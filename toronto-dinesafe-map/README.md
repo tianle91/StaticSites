@@ -21,11 +21,10 @@ make test   # run the tests
 `uv` creates this project's `.venv` on first run. Targets follow the repo
 standard — see the [repo README](../README.md).
 
-> **Committed data is a small sample.** The repo ships a handful of *fictional*
-> placeholder establishments so the site builds and tests offline. The live
-> DineSafe dataset (~16k establishments) is fetched by `make data`, which
-> requires network access to Toronto Open Data. Run it to replace the sample
-> with real inspection results; the page shows a banner until you do.
+> **Committed data is the live dataset.** `data/dinesafe.json` holds the full
+> DineSafe set (~18k establishments, one pin each) so the site builds and tests
+> offline straight from a clone. `make data` re-pulls it from Toronto Open Data
+> (needs internet) whenever you want fresher inspection results.
 
 ## Where the data comes from
 
@@ -57,7 +56,7 @@ OpenStreetMap Nominatim (cached in `data/geocode_cache.json`, 1 request/second).
 | --- | --- |
 | `src/fetch_data.py` | Network step (`make data`): pulls DineSafe, reduces it to one pin per establishment |
 | `src/build_map.py` | Offline build: renders `output/toronto-dinesafe-map.html` from `data/dinesafe.json` |
-| `data/dinesafe.json` | Per-establishment data consumed by the build (sample until `make data` is run) |
+| `data/dinesafe.json` | Per-establishment data consumed by the build (full DineSafe set; refreshed by `make data`) |
 | `data/geocode_cache.json` | Address → `[lat, lon]` cache produced by `make data` (commit it) |
 | `output/toronto-dinesafe-map.html` | Generated map (committed so it works without a build) |
 

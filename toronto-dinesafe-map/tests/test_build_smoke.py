@@ -38,10 +38,17 @@ def test_documents_data_sources(built):
 
 def test_renders_every_committed_establishment(built):
     data = json.loads((ROOT / "data" / "dinesafe.json").read_text())
-    # Each mappable establishment should be embedded in the page payload.
+    # Pull the embedded payload back out of the page and compare by name, so the
+    # check is exact regardless of HTML/JSON escaping (real names contain quotes,
+    # ampersands, etc.).
+    marker = "const DATA = "
+    start = built.index(marker) + len(marker)
+    end = built.index(";\n", start)
+    payload = json.loads(built[start:end])
+    rendered = {e["name"] for e in payload["establishments"]}
     for e in data["establishments"]:
         if e.get("lat") is not None and e.get("lon") is not None:
-            assert e["name"] in built
+            assert e["name"] in rendered
 
 
 def test_status_categories_present(built):

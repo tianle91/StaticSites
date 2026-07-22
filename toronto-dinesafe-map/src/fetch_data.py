@@ -115,6 +115,26 @@ def _get(rec, *names):
     return None
 
 
+def _clean_address(addr) -> str:
+    """Upstream fills an absent unit/suite with the literal token "None"
+    (e.g. "1 Blue Jays Way None M5V 1J4"). Drop those tokens and tidy whitespace
+    so pins and directions links read cleanly."""
+    if not addr:
+        return ""
+    return " ".join(p for p in str(addr).split() if p != "None")
+
+
+def _is_infraction(rec) -> bool:
+    """True when a DineSafe row records an actual infraction. Clean inspections
+    come through as a single row whose severity/deficiency columns are blank or
+    the literal string "None" (the CKAN export uses "None"/"NA" placeholders)."""
+    for val in (_get(rec, "deficiencyDesc", "Infraction Details", "infraction_details"),
+                _get(rec, "severity")):
+        if val and str(val).strip().lower() not in ("none", "na"):
+            return True
+    return False
+
+
 def _coord(rec):
     lat = _get(rec, "Latitude", "latitude")
     lon = _get(rec, "Longitude", "longitude")
@@ -132,30 +152,31 @@ def reduce_to_establishments(records):
     """Collapse inspection rows to one current record per establishment."""
     est = {}
     for rec in records:
-        eid = _get(rec, "Establishment ID", "establishment_id") or _get(rec, "Establishment Name")
+        eid = _get(rec, "estId", "oldEstId", "Establishment ID", "establishment_id") \
+            or _get(rec, "estName", "Establishment Name")
         if not eid:
             continue
-        date = str(_get(rec, "Inspection Date", "inspection_date") or "")
+        date = str(_get(rec, "inspectionDate", "Inspection Date", "inspection_date") or "")
         e = est.get(eid)
         if e is None:
             e = est[eid] = {
-                "name": _get(rec, "Establishment Name", "establishment_name") or "Establishment",
+                "name": _get(rec, "estName", "Establishment Name", "establishment_name") or "Establishment",
                 "type": _get(rec, "Establishment Type", "Establishmenttype", "establishment_type") or "",
-                "address": _get(rec, "Establishment Address", "establishment_address") or "",
-                "status": _get(rec, "Establishment Status", "establishment_status") or "",
+                "address": _clean_address(_get(rec, "address", "Establishment Address", "establishment_address")),
+                "status": _get(rec, "inspectionStatus", "Establishment Status", "establishment_status") or "",
                 "last_inspection": date,
                 "min_per_year": _get(rec, "Min. Inspections Per Year", "min_inspections_per_year") or "",
                 "coord": _coord(rec),
                 "_infractions": {},  # inspection date -> count, so we can report the latest
             }
         # Track infractions per inspection date; keep the newest inspection's status.
-        if _get(rec, "Infraction Details", "infraction_details"):
+        if _is_infraction(rec):
             e["_infractions"][date] = e["_infractions"].get(date, 0) + 1
         else:
             e["_infractions"].setdefault(date, 0)
         if date and date >= (e["last_inspection"] or ""):
             e["last_inspection"] = date
-            e["status"] = _get(rec, "Establishment Status", "establishment_status") or e["status"]
+            e["status"] = _get(rec, "inspectionStatus", "Establishment Status", "establishment_status") or e["status"]
         if e["coord"] is None:
             e["coord"] = _coord(rec)
     return est
