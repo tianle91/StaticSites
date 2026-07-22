@@ -1,17 +1,1 @@
-{
-  "generated_at": "sample",
-  "sample": true,
-  "source_page": "https://open.toronto.ca/dataset/dinesafe/",
-  "_comment": "PLACEHOLDER DATA. These establishments are fictional and the statuses are illustrative only - they do NOT describe any real business. Run `make data` to replace this file with the live DineSafe dataset from Toronto Open Data.",
-  "total_records": 8,
-  "establishments": [
-    {"name": "Sample Diner (placeholder)", "type": "Restaurant", "address": "100 Queen St W", "lat": 43.65323, "lon": -79.38318, "status": "Pass", "last_inspection": "2025-01-15", "infractions": 0, "min_per_year": "3"},
-    {"name": "Placeholder Pizza Co.", "type": "Restaurant", "address": "2200 Yonge St", "lat": 43.70680, "lon": -79.39860, "status": "Conditional Pass", "last_inspection": "2025-02-03", "infractions": 2, "min_per_year": "3"},
-    {"name": "Example Bistro", "type": "Restaurant", "address": "500 Bloor St W", "lat": 43.66490, "lon": -79.41120, "status": "Pass", "last_inspection": "2025-01-28", "infractions": 1, "min_per_year": "2"},
-    {"name": "Demo Bakery", "type": "Food Store (Bakery)", "address": "800 Danforth Ave", "lat": 43.68050, "lon": -79.34530, "status": "Pass", "last_inspection": "2024-12-11", "infractions": 0, "min_per_year": "2"},
-    {"name": "Test Kitchen Cafe", "type": "Food Take Out", "address": "1000 Eglinton Ave W", "lat": 43.69860, "lon": -79.43380, "status": "Pass", "last_inspection": "2025-02-10", "infractions": 0, "min_per_year": "1"},
-    {"name": "Mockingbird Grill (sample)", "type": "Restaurant", "address": "300 Kingston Rd", "lat": 43.67260, "lon": -79.29840, "status": "Closed", "last_inspection": "2025-01-06", "infractions": 5, "min_per_year": "3"},
-    {"name": "Placeholder Sushi", "type": "Restaurant", "address": "4800 Yonge St", "lat": 43.76890, "lon": -79.41180, "status": "Conditional Pass", "last_inspection": "2025-02-18", "infractions": 3, "min_per_year": "3"},
-    {"name": "Sample Food Court Stall", "type": "Food Court Vendor", "address": "220 Yonge St", "lat": 43.65420, "lon": -79.38010, "status": "Pass", "last_inspection": "2025-02-01", "infractions": 0, "min_per_year": "2"}
-  ]
-}
+{"generated_at": "2026-07-22", "source_page": "https://open.toronto.ca/dataset/dinesafe/", "total_records": 0, "establishments": []}
