@@ -301,7 +301,10 @@ loadShelterStats();
 
 
 def main() -> None:
-    out = HTML.replace("__PAYLOAD__", PAYLOAD)
+    # Escape "<" so a field value like "</script>" (or "<!--") in the embedded
+    # JSON can't close the <script> element and break the page. These become
+    # < inside the JSON string literals, leaving the parsed data unchanged.
+    out = HTML.replace("__PAYLOAD__", PAYLOAD.replace("<", "\\u003c"))
     target = OUT_DIR / "toronto-vulnerable-services-map.html"
     target.write_text(out, encoding="utf-8")
     curated = len(LOCATIONS) - shelter_count
