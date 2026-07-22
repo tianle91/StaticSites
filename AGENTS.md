@@ -13,13 +13,23 @@ subdirectory is a separate, self-contained static-site project:
 - `union-station-transit-isochrone/`
 
 Projects are independent. No project imports from another, there is no shared
-source package, and there is no repo-level virtualenv, `Makefile`, or dependency
-file. **Do not add one.** If two projects need the same helper, duplicating it is
-the right call here. Scope a change to a single project and read that project's
-own `README.md` first.
+source package, and there is no repo-level virtualenv or dependency file, and no
+shared build system. **Do not add one.** If two projects need the same helper,
+duplicating it is the right call here. Scope a change to a single project and read
+that project's own `README.md` first.
 
-The only repo-level code is [`new-project.py`](new-project.py), the scaffolder —
-see below.
+The only repo-level code is a small amount of repo-admin tooling, none of which a
+project may depend on:
+
+- [`new-project.py`](new-project.py) — the scaffolder (see below).
+- [`generate_manifest.py`](generate_manifest.py) — regenerates
+  [`sites.json`](sites.json) from the projects' metadata (see "Site-listing
+  metadata" below).
+- [`Makefile`](Makefile) — **admin targets only** (`make manifest`, `make
+  check`). This is the one allowed repo-root Makefile; it is not a build system
+  and must never gain build/test/deps targets — those stay per project. CI
+  discovers projects with `*/Makefile` (one level deep), so this root Makefile is
+  invisible to that glob and never becomes a phantom project.
 
 ## Creating a project
 
@@ -89,6 +99,52 @@ Rules that go with it:
   testpaths = ["tests"]
   pythonpath = ["src"]
   ```
+
+## Site-listing metadata (`sites.json`)
+
+Downstream consumers — chiefly [tianle91.github.io](https://github.com/tianle91/tianle91.github.io),
+which vendors this repo as a submodule and lists every site — need each site's
+**title** and **one-line blurb** in a structured form, so they can regenerate
+their link list deterministically instead of scraping prose out of the READMEs.
+
+Each project declares that in its `pyproject.toml`:
+
+```toml
+[project]
+# Standalone one-liner. MUST start with "<title> — " so the blurb can be split
+# out mechanically (see below).
+description = "Toronto DineSafe food-safety inspections — one pin per establishment, coloured by its latest outcome, searchable by name / type / address."
+
+[tool.staticsite]
+title = "Toronto DineSafe food-safety inspections"   # the link text
+```
+
+[`generate_manifest.py`](generate_manifest.py) aggregates all of them into the
+committed [`sites.json`](sites.json), one entry per project:
+
+```json
+{ "slug": "toronto-dinesafe-map",
+  "title": "Toronto DineSafe food-safety inspections",
+  "description": "one pin per establishment, coloured by its latest outcome, searchable by name / type / address.",
+  "output": "toronto-dinesafe-map/output/toronto-dinesafe-map.html" }
+```
+
+`description` is `[project].description` with the leading `"<title> — "` removed,
+so the title is stored once and the blurb is not duplicated. `output` is the
+standard `<slug>/output/<slug>.html` artifact.
+
+Regenerate and verify from the repo root:
+
+```bash
+make manifest    # rewrite sites.json  (== ./generate_manifest.py)
+make check       # fail if sites.json is stale  (CI runs this)
+```
+
+`sites.json` must not drift: CI fails the `manifest` job if it is out of date, so
+**run `make manifest` and commit the result whenever you change a project's
+`title`/`description` or add a project.** The generator is stdlib-only (it must
+run on the system `python3`, which is 3.9 and predates `tomllib`), matching the
+scaffolder.
 
 ## The standard Make target contract
 

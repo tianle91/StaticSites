@@ -41,3 +41,13 @@ jobs:
         run: make -C ${{ matrix.project }} test
       - name: make all
         run: make -C ${{ matrix.project }} all
+
+  # sites.json is generated from the projects' pyproject.toml metadata; fail if
+  # the committed copy is stale so downstream consumers can trust it. Stdlib
+  # only, so no uv/venv setup is needed.
+  manifest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: sites.json is in sync
+        run: ./generate_manifest.py --check

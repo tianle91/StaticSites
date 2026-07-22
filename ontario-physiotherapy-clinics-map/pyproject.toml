@@ -1,7 +1,7 @@
 [project]
 name = "ontario-physiotherapy-clinics-map"
 version = "0.0.0"
-description = "Ontario's publicly-funded (OHIP-covered) physiotherapy clinics and hospitals, mapped."
+description = "Ontario OHIP physiotherapy clinics — the 255 publicly-funded clinics and hospitals, searchable by name / city / postal code."
 requires-python = ">=3.11"
 
 # Only `make data` needs these; building the map from data/ is stdlib-only.
@@ -19,3 +19,10 @@ package = false
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
+
+[tool.staticsite]
+# Homepage-listing metadata, aggregated into the repo-root sites.json by
+# ../generate_manifest.py. `title` is the link text; the blurb shown after it is
+# [project].description with the leading "<title> — " stripped, so description
+# must start with "<title> — ".
+title = "Ontario OHIP physiotherapy clinics"

@@ -84,8 +84,27 @@ cd my-new-map && make && make test    # both pass immediately
 The generated project is a working end-to-end placeholder: `src/fetch_data.py`
 writes `data/`, `src/build_site.py` renders `output/my-new-map.html` from it, and
 a smoke test covers the build. Replace those three with the real thing, fill in
-the `TODO`s in the project's `README.md`, and add a row to the table at the top
-of this README. CI picks the project up automatically — no workflow changes.
+the `TODO`s in the project's `README.md`, set the homepage blurb in
+`pyproject.toml` (`[project].description` + `[tool.staticsite].title`), and add a
+row to the table at the top of this README. CI picks the project up automatically
+— no workflow changes.
 
 Do not hand-roll a new project directory; scaffolding it is what keeps the four
 (and counting) projects identical in shape.
+
+## Machine-readable index (`sites.json`)
+
+Each project's title and one-line blurb are aggregated into
+[`sites.json`](sites.json) — a structured index that downstream consumers (e.g.
+[tianle91.github.io](https://github.com/tianle91/tianle91.github.io), which
+vendors this repo as a submodule) read to regenerate their site list without
+parsing prose. Regenerate it from the repo root whenever a project's metadata
+changes:
+
+```bash
+make manifest    # rewrite sites.json from the projects' pyproject.toml
+make check       # fail if sites.json is stale (CI enforces this)
+```
+
+See [AGENTS.md](AGENTS.md#site-listing-metadata-sitesjson) for the metadata
+fields and conventions.

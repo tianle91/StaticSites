@@ -1,7 +1,7 @@
 [project]
 name = "union-station-transit-isochrone"
 version = "0.0.0"
-description = "The morning transit commute-shed of Toronto's Union Station (30/60/90/120 min)."
+description = "Union Station commute-shed — where you can reach Toronto's Union Station by transit in 30 / 60 / 90 / 120 minutes."
 # r5py needs >= 3.10; 3.11 is what CI runs, so pin the floor there.
 requires-python = ">=3.11"
 
@@ -21,3 +21,10 @@ package = false
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
+
+[tool.staticsite]
+# Homepage-listing metadata, aggregated into the repo-root sites.json by
+# ../generate_manifest.py. `title` is the link text; the blurb shown after it is
+# [project].description with the leading "<title> — " stripped, so description
+# must start with "<title> — ".
+title = "Union Station commute-shed"
