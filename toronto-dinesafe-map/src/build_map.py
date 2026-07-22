@@ -53,8 +53,8 @@ for e in DATA.get("establishments", []):
     counts[key] += 1
     establishments.append(e)
 
-CENTER = [43.7182, -79.3762]  # Toronto; overridden by fitBounds once pins load
-ZOOM = 11
+CENTER = [43.6532, -79.3832]  # downtown Toronto; the user's location recenters when permitted
+ZOOM = 13
 
 PAYLOAD = json.dumps(
     {
@@ -178,7 +178,6 @@ function esc(s) {
 
 // Keep marker + record together so the search box can filter without rebuilding.
 const entries = [];
-const bounds = [];
 for (const e of DATA.establishments) {
   const cat = DATA.categories[e.cat] || { label: e.status, color: '#777' };
   const marker = L.circleMarker([e.lat, e.lon], {
@@ -201,9 +200,9 @@ for (const e of DATA.establishments) {
   marker.addTo(layers[e.cat]);
   entries.push({ marker, rec: e, cat: e.cat,
     haystack: [e.name, e.type, e.address].join(' ').toLowerCase() });
-  bounds.push([e.lat, e.lon]);
 }
-if (bounds.length) map.fitBounds(bounds, { padding: [40, 40] });
+// Open at the default downtown view (ZOOM above) rather than fitting all ~18k
+// city-wide pins, which would zoom right back out; a search still fits its matches.
 
 // Layer toggle control + legend (with per-status counts).
 const overlays = {};

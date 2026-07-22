@@ -21,6 +21,19 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT_DIR = ROOT / "output"
 SERIES_CSV = ROOT / "data" / "series.csv"
+PULLED_STAMP = ROOT / "data" / "generated_at.txt"  # written by fetch_data.py
+
+
+def data_pulled_date() -> str:
+    """The date the committed data was pulled (stamped by `make data`), falling
+    back to the CSV's own modification date so every chart carries a data date."""
+    if PULLED_STAMP.exists():
+        stamp = PULLED_STAMP.read_text(encoding="utf-8").strip()
+        if stamp:
+            return stamp[:10]
+    if SERIES_CSV.exists():
+        return date.fromtimestamp(SERIES_CSV.stat().st_mtime).isoformat()
+    return ""
 
 START = pd.Timestamp("2000-01-01")
 
@@ -179,9 +192,11 @@ def render_png(rebased: pd.DataFrame, out_path: Path) -> None:
 
     # Attribute the data sources on the image itself (URLs can't be clickable in a
     # PNG, but a reader with only the picture can still see where the data is from).
+    pulled = data_pulled_date()
     fig.text(
         0.5, 0.005,
-        "Data sources: " + " · ".join(f"{label} ({url})" for label, url in DATA_SOURCES),
+        (f"Data pulled {pulled} · " if pulled else "")
+        + "Data sources: " + " · ".join(f"{label} ({url})" for label, url in DATA_SOURCES),
         ha="center", va="bottom", fontsize=6.5, color="#666666",
     )
 
@@ -284,10 +299,12 @@ def render_html(rebased: pd.DataFrame, out_path: Path) -> None:
         f'<a href="{url}" target="_blank" rel="noopener">{label}</a>'
         for label, url in DATA_SOURCES
     )
+    pulled = data_pulled_date()
+    pulled_html = f"Data pulled {pulled} &middot; " if pulled else ""
     footer = (
         '<footer style="font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;'
         'font-size:12px;color:#666;text-align:center;padding:8px 16px 16px">'
-        "<strong>Data sources:</strong> " + links + "</footer>"
+        + pulled_html + "<strong>Data sources:</strong> " + links + "</footer>"
     )
     html = html.replace("</body>", footer + "</body>", 1)
     out_path.write_text(html, encoding="utf-8")

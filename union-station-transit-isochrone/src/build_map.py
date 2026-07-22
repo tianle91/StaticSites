@@ -6,6 +6,7 @@ transit_model.json.
 Stdlib only - no pip install, no network needed at build time. The generated
 index.html needs the internet only for OpenStreetMap tiles.
 """
+import datetime
 import json
 import pathlib
 
@@ -35,12 +36,23 @@ MODE_LABEL = {
     "bus": "Bus",
 }
 
+def _generated_at() -> str:
+    """When the reachability bands were last computed by `make data`. Prefer the
+    stamp in the model; fall back to the data file's date so the page always
+    carries a data-pulled date."""
+    stamp = MODEL.get("generated_at")
+    if stamp:
+        return str(stamp)[:10]
+    return datetime.date.fromtimestamp((DATA_DIR / "transit_model.json").stat().st_mtime).isoformat()
+
+
 PAYLOAD = json.dumps({
     "geo": GEO,
     "origin": MODEL["origin"],
     "bands": MODEL["bands"],
     "nodes": MODEL["nodes"],
     "service_assumption": MODEL["service_assumption"],
+    "generated_at": _generated_at(),
     "stations": STATIONS,
     "mode_color": MODE_COLOR,
     "mode_label": MODE_LABEL,
@@ -127,6 +139,7 @@ HTML = """<!DOCTYPE html>
     <li>Map tiles: &copy;
       <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors</li>
   </ul>
+  <p id="generated" style="color:#666;font-size:12px"></p>
 
   <details>
     <summary>Method &amp; caveats</summary>
@@ -223,6 +236,8 @@ for (const m of presentModes) {
   modes.appendChild(row);
 }
 document.getElementById('assume').textContent = DATA.service_assumption;
+document.getElementById('generated').textContent = DATA.generated_at
+  ? 'Data pulled ' + DATA.generated_at : '';
 
 // --- Point-in-polygon: which band contains a clicked point? ---
 function pointInRing(lon, lat, ring) {
