@@ -1,7 +1,7 @@
 [project]
 name = "toronto-dinesafe-map"
 version = "0.0.0"
-description = "Toronto DineSafe food-safety inspections — one pin per establishment, coloured by its latest outcome (Pass / Conditional Pass / Closed), searchable by name / type / address."
+description = "Toronto DineSafe food-safety inspections — one pin per establishment, coloured by its latest outcome (Pass / Conditional Pass / Closed); search by name / type / address and open any business for its inspection history."
 requires-python = ">=3.11"
 
 # Runtime dependencies are only needed by `make data` (the network step); the

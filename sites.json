@@ -14,7 +14,7 @@
   {
     "slug": "toronto-dinesafe-map",
     "title": "Toronto DineSafe food-safety inspections",
-    "description": "one pin per establishment, coloured by its latest outcome (Pass / Conditional Pass / Closed), searchable by name / type / address.",
+    "description": "one pin per establishment, coloured by its latest outcome (Pass / Conditional Pass / Closed); search by name / type / address and open any business for its inspection history.",
     "output": "toronto-dinesafe-map/output/toronto-dinesafe-map.html"
   },
   {
