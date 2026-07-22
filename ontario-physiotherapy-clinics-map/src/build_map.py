@@ -90,8 +90,11 @@ HTML = """<!DOCTYPE html>
   <h2>Legend</h2>
   <div id="legend"></div>
 
-  <h2>Source</h2>
-  <p><a id="source" href="#" target="_blank" rel="noopener">ontario.ca &mdash; publicly-funded physiotherapy clinic locations</a></p>
+  <h2>Data sources</h2>
+  <p><a id="source" href="#" target="_blank" rel="noopener">ontario.ca &mdash; publicly-funded physiotherapy clinic locations</a>
+     (via the <a href="https://data.ontario.ca/dataset/publicly-funded-physiotherapy-clinics" target="_blank" rel="noopener">Ontario Open Data</a> CKAN datastore)</p>
+  <p style="color:#666">Coordinates geocoded with &copy;
+     <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> Nominatim; map tiles &copy; OpenStreetMap contributors.</p>
   <p id="generated" style="color:#666"></p>
 
   <details>

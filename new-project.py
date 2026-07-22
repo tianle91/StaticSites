@@ -167,8 +167,12 @@ HTML = """<!DOCTYPE html>
   body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
   main { max-width: 760px; margin: 40px auto; padding: 0 16px; }
   h1 { font-size: 20px; margin: 0 0 4px; }
+  h2 { font-size: 14px; margin: 24px 0 6px; }
   p.meta { color: #555; font-size: 13px; margin: 0 0 20px; }
   li { margin: 4px 0; }
+  footer.sources { margin-top: 28px; border-top: 1px solid #eee; padding-top: 12px;
+    font-size: 13px; color: #555; }
+  footer.sources a { color: #1f78b4; }
 </style>
 </head>
 <body>
@@ -176,6 +180,16 @@ HTML = """<!DOCTYPE html>
   <h1>__TITLE__</h1>
   <p class="meta" id="meta"></p>
   <ul id="items"></ul>
+
+  <!-- Every site documents where its data came from, and links it. Replace these
+       placeholders with the real upstream sources (keep them in sync with the
+       "Data sources" section of README.md). -->
+  <footer class="sources">
+    <h2>Data sources</h2>
+    <ul>
+      <li><a href="https://example.com/" target="_blank" rel="noopener">TODO: upstream source</a></li>
+    </ul>
+  </footer>
 </main>
 <script>
 const DATA = __PAYLOAD__;
@@ -232,6 +246,11 @@ def built(tmp_path):
 def test_html_is_self_contained(built):
     assert built.startswith("<!DOCTYPE html")
     assert "__PAYLOAD__" not in built          # payload was substituted
+
+
+def test_documents_data_sources(built):
+    # Every site must document its data sources on the page itself.
+    assert "Data sources" in built
 '''
 
 FILES["README.md"] = '''\

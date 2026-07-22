@@ -19,6 +19,8 @@
   .panel p { font-size: 12px; color: #444; margin: 4px 0; }
   .panel a { color: #1f78b4; text-decoration: none; }
   .panel a:hover { text-decoration: underline; }
+  .sources { font-size: 12px; color: #444; margin: 4px 0; padding-left: 18px; }
+  .sources li { margin: 3px 0; }
   .legend-row { display: flex; align-items: center; font-size: 12px; margin: 4px 0; }
   .swatch { width: 14px; height: 14px; border-radius: 3px; margin-right: 8px; border: 1px solid rgba(0,0,0,.25); }
   .dot { width: 11px; height: 11px; border-radius: 50%; margin-right: 8px; border: 1px solid rgba(0,0,0,.3); }
@@ -61,6 +63,22 @@
 
   <h2>Assumptions</h2>
   <p id="assume"></p>
+
+  <h2>Data sources</h2>
+  <ul class="sources">
+    <li>Street &amp; walk network:
+      <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>
+      (&copy; OpenStreetMap contributors), via a
+      <a href="https://download.geofabrik.de/north-america/canada/ontario.html" target="_blank" rel="noopener">Geofabrik</a> extract</li>
+    <li>TTC subway / streetcar / bus schedules (GTFS):
+      <a href="https://open.toronto.ca/dataset/ttc-routes-and-schedules/" target="_blank" rel="noopener">Toronto Open Data</a></li>
+    <li>GO Transit &amp; UP Express schedules (GTFS):
+      <a href="https://www.metrolinx.com/en/about-us/open-data" target="_blank" rel="noopener">Metrolinx Open Data</a></li>
+    <li>Multimodal transit routing:
+      <a href="https://r5py.readthedocs.io/" target="_blank" rel="noopener">r5py</a> (Conveyal R5)</li>
+    <li>Map tiles: &copy;
+      <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors</li>
+  </ul>
 
   <details>
     <summary>Method &amp; caveats</summary>

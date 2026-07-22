@@ -89,6 +89,8 @@ HTML = """<!DOCTYPE html>
   .panel p { font-size: 12px; color: #444; margin: 4px 0; }
   .panel a { color: #1f78b4; text-decoration: none; }
   .panel a:hover { text-decoration: underline; }
+  .sources { font-size: 12px; color: #444; margin: 4px 0; padding-left: 18px; }
+  .sources li { margin: 3px 0; }
   .dir { font-size: 12px; margin: 6px 0; }
   .dir .note { color: #666; display: block; }
   #stats { font-size: 12px; background: #f3f7fb; border: 1px solid #d6e4f0; border-radius: 6px; padding: 8px; }
@@ -122,6 +124,18 @@ HTML = """<!DOCTYPE html>
 
   <h2>Directories &amp; Data</h2>
   <div id="directories"></div>
+
+  <h2>Data sources</h2>
+  <ul class="sources">
+    <li>Curated service locations &mdash; compiled from the City/Province pages linked above; see the
+      <a href="https://github.com/tianle91/StaticSites/blob/main/toronto-vulnerable-services-map/data/SOURCES.md" target="_blank" rel="noopener">Sources document</a></li>
+    <li>Live shelter occupancy &mdash;
+      <a href="https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/" target="_blank" rel="noopener">Toronto Open Data</a>
+      (Daily Shelter &amp; Overnight Service Occupancy)</li>
+    <li>Geocoding &amp; map tiles &mdash; &copy;
+      <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors
+      (via Nominatim)</li>
+  </ul>
 
   <details>
     <summary>Notes &amp; caveats</summary>
