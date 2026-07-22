@@ -7,7 +7,9 @@ outcome of its most recent inspection (**Pass**, **Conditional Pass**, or
 **Closed**).
 
 - **Search** by name, type or address — matches are listed as you type; click one
-  to fly to its pin and open its details.
+  to fly to its pin and open its details. A **Nearest first** toggle (on by
+  default) ranks the results by distance and labels each once you allow the
+  browser to share your location; without a location it falls back to A–Z.
 - **Detail sidebar** — clicking a pin (or a search result) opens a sidebar with
   the establishment's current status, key facts, and its **inspection history**:
   every inspection on record, each visit's outcome, and the individual

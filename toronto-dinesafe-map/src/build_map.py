@@ -114,6 +114,11 @@ HTML = """<!DOCTYPE html>
   #stats b { font-size: 16px; color: #1f78b4; }
   #search { width: 100%; box-sizing: border-box; margin-top: 10px; padding: 6px 8px;
     font-size: 13px; border: 1px solid #ccc; border-radius: 6px; }
+  .near-toggle { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #555;
+    margin-top: 7px; cursor: pointer; user-select: none; }
+  .near-toggle input { margin: 0; cursor: pointer; }
+  .near-toggle.disabled { color: #9aa3ab; }
+  #near-hint { color: #9aa3ab; font-size: 11px; }
   #results { list-style: none; margin: 6px 0 0; padding: 0; max-height: 210px; overflow: auto; }
   #results:empty { margin: 0; }
   #results li { padding: 6px 8px; border-radius: 6px; cursor: pointer; font-size: 12px;
@@ -121,6 +126,7 @@ HTML = """<!DOCTYPE html>
   #results li:hover, #results li.active { background: #eef4fb; }
   #results .r-name { font-weight: 600; color: #222; }
   #results .r-addr { color: #777; display: block; font-weight: 400; }
+  #results .r-dist { margin-left: auto; color: #888; font-size: 11px; white-space: nowrap; padding-left: 6px; }
   #results .r-more { color: #888; text-align: center; cursor: default; }
   #results .r-more:hover { background: none; }
   .legend-row { display: flex; align-items: center; font-size: 12px; margin: 3px 0; }
@@ -207,6 +213,9 @@ HTML = """<!DOCTYPE html>
   <div id="sample-banner" class="sample-banner" style="display:none"></div>
   <div id="stats"></div>
   <input id="search" type="search" placeholder="Search by name, type or address&hellip;" autocomplete="off" />
+  <label id="near-toggle-label" class="near-toggle">
+    <input id="near-toggle" type="checkbox" checked /> Nearest first<span id="near-hint"></span>
+  </label>
   <ul id="results"></ul>
 
   <h2>Legend</h2>
@@ -415,17 +424,28 @@ function focusEntry(rec) {
 // matches so a business can be found and opened without hunting for its pin.
 const search = document.getElementById('search');
 const results = document.getElementById('results');
+const nearToggle = document.getElementById('near-toggle');
+const nearHint = document.getElementById('near-hint');
 const RESULT_LIMIT = 40;
 
-function renderResults(matches, q) {
+// The user's location, once the browser shares it (see locate()); null until then.
+let userLoc = null;
+
+function fmtDist(m) {  // metres -> a short "120 m" / "1.4 km" label
+  return m < 950 ? Math.round(m / 10) * 10 + ' m' : (m / 1000).toFixed(1) + ' km';
+}
+
+function renderResults(matches, q, showDist) {
   results.innerHTML = '';
   if (!q) return;
   for (const en of matches.slice(0, RESULT_LIMIT)) {
     const cat = catFor(en.cat);
     const li = document.createElement('li');
+    const dist = (showDist && en._dist != null)
+      ? '<span class="r-dist">' + fmtDist(en._dist) + '</span>' : '';
     li.innerHTML = '<span class="dot" style="background:' + cat.color + '"></span>' +
       '<span><span class="r-name">' + esc(en.rec.name) + '</span>' +
-      (en.rec.address ? '<span class="r-addr">' + esc(en.rec.address) + '</span>' : '') + '</span>';
+      (en.rec.address ? '<span class="r-addr">' + esc(en.rec.address) + '</span>' : '') + '</span>' + dist;
     li.addEventListener('click', () => focusEntry(en.rec));
     results.appendChild(li);
   }
@@ -437,7 +457,7 @@ function renderResults(matches, q) {
   }
 }
 
-search.addEventListener('input', () => {
+function runSearch() {
   const q = search.value.trim().toLowerCase();
   let shown = 0;
   const visible = [];
@@ -454,9 +474,27 @@ search.addEventListener('input', () => {
     }
   }
   renderStats(shown);
-  renderResults(matches, q);
+  // Nearest-first: when the toggle is on and we know where the user is, rank
+  // matches by distance to them; otherwise keep the dataset's A-Z order.
+  const near = nearToggle.checked && userLoc;
+  if (near) {
+    for (const en of matches) en._dist = map.distance(userLoc, [en.rec.lat, en.rec.lon]);
+    matches.sort((a, b) => a._dist - b._dist);
+  }
+  renderResults(matches, q, near);
   if (q && visible.length) map.fitBounds(visible, { padding: [40, 40], maxZoom: 15 });
-});
+}
+
+// Reflect whether "Nearest first" can actually apply yet (needs a location).
+function updateNearToggle() {
+  const label = document.getElementById('near-toggle-label');
+  if (userLoc) { nearHint.textContent = ''; label.classList.remove('disabled'); }
+  else { nearHint.textContent = ' \\u00b7 share location to use'; label.classList.add('disabled'); }
+}
+
+search.addEventListener('input', runSearch);
+nearToggle.addEventListener('change', runSearch);
+updateNearToggle();
 
 // Center on the user's location when available/permitted (button + auto-attempt).
 let youMarker = null;
@@ -464,13 +502,15 @@ function locate() {
   if (!navigator.geolocation) return;
   navigator.geolocation.getCurrentPosition(
     pos => {
-      const ll = [pos.coords.latitude, pos.coords.longitude];
-      if (youMarker) youMarker.setLatLng(ll);
-      else youMarker = L.circleMarker(ll, { radius: 8, color: '#fff', weight: 2,
+      userLoc = [pos.coords.latitude, pos.coords.longitude];
+      if (youMarker) youMarker.setLatLng(userLoc);
+      else youMarker = L.circleMarker(userLoc, { radius: 8, color: '#fff', weight: 2,
         fillColor: '#2b8cbe', fillOpacity: 1 }).addTo(map).bindPopup('You are here');
-      map.setView(ll, 14);
+      map.setView(userLoc, 14);
+      updateNearToggle();
+      if (search.value.trim()) runSearch();  // re-rank any open results now we know where they are
     },
-    () => {},  // denied/unavailable: keep the city-wide view
+    () => {},  // denied/unavailable: keep the city-wide view and A-Z result order
     { enableHighAccuracy: true, timeout: 8000 }
   );
 }

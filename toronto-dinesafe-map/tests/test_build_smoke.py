@@ -68,6 +68,15 @@ def test_search_and_detail_sidebar_present(built):
     assert "Inspection history" in built
 
 
+def test_nearest_first_toggle_default_on(built):
+    # Results can be ranked by distance to the user; the toggle is on by default
+    # and takes effect once the browser shares a location.
+    assert 'id="near-toggle"' in built
+    assert 'type="checkbox" checked' in built   # default-enabled
+    assert "map.distance(userLoc" in built      # distance-based ranking
+    assert "Nearest first" in built
+
+
 def _build_in(tmp_path, data):
     """Run the builder against a custom data/dinesafe.json and return the page."""
     for sub in ("src", "data", "output"):
