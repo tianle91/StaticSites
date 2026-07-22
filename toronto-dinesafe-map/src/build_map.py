@@ -305,7 +305,11 @@ toggle.addEventListener('click', () => {
 
 
 def main() -> None:
-    out = HTML.replace("__PAYLOAD__", PAYLOAD)
+    # Escape "<" so a field value like "</script>" (or "<!--") in the embedded
+    # JSON can't close the <script> element and break the page. These become
+    # < inside the JSON string literals, leaving the parsed data unchanged.
+    payload = PAYLOAD.replace("<", "\\u003c")
+    out = HTML.replace("__PAYLOAD__", payload)
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     target = OUT_DIR / "toronto-dinesafe-map.html"
     target.write_text(out, encoding="utf-8")
