@@ -5,13 +5,17 @@ compact, committable data/dinesafe.json.
 
 DineSafe is Toronto Public Health's food-safety inspection program. The Open Data
 resource has **one row per infraction/inspection line**, which is far too large
-and too fine-grained to map directly, so this step collapses it to the current
-state of each establishment:
+and too fine-grained to map directly, so this step collapses it to one record per
+establishment:
 
   - status            : Establishment Status of its most recent inspection
                         (Pass / Conditional Pass / Closed)
   - last_inspection   : that inspection's date
   - infractions       : how many infraction lines that inspection recorded
+  - inspections       : the full timeline (newest first) - each inspection's
+                        date, status, and the individual infractions it recorded
+                        (description, severity, and the action ordered), so the
+                        map's sidebar can show inspection detail and history
 
 Coordinates: the DineSafe rows carry Latitude/Longitude for most establishments;
 where they are missing or unparseable we fall back to geocoding the address with
@@ -124,15 +128,35 @@ def _clean_address(addr) -> str:
     return " ".join(p for p in str(addr).split() if p != "None")
 
 
+def _clean(val):
+    """Trim a cell, treating the CKAN "None"/"NA" placeholders as empty."""
+    if val is None:
+        return ""
+    s = str(val).strip()
+    return "" if s.lower() in ("none", "na") else s
+
+
 def _is_infraction(rec) -> bool:
     """True when a DineSafe row records an actual infraction. Clean inspections
     come through as a single row whose severity/deficiency columns are blank or
     the literal string "None" (the CKAN export uses "None"/"NA" placeholders)."""
-    for val in (_get(rec, "deficiencyDesc", "Infraction Details", "infraction_details"),
-                _get(rec, "severity")):
-        if val and str(val).strip().lower() not in ("none", "na"):
-            return True
-    return False
+    return bool(
+        _clean(_get(rec, "deficiencyDesc", "Infraction Details", "infraction_details"))
+        or _clean(_get(rec, "severity", "Severity"))
+    )
+
+
+def _infraction(rec) -> dict:
+    """The infraction detail carried by one DineSafe row: what was wrong, how
+    serious, and what the inspector ordered. Blank fields are dropped so the
+    committed JSON (and the sidebar) stay compact."""
+    fields = {
+        "detail": _clean(_get(rec, "deficiencyDesc", "Infraction Details", "infraction_details")),
+        "severity": _clean(_get(rec, "severity", "Severity")),
+        "action": _clean(_get(rec, "action", "Action")),
+        "outcome": _clean(_get(rec, "Outcome", "outcome", "Court Outcome", "court_outcome")),
+    }
+    return {k: v for k, v in fields.items() if v}
 
 
 def _coord(rec):
@@ -157,26 +181,32 @@ def reduce_to_establishments(records):
         if not eid:
             continue
         date = str(_get(rec, "inspectionDate", "Inspection Date", "inspection_date") or "")
+        status = _get(rec, "inspectionStatus", "Establishment Status", "establishment_status") or ""
         e = est.get(eid)
         if e is None:
             e = est[eid] = {
                 "name": _get(rec, "estName", "Establishment Name", "establishment_name") or "Establishment",
                 "type": _get(rec, "Establishment Type", "Establishmenttype", "establishment_type") or "",
                 "address": _clean_address(_get(rec, "address", "Establishment Address", "establishment_address")),
-                "status": _get(rec, "inspectionStatus", "Establishment Status", "establishment_status") or "",
+                "status": status,
                 "last_inspection": date,
                 "min_per_year": _get(rec, "Min. Inspections Per Year", "min_inspections_per_year") or "",
                 "coord": _coord(rec),
-                "_infractions": {},  # inspection date -> count, so we can report the latest
+                "_inspections": {},  # inspection date -> {status, infractions[]}, the full timeline
             }
-        # Track infractions per inspection date; keep the newest inspection's status.
+        # Build the per-inspection timeline: one entry per inspection date, each
+        # holding that visit's status and the infraction lines recorded on it.
+        ins = e["_inspections"].get(date)
+        if ins is None:
+            ins = e["_inspections"][date] = {"status": status, "infractions": []}
+        elif status and not ins["status"]:
+            ins["status"] = status
         if _is_infraction(rec):
-            e["_infractions"][date] = e["_infractions"].get(date, 0) + 1
-        else:
-            e["_infractions"].setdefault(date, 0)
+            ins["infractions"].append(_infraction(rec))
+        # Keep the newest inspection's status as the establishment's current status.
         if date and date >= (e["last_inspection"] or ""):
             e["last_inspection"] = date
-            e["status"] = _get(rec, "inspectionStatus", "Establishment Status", "establishment_status") or e["status"]
+            e["status"] = status or e["status"]
         if e["coord"] is None:
             e["coord"] = _coord(rec)
     return est
@@ -200,6 +230,16 @@ def main() -> None:
         if not coord:
             dropped += 1
             continue
+        # Timeline, newest inspection first, for the sidebar's history section.
+        inspections = [
+            {
+                "date": d[:10] if d else "",
+                "status": e["_inspections"][d]["status"],
+                "infractions": e["_inspections"][d]["infractions"],
+            }
+            for d in sorted(e["_inspections"], reverse=True)
+        ]
+        latest = inspections[0] if inspections else {"infractions": []}
         establishments.append({
             "name": e["name"],
             "type": e["type"],
@@ -208,8 +248,9 @@ def main() -> None:
             "lon": coord[1],
             "status": e["status"],
             "last_inspection": e["last_inspection"][:10] if e["last_inspection"] else "",
-            "infractions": e["_infractions"].get(e["last_inspection"], 0),
+            "infractions": len(latest["infractions"]),  # count on the most recent inspection
             "min_per_year": e["min_per_year"],
+            "inspections": inspections,
         })
 
     establishments.sort(key=lambda x: (x["name"] or "").lower())

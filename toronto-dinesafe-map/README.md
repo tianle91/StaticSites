@@ -4,7 +4,17 @@ An interactive Leaflet map of Toronto's
 [DineSafe](https://www.toronto.ca/community-people/health-wellness-care/health-programs-advice/food-safety/dinesafe/)
 food-safety inspection results — one pin per establishment, coloured by the
 outcome of its most recent inspection (**Pass**, **Conditional Pass**, or
-**Closed**), with a name / type / address filter and directions links.
+**Closed**).
+
+- **Search** by name, type or address — matches are listed as you type; click one
+  to fly to its pin and open its details. A **Nearest first** toggle (on by
+  default) ranks the results by distance and labels each once you allow the
+  browser to share your location; without a location it falls back to A–Z.
+- **Detail sidebar** — clicking a pin (or a search result) opens a sidebar with
+  the establishment's current status, key facts, and its **inspection history**:
+  every inspection on record, each visit's outcome, and the individual
+  infractions it found (description, severity, and the action ordered).
+- **Directions** links out to Google Maps for each establishment.
 
 DineSafe is Toronto Public Health's inspection and disclosure program for
 restaurants, food stores, and other establishments that serve or sell food.
@@ -36,11 +46,17 @@ https://ckan0.cf.opendata.inter.prod-toronto.ca/api/3/action/datastore_search?re
 ```
 
 The dataset has **one row per inspection/infraction line**. The fetch collapses
-it to one record per establishment — its latest inspection date, that
-inspection's status, and how many infractions it recorded — so the committed
-`data/dinesafe.json` stays small and maps cleanly. Most rows carry
+it to one record per establishment — its latest inspection date and status, plus
+an `inspections` timeline (every inspection on record with that visit's status and
+its individual infractions) that powers the detail sidebar. Most rows carry
 `Latitude`/`Longitude`; the few that don't are geocoded from their address with
 OpenStreetMap Nominatim (cached in `data/geocode_cache.json`, 1 request/second).
+
+> **The committed `data/dinesafe.json` is summary-only** (latest inspection per
+> establishment, without the per-infraction detail). The build handles both
+> shapes: with summary data the sidebar shows the latest inspection and notes that
+> details load on refresh; run **`make data`** to pull the full per-inspection
+> history and the sidebar fills in every past inspection and infraction.
 
 ## Data sources
 
