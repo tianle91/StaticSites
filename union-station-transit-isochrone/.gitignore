@@ -1,11 +1,10 @@
-__pycache__/
-*.pyc
-preview.png
-# generated r5py intermediate (committed outputs are isochrones.geojson + index.html)
-reachability.json
-# r5py inputs (large OSM extracts + GTFS feeds) and its build cache
+# Generic Python/venv rules live in the repo-root .gitignore.
+# r5py inputs (large OSM extracts + GTFS feeds), R5's build cache, and the
+# generated travel-time grid. Only the curated model + the data README ship.
 data/*
 !data/README.md
+!data/transit_model.json
 *.osm.pbf
 *.mapdb
 *.mapdb.p
+preview.png

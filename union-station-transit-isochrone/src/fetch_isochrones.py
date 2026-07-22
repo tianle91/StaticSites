@@ -35,10 +35,12 @@ import os
 import pathlib
 import sys
 
-HERE = pathlib.Path(__file__).parent
-MODEL = json.loads((HERE / "transit_model.json").read_text(encoding="utf-8"))
+ROOT = pathlib.Path(__file__).resolve().parent.parent  # project root (src/ is one level down)
+DATA_DIR = ROOT / "data"
+OUT_DIR = ROOT / "output"
+MODEL = json.loads((DATA_DIR / "transit_model.json").read_text(encoding="utf-8"))
 ORIGIN = MODEL["origin"]
-OUT = HERE / "reachability.json"
+OUT = DATA_DIR / "reachability.json"
 
 # Tunables (env-overridable).
 # This computes a *reverse* isochrone: travel time TO Union, arriving by ARRIVE_HHMM
@@ -63,8 +65,8 @@ BBOX = (
     float(os.environ.get("BBOX_W", "-80.60")),  # west lon
     float(os.environ.get("BBOX_E", "-78.70")),  # east lon
 )
-OSM_PBF = os.environ.get("OSM_PBF", str(HERE / "data" / "gtha.osm.pbf"))
-GTFS_DIR = os.environ.get("GTFS_DIR", str(HERE / "data"))
+OSM_PBF = os.environ.get("OSM_PBF", str(DATA_DIR / "gtha.osm.pbf"))
+GTFS_DIR = os.environ.get("GTFS_DIR", str(DATA_DIR))
 
 
 def _easter(year):

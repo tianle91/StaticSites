@@ -3,10 +3,10 @@
 A collection of self-contained static sites — interactive maps and plots that
 build to a single file you can open in a browser with no server.
 
-**Every top-level subdirectory is its own independent project.** Each one has its
-own `README.md`, its own `Makefile`, its own data, and its own committed output.
-Projects never import from one another. The only thing they share is the Python
-environment described below.
+**Every top-level subdirectory is its own independent project**, with its own
+dependencies, its own virtualenv, its own tests, and its own committed output.
+Projects never import from one another and there is nothing to install at the
+repo root.
 
 | Project | What it is |
 | --- | --- |
@@ -15,54 +15,65 @@ environment described below.
 | [toronto-vulnerable-services-map/](toronto-vulnerable-services-map/) | Toronto/Ontario services for vulnerable populations: shelters, warming & respite centres, drop-ins, harm reduction, housing supports. |
 | [union-station-transit-isochrone/](union-station-transit-isochrone/) | The morning commute-shed of Toronto's Union Station — where you can reach Union by transit in 30 / 60 / 90 / 120 min. |
 
-## Setup
-
-One [uv](https://docs.astral.sh/uv/)-managed virtualenv at the repo root serves
-every project. There are no per-project virtualenvs and no per-project
-requirements files.
-
-```bash
-uv sync        # creates ./.venv from pyproject.toml + uv.lock
-```
-
-You rarely need to run that by hand: every `make` target syncs the environment
-first, and `uv sync` is a no-op once the tree is warm.
-
 ## Usage
 
-Build one project from its own directory:
+Everything happens inside a project directory. You need
+[uv](https://docs.astral.sh/uv/) installed; it creates the virtualenv for you on
+first build.
 
 ```bash
-cd <project> && make        # build the output
-cd <project> && make open   # build and open in a browser (maps)
-cd <project> && make test   # run that project's tests
+cd <project>
+make          # build output/<project>.html from the committed data/
+make open     # build, then open it in a browser
+make test     # run this project's tests
 ```
 
-Or fan out across all of them from the repo root:
+Or just open the committed `output/<project>.html` directly — the sites work
+straight from a clone.
 
-```bash
-make          # build every project
-make test     # run every project's tests
-make clean    # remove every project's generated output
+## Project standard
+
+Every project follows the same layout and the same `make` targets, so any
+project is navigable once you have seen one, and CI stays generic. The full
+specification — including the rules for agents working in this repo — is in
+[AGENTS.md](AGENTS.md); the short version:
+
+```
+<project>/
+  README.md        # what it is, data sources, caveats
+  Makefile         # the standard targets below
+  pyproject.toml   # dependencies + pytest config
+  uv.lock          # committed
+  src/             # all Python source
+  tests/           # all tests, pytest
+  data/            # inputs consumed by the build (committed where small)
+  output/          # generated artifacts, committed
 ```
 
-## Dependencies
+| Target | What it does | Network |
+| --- | --- | --- |
+| `make` / `make all` | Rebuild `output/` from committed `data/` | **No** |
+| `make deps` | `uv sync` into the project's `./.venv` | First run only |
+| `make test` | Run the project's pytest suite | **No** |
+| `make data` | Refresh `data/` from upstream APIs, then rebuild | **Yes** |
+| `make open` | Open `output/<project>.html` | No |
+| `make clean` | Remove generated output | No |
+| `make clean-venv` | Remove the project's `./.venv` | No |
 
-All Python dependencies for all projects live in a single root
-[`pyproject.toml`](pyproject.toml), locked in `uv.lock`. Adding a dependency for
-one project means adding it there:
+The load-bearing rule is that **`all` and `test` never touch the network** —
+every fetch, download, and geocode lives behind `make data`, and its results are
+committed. That is what lets CI build and test all four projects hermetically,
+and what lets you rebuild any site offline.
 
-```bash
-uv add <package>            # runtime dependency
-uv add --dev <package>      # test-only dependency
-```
+CI runs `make test` and `make all` once per project, in a matrix discovered
+automatically from `*/Makefile`
+([.github/workflows/ci.yml](.github/workflows/ci.yml)). A new project that
+follows the standard needs no CI changes.
 
-Most projects are stdlib-only and pull nothing from that list — they use the
-shared environment purely to get a modern interpreter instead of whatever
-`python3` happens to be. The heavy dependencies (r5py, geopandas, shapely) are
-needed only by `union-station-transit-isochrone`'s optional `make data` step,
-which additionally requires a Java 21 JDK and `osmium-tool`; see
-[its README](union-station-transit-isochrone/README.md).
+## Adding a project
 
-Shared Make settings — the path to the root virtualenv and the `uv sync` rule —
-live in [`common.mk`](common.mk), which every project's `Makefile` includes.
+1. Create `<project>/` with the layout above.
+2. `cd <project> && uv init --bare && uv add <deps>` — then add the pytest config
+   block from [AGENTS.md](AGENTS.md) to `pyproject.toml`.
+3. Copy a `Makefile` from a sibling project and adjust the inputs and outputs.
+4. Add a row to the table at the top of this README.

@@ -6,28 +6,34 @@ Outputs (both consumed by build_map.py, both safe to commit):
   - geocode_cache.json : { "address": [lat, lon] | null }  (refines curated pins)
   - shelters.json      : { "date": "...", "locations": [ ...marker dicts... ] }
 
-Requires internet. Stdlib only. Respects the Nominatim usage policy
-(<=1 request/second, descriptive User-Agent, results cached so reruns are
-cheap). Re-run with `make data` whenever you want fresh shelter data.
+Requires internet. geopy's RateLimiter enforces the Nominatim usage policy
+(<=1 request/second, descriptive User-Agent); results are cached on disk so
+reruns are cheap. Re-run with `make data` whenever you want fresh shelter data.
 """
 import datetime
 import json
 import pathlib
 import sys
-import time
-import urllib.error
-import urllib.parse
-import urllib.request
 
-HERE = pathlib.Path(__file__).parent
-SERVICES = json.loads((HERE / "services.json").read_text(encoding="utf-8"))
-CACHE_PATH = HERE / "geocode_cache.json"
-SHELTERS_PATH = HERE / "shelters.json"
+import requests
+from geopy.extra.rate_limiter import RateLimiter
+from geopy.geocoders import Nominatim
+
+ROOT = pathlib.Path(__file__).resolve().parent.parent  # project root (src/ is one level down)
+DATA_DIR = ROOT / "data"
+OUT_DIR = ROOT / "output"
+SERVICES = json.loads((DATA_DIR / "services.json").read_text(encoding="utf-8"))
+CACHE_PATH = DATA_DIR / "geocode_cache.json"
+SHELTERS_PATH = DATA_DIR / "shelters.json"
 
 CKAN = "https://ckan0.cf.opendata.inter.prod-toronto.ca"
 DATASET = "daily-shelter-overnight-service-occupancy-capacity"
-NOMINATIM = "https://nominatim.openstreetmap.org/search"
-HEADERS = {"User-Agent": "toronto-vulnerable-services-map/1.0 (+https://github.com/tianle91/Notes)"}
+USER_AGENT = "toronto-vulnerable-services-map/1.0 (+https://github.com/tianle91/StaticSites)"
+
+# RateLimiter sleeps between calls for us, which is what keeps this inside
+# Nominatim's 1 request/second policy.
+_nominatim = Nominatim(user_agent=USER_AGENT, timeout=30)
+_lookup = RateLimiter(_nominatim.geocode, min_delay_seconds=1.1, swallow_exceptions=False)
 
 cache = json.loads(CACHE_PATH.read_text(encoding="utf-8")) if CACHE_PATH.exists() else {}
 
@@ -42,16 +48,12 @@ def geocode(address):
         return None
     if address in cache:
         return cache[address]
-    params = urllib.parse.urlencode({"q": address, "format": "json", "limit": 1, "countrycodes": "ca"})
-    req = urllib.request.Request(f"{NOMINATIM}?{params}", headers=HEADERS)
     try:
-        with urllib.request.urlopen(req, timeout=30) as r:
-            data = json.load(r)
+        loc = _lookup(address, country_codes="ca", exactly_one=True)
     except Exception as exc:  # noqa: BLE001 - network/parse errors are non-fatal
         print(f"  ! geocode failed for {address!r}: {exc}", file=sys.stderr)
         return None
-    time.sleep(1.1)  # Nominatim usage policy: max 1 request/second
-    result = [float(data[0]["lat"]), float(data[0]["lon"])] if data else None
+    result = [loc.latitude, loc.longitude] if loc else None
     cache[address] = result  # cache misses too, so we don't re-hammer for unknown addresses
     save_cache()
     if result:
@@ -62,13 +64,10 @@ def geocode(address):
 
 
 def ckan(action, **params):
-    url = f"{CKAN}/api/3/action/{action}?{urllib.parse.urlencode(params)}"
-    req = urllib.request.Request(url, headers=HEADERS)
-    try:
-        with urllib.request.urlopen(req, timeout=60) as r:
-            payload = json.load(r)
-    except urllib.error.HTTPError as exc:
-        raise RuntimeError(f"CKAN {action} HTTP {exc.code} for {url}") from exc
+    r = requests.get(f"{CKAN}/api/3/action/{action}", params=params,
+                     headers={"User-Agent": USER_AGENT}, timeout=60)
+    r.raise_for_status()
+    payload = r.json()
     if not payload.get("success"):
         raise RuntimeError(f"CKAN {action} failed: {payload}")
     return payload["result"]
@@ -155,7 +154,7 @@ def main() -> None:
         fetch_shelters()
     except Exception as exc:  # noqa: BLE001 - keep curated geocoding even if the API is down
         print(f"! Shelter fetch failed ({exc}); shelters.json left unchanged.", file=sys.stderr)
-    print("Done. Now run `make` to rebuild index.html.")
+    print("Done. Now run `make` to rebuild the map.")
 
 
 if __name__ == "__main__":

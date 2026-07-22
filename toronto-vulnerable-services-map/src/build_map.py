@@ -10,13 +10,15 @@ import datetime
 import json
 import pathlib
 
-HERE = pathlib.Path(__file__).parent
-DATA = json.loads((HERE / "services.json").read_text(encoding="utf-8"))
+ROOT = pathlib.Path(__file__).resolve().parent.parent  # project root (src/ is one level down)
+DATA_DIR = ROOT / "data"
+OUT_DIR = ROOT / "output"
+DATA = json.loads((DATA_DIR / "services.json").read_text(encoding="utf-8"))
 
 # Optional artifacts produced by `make data` (fetch_data.py). Absent on a fresh
 # offline build - the map still works from the curated locations alone.
-CACHE_PATH = HERE / "geocode_cache.json"
-SHELTERS_PATH = HERE / "shelters.json"
+CACHE_PATH = DATA_DIR / "geocode_cache.json"
+SHELTERS_PATH = DATA_DIR / "shelters.json"
 SHELTER_CATEGORY = {"label": "Shelter / Overnight (live)", "color": "#b15928"}
 
 CATEGORIES = dict(DATA["categories"])
@@ -286,7 +288,7 @@ loadShelterStats();
 
 def main() -> None:
     out = HTML.replace("__PAYLOAD__", PAYLOAD)
-    target = HERE / "index.html"
+    target = OUT_DIR / "toronto-vulnerable-services-map.html"
     target.write_text(out, encoding="utf-8")
     curated = len(LOCATIONS) - shelter_count
     print(f"Wrote {target} ({curated} curated locations + {shelter_count} live shelter "

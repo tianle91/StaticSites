@@ -4,7 +4,7 @@ Drop the OpenStreetMap extract and the GTFS feeds here, then run `make data` fro
 the parent folder. These files are **gitignored** (they're large and change often)
 — only this README is tracked.
 
-`fetch_isochrones.py` looks for:
+`src/fetch_isochrones.py` looks for:
 * `OSM_PBF` → `data/gtha.osm.pbf` by default (override with the `OSM_PBF` env var)
 * `GTFS_DIR` → `data/` by default; it loads **every `*.zip`** in here
 
@@ -29,7 +29,7 @@ installed (`brew install osmium-tool`). To clip manually:
 osmium extract -b -80.6,43.05,-78.7,44.40 gtha.osm.pbf -o gtha-clipped.osm.pbf
 ```
 
-(That bbox matches `BBOX_*` in `fetch_isochrones.py` and `BBOX` in the Makefile:
+(That bbox matches `BBOX_*` in `src/fetch_isochrones.py` and `BBOX` in the Makefile:
 west,south,east,north.)
 
 ## 2. GTFS feeds (the transit schedules)
@@ -50,7 +50,7 @@ curl -L -o go.zip "https://assets.metrolinx.com/raw/upload/Documents/Metrolinx/O
   <https://www.metrolinx.com/en/about-us/open-data> ·
   <https://www.gotransit.com/en/partner-with-us/software-developers>
 
-Use **current** feeds: `fetch_isochrones.py` routes for the *next non-holiday Wednesday* (arriving Union ~09:00, morning peak), so
+Use **current** feeds: `src/fetch_isochrones.py` routes for the *next non-holiday Wednesday* (arriving Union ~09:00, morning peak), so
 the GTFS `calendar` must cover that date or you'll get empty isochrones.
 
 ### Optional — 905 / regional agencies for fuller suburban reach
@@ -74,7 +74,7 @@ Then:
 
 ```bash
 cd ..
-make data   # syncs ../../.venv, clips OSM, routes Union -> grid, writes reachability.json
+make data   # syncs .venv, clips OSM, routes Union -> grid, writes data/reachability.json
 make open   # rebuild + open the map
 ```
 

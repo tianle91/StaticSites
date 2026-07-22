@@ -9,11 +9,13 @@ index.html needs the internet only for OpenStreetMap tiles.
 import json
 import pathlib
 
-HERE = pathlib.Path(__file__).parent
-GEO = json.loads((HERE / "isochrones.geojson").read_text(encoding="utf-8"))
-MODEL = json.loads((HERE / "transit_model.json").read_text(encoding="utf-8"))
+ROOT = pathlib.Path(__file__).resolve().parent.parent  # project root (src/ is one level down)
+DATA_DIR = ROOT / "data"
+OUT_DIR = ROOT / "output"
+GEO = json.loads((OUT_DIR / "isochrones.geojson").read_text(encoding="utf-8"))
+MODEL = json.loads((DATA_DIR / "transit_model.json").read_text(encoding="utf-8"))
 # Per-station step-by-step trips to Union (from `make data`); empty without it.
-_REACH = HERE / "reachability.json"
+_REACH = DATA_DIR / "reachability.json"
 STATIONS = json.loads(_REACH.read_text(encoding="utf-8")).get("stations", []) \
     if _REACH.exists() else []
 
@@ -337,7 +339,7 @@ toggle.addEventListener('click', () => {
 
 def main():
     out = HTML.replace("__PAYLOAD__", PAYLOAD)
-    target = HERE / "index.html"
+    target = OUT_DIR / "union-station-transit-isochrone.html"
     target.write_text(out, encoding="utf-8")
     n_nodes = sum(1 for n in MODEL["nodes"] if n["mode"] != "origin")
     print(f"Wrote {target} ({len(GEO['features'])} bands, {n_nodes} stations)")

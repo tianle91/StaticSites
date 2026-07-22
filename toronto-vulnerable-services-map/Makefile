@@ -1,25 +1,43 @@
-# Build a self-contained interactive map of Toronto/Ontario services for
-# vulnerable populations. The code is stdlib-only; it runs on the repo's shared
-# virtualenv (../.venv) just to get a modern interpreter.
-include ../common.mk
+# Interactive map of Toronto/Ontario services for vulnerable populations.
+# Run from this directory: cd toronto-vulnerable-services-map && make
+# Layout and target contract are the repo standard - see ../AGENTS.md.
 
-.PHONY: all data open clean
+PROJECT := toronto-vulnerable-services-map
+VENV  := .venv
+PY    := $(VENV)/bin/python
+STAMP := $(VENV)/.stamp
+OUT   := output/$(PROJECT).html
 
-# Default target: one-shot build of the map (offline, no dependencies).
-all: index.html
+.PHONY: all deps test data open clean clean-venv
 
-index.html: build_map.py services.json | $(PY)
-	$(PY) build_map.py
+# Default target: one-shot offline build from the committed data/.
+all: $(OUT)
 
-# Network step: geocode addresses + pull every shelter location from the
-# Toronto Open Data API (cached on disk), then rebuild. Requires internet.
-data: | $(PY)
-	$(PY) fetch_data.py
-	$(PY) build_map.py
+# Create/refresh .venv from pyproject.toml. The stamp keeps `uv sync` from
+# re-running on every build once the tree is warm.
+deps: $(STAMP)
 
-# Build then open in the default browser (macOS `open`, fallback to xdg-open).
-open: index.html
-	open index.html 2>/dev/null || xdg-open index.html 2>/dev/null || echo "Open index.html manually."
+$(STAMP): pyproject.toml $(wildcard uv.lock)
+	uv sync
+	@touch $@
+
+$(OUT): src/build_map.py data/services.json data/shelters.json | $(STAMP)
+	$(PY) src/build_map.py
+
+test: | $(STAMP)
+	$(PY) -m pytest -q
+
+# Network step: geocode curated addresses + pull every shelter location from the
+# Toronto Open Data API (cached in data/geocode_cache.json), then rebuild.
+data: | $(STAMP)
+	$(PY) src/fetch_data.py
+	$(PY) src/build_map.py
+
+open: $(OUT)
+	open $(OUT) 2>/dev/null || xdg-open $(OUT) 2>/dev/null || echo "Open $(OUT) manually."
 
 clean:
-	rm -f index.html
+	rm -f $(OUT)
+
+clean-venv:
+	rm -rf $(VENV)

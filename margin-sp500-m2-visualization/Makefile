@@ -1,24 +1,49 @@
 # FINRA margin debt vs. S&P 500 / M2 / CPI / PPI, rebased to an anchor date.
 # Run from this directory: cd margin-sp500-m2-visualization && make
-# Dependencies come from the repo's shared virtualenv (../.venv).
-include ../common.mk
+# Layout and target contract are the repo standard - see ../AGENTS.md.
 
-SCRIPT := src/plot_macro_series.py
-OUTPUT := output/margin_sp500_m2_2000.png
-OUTPUT_HTML := output/margin_sp500_m2_2000.html
+PROJECT := margin-sp500-m2-visualization
+VENV  := .venv
+PY    := $(VENV)/bin/python
+STAMP := $(VENV)/.stamp
+OUT     := output/$(PROJECT).html
+OUT_PNG := output/$(PROJECT).png
+SCRIPT  := src/plot_macro_series.py
 
-.PHONY: all plot html test clean
+.PHONY: all deps test data open clean clean-venv
 
-all: plot html
+# Default target: one-shot offline render from the committed data/series.csv.
+all: $(OUT) $(OUT_PNG)
 
-plot: | $(PY)
-	$(PY) $(SCRIPT) -o $(OUTPUT)
+# Create/refresh .venv from pyproject.toml. The stamp keeps `uv sync` from
+# re-running on every build once the tree is warm.
+deps: $(STAMP)
 
-html: | $(PY)
-	$(PY) $(SCRIPT) -o $(OUTPUT_HTML)
+$(STAMP): pyproject.toml $(wildcard uv.lock)
+	uv sync
+	@touch $@
 
-test: | $(PY)
-	PYTHONPATH=src $(PY) -m unittest discover -s tests -p 'test_*.py' -v
+$(OUT): $(SCRIPT) data/series.csv | $(STAMP)
+	$(PY) $(SCRIPT) -o $(OUT)
+
+$(OUT_PNG): $(SCRIPT) data/series.csv | $(STAMP)
+	$(PY) $(SCRIPT) -o $(OUT_PNG)
+
+test: | $(STAMP)
+	$(PY) -m pytest -q
+
+# Network step: refetch the FINRA / FRED / Yahoo series into data/series.csv,
+# then re-render both charts.
+data: | $(STAMP)
+	$(PY) src/fetch_data.py
+	$(PY) $(SCRIPT) -o $(OUT)
+	$(PY) $(SCRIPT) -o $(OUT_PNG)
+
+open: $(OUT)
+	open $(OUT) 2>/dev/null || xdg-open $(OUT) 2>/dev/null || echo "Open $(OUT) manually."
 
 clean:
-	rm -f $(OUTPUT) $(OUTPUT_HTML)
+	rm -f $(OUT) $(OUT_PNG)
+
+clean-venv:
+	rm -rf $(VENV)

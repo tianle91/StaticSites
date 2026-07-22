@@ -1,35 +1,28 @@
 #!/usr/bin/env python3
 """
-Download FINRA margin debit balances, FRED M2 / CPI / PPI, and S&P 500 levels,
-align on a monthly grid from 2000 onward, rebase every series to 100 using a
-configurable anchor date, and plot with vertical markers for major market events.
+Read the monthly source series from data/series.csv, rebase every series to 100
+using a configurable anchor date, and plot with vertical markers for major
+market events.
 
 Renders a static PNG (matplotlib) or a zoomable HTML chart (plotly), picked from
-the output file extension.
+the output file extension. Offline: refresh data/series.csv with `make data`.
 """
 
 from __future__ import annotations
 
 import argparse
-import io
 from datetime import date
 from pathlib import Path
 
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 import pandas as pd
-import requests
-import yfinance as yf
 
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT_DIR = ROOT / "output"
-
-FINRA_MARGIN_XLSX = "https://www.finra.org/sites/default/files/2021-03/margin-statistics.xlsx"
-FRED_CSV = "https://fred.stlouisfed.org/graph/fredgraph.csv?id={series}"
+SERIES_CSV = ROOT / "data" / "series.csv"
 
 START = pd.Timestamp("2000-01-01")
-# Use "today" in the execution environment (authoritative for the agent run).
-END = pd.Timestamp.today().normalize() + pd.Timedelta(days=1)
 
 DEFAULT_REBASE = pd.Timestamp("2020-02-20")
 
@@ -71,45 +64,11 @@ def _rebase_to_anchor(s: pd.Series, anchor: pd.Timestamp) -> pd.Series:
     return 100.0 * s / base
 
 
-def _fetch_fred_monthly(series_id: str) -> pd.Series:
-    r = requests.get(FRED_CSV.format(series=series_id), timeout=120)
-    r.raise_for_status()
-    df = pd.read_csv(io.BytesIO(r.content), parse_dates=["observation_date"])
-    if series_id not in df.columns:
-        raise KeyError(f"Column {series_id} missing from FRED CSV response.")
-    s = df.set_index("observation_date")[series_id].sort_index()
-    s = s.loc[(s.index >= START) & (s.index <= END)]
-    # FRED uses month-beginning stamps; treat as month period end for alignment.
-    s.index = s.index.to_period("M").to_timestamp(how="end").normalize()
-    return s.astype(float)
-
-
-def _fetch_margin_debit() -> pd.Series:
-    r = requests.get(FINRA_MARGIN_XLSX, timeout=120)
-    r.raise_for_status()
-    df = pd.read_excel(io.BytesIO(r.content), engine="openpyxl")
-    ym = df.columns[0]
-    debit_col = [c for c in df.columns if "Debit" in str(c)][0]
-    raw = df[[ym, debit_col]].dropna()
-    ts = pd.to_datetime(raw[ym].astype(str) + "-01", errors="coerce")
-    s = pd.Series(raw[debit_col].astype(float).values, index=ts)
-    s = s.groupby(s.index).last().sort_index()
-    s.index = s.index.to_period("M").to_timestamp(how="end").normalize()
-    s = s.loc[(s.index >= START) & (s.index <= END)]
-    return s
-
-
-def _fetch_sp500_monthly() -> pd.Series:
-    tkr = yf.Ticker("^GSPC")
-    hist = tkr.history(start=START, end=END, auto_adjust=False, actions=False)
-    if hist.empty:
-        raise RuntimeError("No S&P 500 data returned from Yahoo Finance (^GSPC).")
-    px = hist["Close"].sort_index()
-    if isinstance(px.index, pd.DatetimeIndex) and px.index.tz is not None:
-        px.index = pd.to_datetime(px.index.date)
-    monthly = px.resample("ME").last()
-    monthly.index = monthly.index.normalize()
-    return monthly.astype(float)
+def load_series() -> pd.DataFrame:
+    """Load the committed monthly grid written by fetch_data.py."""
+    if not SERIES_CSV.exists():
+        raise SystemExit(f"{SERIES_CSV} is missing - run `make data` to fetch it.")
+    return pd.read_csv(SERIES_CSV, parse_dates=["date"], index_col="date").sort_index()
 
 
 SERIES_COLORS = {
@@ -122,29 +81,16 @@ SERIES_COLORS = {
 
 
 def build_rebased(rebase_anchor: pd.Timestamp) -> pd.DataFrame:
-    """Fetch every series, align on month-ends, and rebase each to 100 at the anchor."""
+    """Align the committed series on month-ends and rebase each to 100 at the anchor."""
     anchor = pd.Timestamp(rebase_anchor).normalize()
     anchor_me = _month_end(anchor)
-    if anchor_me < START or anchor_me > END:
-        raise ValueError(f"Rebase anchor month-end {anchor_me:%Y-%m-%d} is outside [{START.date()}, {END.date()}].")
 
-    m2 = _fetch_fred_monthly("M2SL")
-    cpi = _fetch_fred_monthly("CPIAUCSL")
-    ppi = _fetch_fred_monthly("PPIACO")
-    margin = _fetch_margin_debit()
-    spx = _fetch_sp500_monthly()
-
-    frame = pd.DataFrame(
-        {
-            "m2": m2,
-            "cpi": cpi,
-            "ppi": ppi,
-            "margin_debit": margin,
-            "sp500": spx,
-        }
-    ).sort_index()
-    frame = frame.loc[(frame.index >= START) & (frame.index <= END)]
-    frame = frame.dropna(how="all")
+    frame = load_series()
+    end = frame.index.max()
+    if anchor_me < START or anchor_me > end:
+        raise ValueError(f"Rebase anchor month-end {anchor_me:%Y-%m-%d} is outside "
+                         f"[{START.date()}, {end.date()}].")
+    frame = frame.loc[(frame.index >= START) & (frame.index <= end)].dropna(how="all")
 
     aligned = frame.ffill(limit=2).dropna()
     if aligned.empty:

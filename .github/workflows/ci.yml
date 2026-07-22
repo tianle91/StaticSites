@@ -6,15 +6,38 @@ on:
   pull_request:
 
 jobs:
-  test:
+  # Every top-level directory holding a Makefile is a project. Discovering them
+  # here means adding a project needs no CI edits -- it just has to follow the
+  # standard layout documented in AGENTS.md.
+  discover:
     runs-on: ubuntu-latest
+    outputs:
+      projects: ${{ steps.list.outputs.projects }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: list
+        run: |
+          projects=$(ls -d */Makefile | xargs -n1 dirname | jq -R -s -c 'split("\n")[:-1]')
+          echo "projects=$projects" >> "$GITHUB_OUTPUT"
+          echo "Discovered: $projects"
+
+  build:
+    needs: discover
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        project: ${{ fromJson(needs.discover.outputs.projects) }}
+    name: ${{ matrix.project }}
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
         with:
           enable-cache: true
-      # `make test` syncs the single repo-level virtualenv (uv sync, from the
-      # root pyproject.toml + uv.lock) and then runs every project's tests.
-      # No Java / GTFS / OSM extracts needed, so CI stays fast and hermetic.
-      - name: Run all project tests
-        run: make test
+          cache-dependency-glob: ${{ matrix.project }}/uv.lock
+      # Both targets are contractually offline (see AGENTS.md): anything needing
+      # the network lives behind `make data`, which CI never runs.
+      - name: make test
+        run: make -C ${{ matrix.project }} test
+      - name: make all
+        run: make -C ${{ matrix.project }} all

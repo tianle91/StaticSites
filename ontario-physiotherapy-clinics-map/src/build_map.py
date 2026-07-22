@@ -10,8 +10,10 @@ approximate and phone ahead.
 import json
 import pathlib
 
-HERE = pathlib.Path(__file__).parent
-DATA = json.loads((HERE / "clinics.json").read_text(encoding="utf-8"))
+ROOT = pathlib.Path(__file__).resolve().parent.parent  # project root (src/ is one level down)
+DATA_DIR = ROOT / "data"
+OUT_DIR = ROOT / "output"
+DATA = json.loads((DATA_DIR / "clinics.json").read_text(encoding="utf-8"))
 
 CATEGORIES = {
     "clinic": {"label": "Community physiotherapy clinic", "color": "#1f78b4"},
@@ -255,7 +257,7 @@ toggle.addEventListener('click', () => {
 
 def main() -> None:
     out = HTML.replace("__PAYLOAD__", PAYLOAD)
-    target = HERE / "index.html"
+    target = OUT_DIR / "ontario-physiotherapy-clinics-map.html"
     target.write_text(out, encoding="utf-8")
     by_cat = {}
     for c in DATA["clinics"]:

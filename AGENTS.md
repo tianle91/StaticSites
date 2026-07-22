@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Guidance for coding agents working in this repo.
+Guidance for coding agents working in this repo. Humans: see [README.md](README.md).
 
 ## Repo shape: one project per top-level subdirectory
 
@@ -12,74 +12,117 @@ subdirectory is a separate, self-contained static-site project:
 - `toronto-vulnerable-services-map/`
 - `union-station-transit-isochrone/`
 
-What that means in practice:
+Projects are independent. No project imports from another, there is no shared
+source package, and there is no repo-level virtualenv, `Makefile`, or dependency
+file. **Do not add one.** If two projects need the same helper, duplicating it is
+the right call here. Scope a change to a single project and read that project's
+own `README.md` first.
 
-- **Projects are independent.** No project imports from another, and there is no
-  shared source package. Do not create one; if two projects need the same helper,
-  duplicating it is the right call here.
-- **Scope your work to one project.** A change requested for one project should
-  not touch the others' files. Read that project's own `README.md` first — each
-  documents its data sources, build steps, and caveats.
-- **Each project owns its build.** Every project has a `Makefile` with `all`,
-  `clean`, and usually `test`; maps also have `open`, and projects that fetch
-  from the network have `data`.
-- **Outputs are committed.** The generated `index.html` / PNG / HTML chart is
-  checked in on purpose, so the sites work straight from a clone. Rebuild and
-  commit the output when you change a builder.
+## The standard layout
 
-The one thing shared across projects is the Python environment.
+Every project has exactly this shape. It is what makes CI generic and what lets a
+reader open any project and already know where things are.
 
-## The single shared Python environment
-
-There is exactly one virtualenv (`./.venv`) and one dependency list
-(`./pyproject.toml`, locked in `./uv.lock`), managed with
-[uv](https://docs.astral.sh/uv/). Per-project virtualenvs and per-project
-`requirements.txt` files were deliberately removed — **do not reintroduce them.**
-
-```bash
-uv sync                  # create/refresh ./.venv
-uv add <package>         # add a runtime dependency (for any project)
-uv add --dev <package>   # add a test-only dependency
+```
+<project>/
+  README.md        # what it is, data sources, caveats
+  Makefile         # the target contract below
+  pyproject.toml   # dependencies + pytest config
+  uv.lock          # committed
+  .gitignore       # project-specific rules only; generic ones live at repo root
+  src/             # all Python source
+  tests/           # all tests, pytest
+  data/            # inputs consumed by the build
+  output/          # generated artifacts, committed
 ```
 
-`common.mk` at the repo root defines `$(PY)` (the shared interpreter) and the
-`uv sync` rule. Every project's `Makefile` starts with `include ../common.mk` and
-invokes `$(PY)` rather than a bare `python3`. When adding or editing a Makefile:
+Rules that go with it:
 
-- Include `../common.mk` first; it sets `.DEFAULT_GOAL := all`, which is what
-  keeps a bare `make` from resolving to the `venv` target defined in that file.
-- Depend on the interpreter order-only — `target: deps... | $(PY)` — so an
-  existing venv never forces a rebuild.
-- Never call `python3`, `pip`, or `python -m venv` directly.
+- **Scripts live in `src/`** and resolve paths from the project root, never from
+  their own directory:
+  ```python
+  ROOT = pathlib.Path(__file__).resolve().parent.parent
+  DATA_DIR = ROOT / "data"
+  OUT_DIR = ROOT / "output"
+  ```
+- **The primary artifact is `output/<project>.html`** — named after the directory
+  it lives in, so it stays identifiable once downloaded or served. Secondary
+  artifacts share the stem (`output/<project>.png`).
+- **`output/` is committed.** These sites are meant to work straight from a
+  clone. Rebuild and commit the output whenever you change a builder.
+- **`data/` is committed** where it is small enough (curated JSON, geocode
+  caches, fetched CSV). Large binary inputs — OSM extracts, GTFS feeds — are
+  gitignored, with a `data/README.md` recording how to obtain them.
+- **Tests import from `src/` via pytest config**, not `sys.path` hacks or a
+  `conftest.py`:
+  ```toml
+  [tool.pytest.ini_options]
+  testpaths = ["tests"]
+  pythonpath = ["src"]
+  ```
 
-Note that the system `python3` on this machine is old (3.9). The shared env
-targets Python ≥ 3.11, which is the reason even stdlib-only projects run through
-`$(PY)`.
+## The standard Make target contract
+
+CI and humans only ever invoke these. Every project implements every target;
+inapplicable ones are omitted only if genuinely meaningless.
+
+| Target | Contract | Network |
+| --- | --- | --- |
+| `all` (default) | Rebuild everything in `output/` from committed `data/` | **No** |
+| `deps` | `uv sync` into `./.venv` | First run only |
+| `test` | `pytest` | **No** |
+| `data` | Refresh `data/` from upstream, then rebuild `output/` | **Yes** |
+| `open` | Open `output/<project>.html` in a browser | No |
+| `clean` | Remove generated `output/` files | No |
+| `clean-venv` | Remove `./.venv` | No |
+
+**The rule CI depends on: `all` and `test` never touch the network.** Anything
+that fetches from an API, geocodes, or downloads lives behind `data`, whose
+outputs are committed. If you add a build step that needs the network, move the
+fetch into `data` and commit its result instead of relaxing this.
+
+## Dependencies
+
+Each project has its own `pyproject.toml`, its own `uv.lock`, and its own
+`./.venv`, all managed with [uv](https://docs.astral.sh/uv/):
+
+```bash
+cd <project>
+uv sync                  # create/refresh .venv  (or just `make deps`)
+uv add <package>         # runtime dependency
+uv add --dev <package>   # test-only dependency
+```
+
+Makefiles invoke `$(PY)` = `.venv/bin/python`. **Never call `python3`, `pip`, or
+`python -m venv` directly in a Makefile or script** — the system `python3` here
+is 3.9, while every project targets ≥ 3.11.
+
+Prefer a well-known package over hand-rolled logic, and say why the dependency
+exists in a comment next to it. Current examples: `geopy` supplies the Nominatim
+client, its rate limiter, and geodesic distance for both geocoding maps;
+`shapely` unions the walk-circles into isochrone polygons. The reverse also
+holds — the map HTML is hand-written Leaflet on purpose, because `folium` cannot
+express the custom search/filter panels these maps have.
 
 ## Verifying changes
 
-From the repo root:
-
 ```bash
-make          # build every project
-make test     # run every project's tests
+cd <project> && make && make test
 ```
 
-Or per project: `cd <project> && make && make test`.
+That is exactly what CI runs, once per project, via a matrix auto-discovered
+from `*/Makefile` — see [.github/workflows/ci.yml](.github/workflows/ci.yml).
+Adding a project that follows this standard needs no CI changes.
 
-`make test` is hermetic — no network, no Java, no GTFS feeds — and is what CI
-runs ([.github/workflows/ci.yml](.github/workflows/ci.yml)). The `make data`
-targets do hit the network (open-data APIs, geocoding, transit routing) and are
-slow; do not run them as a routine check. `union-station-transit-isochrone`'s
-`make data` additionally needs a Java 21 JDK and `osmium-tool`.
+Do **not** run `make data` as a routine check: it is slow and hits live APIs
+(Nominatim allows 1 request/second, so one map takes ~5 minutes).
+`union-station-transit-isochrone`'s `make data` additionally needs a Java 21 JDK
+and `osmium-tool`.
 
 ## Conventions
 
 - Match the surrounding style: these builders are heavily commented, explaining
-  *why* a step exists (API quirks, geographic limits, rate limits), and the
-  Makefiles carry that same commentary. Keep it.
-- Prefer the standard library. Most projects are stdlib-only by design; reach for
-  a dependency only when a project genuinely needs it.
-- Geocoding results and other slow fetches are cached in committed JSON files
-  (e.g. `geocode_cache.json`). Preserve them — regenerating means hours of
+  *why* a step exists (API quirks, geographic limits, rate limits). Keep that.
+- Geocoding results and other slow fetches are cached in committed files (e.g.
+  `data/geocode_cache.json`). Preserve them — regenerating means hours of
   rate-limited requests.

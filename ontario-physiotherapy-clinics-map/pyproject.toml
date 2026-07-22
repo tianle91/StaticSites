@@ -1,0 +1,21 @@
+[project]
+name = "ontario-physiotherapy-clinics-map"
+version = "0.0.0"
+description = "Ontario's publicly-funded (OHIP-covered) physiotherapy clinics and hospitals, mapped."
+requires-python = ">=3.11"
+
+# Only `make data` needs these; building the map from data/ is stdlib-only.
+dependencies = [
+    "geopy>=2.4",     # Nominatim client + rate limiter + geodesic distance
+    "requests>=2.31",
+]
+
+[dependency-groups]
+dev = ["pytest>=8.0"]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

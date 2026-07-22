@@ -1,0 +1,23 @@
+[project]
+name = "union-station-transit-isochrone"
+version = "0.0.0"
+description = "The morning transit commute-shed of Toronto's Union Station (30/60/90/120 min)."
+# r5py needs >= 3.10; 3.11 is what CI runs, so pin the floor there.
+requires-python = ">=3.11"
+
+dependencies = [
+    "shapely>=2.0",   # unions the reachable walk-circles into isochrone polygons
+    # `make data` only - real multimodal routing, needs a Java 21 JDK too.
+    "geopandas>=0.14",
+    "r5py>=1.1",
+]
+
+[dependency-groups]
+dev = ["pytest>=8.0"]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

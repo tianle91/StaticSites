@@ -1,15 +1,10 @@
 #!/usr/bin/env python3
 """Regression tests for the address cleaner.
 
-Stdlib only, like the rest of the project: run `python3 test_clean_street.py`
-(or `make test`). Also collectible by pytest if you have it.
-
-Every case here is a real row from the province's clinic list. The two
+Run with `make test`. Every case here is a real row from the province's clinic list. The two
 "survives" groups matter most - they are the ways an over-eager rule would
 quietly corrupt a good address instead of merely failing to improve a bad one.
 """
-import sys
-
 from fetch_data import clean_street
 
 CASES = [
@@ -69,16 +64,3 @@ def test_every_result_keeps_a_house_number():
     for raw, _ in CASES:
         got = clean_street(raw)
         assert got[:1].isdigit(), f"clean_street({raw!r}) == {got!r} lost its house number"
-
-
-if __name__ == "__main__":
-    failures = 0
-    for test in (test_clean_street, test_every_result_keeps_a_house_number):
-        try:
-            test()
-            print(f"ok   {test.__name__}")
-        except AssertionError as exc:
-            failures += 1
-            print(f"FAIL {test.__name__}: {exc}")
-    print(f"{len(CASES)} cases, {failures} failing test(s)")
-    sys.exit(1 if failures else 0)

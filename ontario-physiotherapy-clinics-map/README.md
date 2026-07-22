@@ -8,7 +8,7 @@ links.
 ## Run
 
 ```bash
-make        # builds index.html from the committed clinics.json (offline, no deps)
+make        # builds output/ontario-physiotherapy-clinics-map.html from data/clinics.json (offline)
 make data   # re-pulls the clinic list and geocodes it, then rebuilds (needs internet)
 make open   # build and open in a browser
 ```
@@ -18,7 +18,7 @@ make open   # build and open in a browser
 The ontario.ca page renders its table client-side from an
 `<onesite-interactive-table>` component, so there is nothing to scrape in the
 served HTML. That component reads a CKAN datastore resource, which
-`fetch_data.py` queries directly:
+`src/fetch_data.py` queries directly:
 
 ```
 https://data.ontario.ca/api/3/action/datastore_search?resource_id=6238e64a-e5a9-484b-97b2-774640f7ab99
@@ -26,8 +26,8 @@ https://data.ontario.ca/api/3/action/datastore_search?resource_id=6238e64a-e5a9-
 
 Fields published per clinic: type of facility, operating name, address, city,
 postal code, phone, email. There are **no coordinates** in the source, so
-`fetch_data.py` geocodes each address with OpenStreetMap Nominatim
-(1 request/second, results cached in `geocode_cache.json`).
+`src/fetch_data.py` geocodes each address with OpenStreetMap Nominatim
+(1 request/second, results cached in `data/geocode_cache.json`).
 
 ## Caveats
 

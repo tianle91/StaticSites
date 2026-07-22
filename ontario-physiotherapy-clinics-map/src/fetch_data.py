@@ -10,31 +10,38 @@ Outputs (both consumed by build_map.py, both safe to commit):
   - clinics.json       : { "generated_at": "...", "clinics": [ ...marker dicts... ] }
   - geocode_cache.json : { "address": [lat, lon] | null }
 
-Requires internet. Stdlib only. Respects the Nominatim usage policy (<=1
-request/second, descriptive User-Agent, results cached so reruns are cheap) -
-the first full run takes ~5 minutes, later ones are near-instant.
+Requires internet. geopy's RateLimiter enforces the Nominatim usage policy
+(<=1 request/second, descriptive User-Agent); results are cached on disk so
+reruns are cheap - the first full run takes ~5 minutes, later ones are
+near-instant.
 """
 import datetime
 import json
-import math
 import pathlib
 import re
 import sys
-import time
-import urllib.error
-import urllib.parse
-import urllib.request
 
-HERE = pathlib.Path(__file__).parent
-CACHE_PATH = HERE / "geocode_cache.json"
-CLINICS_PATH = HERE / "clinics.json"
+import requests
+from geopy.distance import geodesic
+from geopy.extra.rate_limiter import RateLimiter
+from geopy.geocoders import Nominatim
+
+ROOT = pathlib.Path(__file__).resolve().parent.parent  # project root (src/ is one level down)
+DATA_DIR = ROOT / "data"
+OUT_DIR = ROOT / "output"
+CACHE_PATH = DATA_DIR / "geocode_cache.json"
+CLINICS_PATH = DATA_DIR / "clinics.json"
 
 CKAN = "https://data.ontario.ca"
 # Resource backing the <onesite-interactive-table> on the ontario.ca page.
 RESOURCE_ID = "6238e64a-e5a9-484b-97b2-774640f7ab99"
 SOURCE_PAGE = "https://www.ontario.ca/page/publicly-funded-physiotherapy-clinic-locations"
-NOMINATIM = "https://nominatim.openstreetmap.org/search"
-HEADERS = {"User-Agent": "ontario-physiotherapy-clinics-map/1.0 (+https://github.com/tianle91/StaticMaps)"}
+USER_AGENT = "ontario-physiotherapy-clinics-map/1.0 (+https://github.com/tianle91/StaticSites)"
+
+# RateLimiter sleeps between calls for us, which is what keeps this inside
+# Nominatim's 1 request/second policy.
+_nominatim = Nominatim(user_agent=USER_AGENT, timeout=30)
+_lookup = RateLimiter(_nominatim.geocode, min_delay_seconds=1.1, swallow_exceptions=False)
 
 cache = json.loads(CACHE_PATH.read_text(encoding="utf-8")) if CACHE_PATH.exists() else {}
 
@@ -43,22 +50,18 @@ def save_cache() -> None:
     CACHE_PATH.write_text(json.dumps(cache, indent=2, ensure_ascii=False), encoding="utf-8")
 
 
-def _nominatim(**query):
+def lookup(**query):
     """One Nominatim lookup. Pass q= for free-form, or structured params (city=,
     state=, ...) - structured queries are what keep "Perth" from matching Perth
-    *County* instead of the town.
+    *County* instead of the town. geopy takes a dict for the structured form.
     """
-    params = urllib.parse.urlencode({**query, "format": "json", "limit": 1, "countrycodes": "ca"})
-    req = urllib.request.Request(f"{NOMINATIM}?{params}", headers=HEADERS)
+    q = query.pop("q", None)
     try:
-        with urllib.request.urlopen(req, timeout=30) as r:
-            data = json.load(r)
+        loc = _lookup(q if q is not None else query, country_codes="ca", exactly_one=True)
     except Exception as exc:  # noqa: BLE001 - network/parse errors are non-fatal
-        print(f"  ! geocode failed for {query!r}: {exc}", file=sys.stderr)
+        print(f"  ! geocode failed for {q or query!r}: {exc}", file=sys.stderr)
         return None
-    finally:
-        time.sleep(1.1)  # Nominatim usage policy: max 1 request/second
-    return [float(data[0]["lat"]), float(data[0]["lon"])] if data else None
+    return [loc.latitude, loc.longitude] if loc else None
 
 
 # Unit/suite noise the province writes into the street field. Nominatim indexes
@@ -130,7 +133,7 @@ def _cached(params):
     key = params.get("q") or "|".join(f"{k}={v}" for k, v in sorted(params.items()))
     if key in cache:
         return cache[key]
-    result = _nominatim(**params)
+    result = lookup(**params)
     cache[key] = result  # cache misses too, so reruns don't re-hammer
     save_cache()
     return result
@@ -149,7 +152,7 @@ def geocode(street, city, postal, center):
         if not coord:
             continue
         if center:
-            off = km_between(coord, center)
+            off = geodesic(coord, center).km
             if off > OUTLIER_KM:
                 print(f"  ~ rejected {params} - {off:.0f} km from {city}")
                 continue
@@ -172,19 +175,11 @@ def city_center(city):
     key = f"city:{city}"
     if key in cache:
         return cache[key]
-    result = _nominatim(city=city, state="Ontario", country="Canada")
+    result = lookup(city=city, state="Ontario", country="Canada")
     cache[key] = result
     save_cache()
     print(f"  city {city} -> {result}")
     return result
-
-
-def km_between(a, b):
-    """Rough great-circle distance in km - precise enough for an outlier check."""
-    lat1, lon1, lat2, lon2 = map(math.radians, [a[0], a[1], b[0], b[1]])
-    h = (math.sin((lat2 - lat1) / 2) ** 2
-         + math.cos(lat1) * math.cos(lat2) * math.sin((lon2 - lon1) / 2) ** 2)
-    return 2 * 6371 * math.asin(math.sqrt(h))
 
 
 # Nominatim sometimes resolves a unit-prefixed street address to a same-named
@@ -195,13 +190,10 @@ OUTLIER_KM = 40
 
 
 def ckan(action, **params):
-    url = f"{CKAN}/api/3/action/{action}?{urllib.parse.urlencode(params)}"
-    req = urllib.request.Request(url, headers=HEADERS)
-    try:
-        with urllib.request.urlopen(req, timeout=60) as r:
-            payload = json.load(r)
-    except urllib.error.HTTPError as exc:
-        raise RuntimeError(f"CKAN {action} HTTP {exc.code} for {url}") from exc
+    r = requests.get(f"{CKAN}/api/3/action/{action}", params=params,
+                     headers={"User-Agent": USER_AGENT}, timeout=60)
+    r.raise_for_status()
+    payload = r.json()
     if not payload.get("success"):
         raise RuntimeError(f"CKAN {action} failed: {payload}")
     return payload["result"]
@@ -269,7 +261,7 @@ def main() -> None:
     coarse = sum(1 for c in clinics if c["precision"] == "city")
     print(f"  Wrote {CLINICS_PATH} with {len(clinics)} geocoded clinics "
           f"({missing} without coordinates, {coarse} placed at the city centre).")
-    print("Done. Now run `make` to rebuild index.html.")
+    print("Done. Now run `make` to rebuild the map.")
 
 
 if __name__ == "__main__":

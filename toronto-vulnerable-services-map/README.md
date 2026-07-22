@@ -8,7 +8,7 @@ food/drop-ins, harm reduction, and housing supports. Companion to
 ## Run
 
 ```bash
-make        # builds index.html from the curated locations (offline, no deps)
+make        # builds output/toronto-vulnerable-services-map.html from data/ (offline)
 make data   # geocodes addresses + pulls EVERY shelter location, then rebuilds (needs internet)
 make open   # builds and opens it in your browser
 ```
@@ -16,9 +16,9 @@ make open   # builds and opens it in your browser
 `make` uses only the Python standard library — no dependencies, no network.
 `make data` is the enrichment step: it geocodes the curated addresses into
 accurate pins and adds every distinct shelter location from the Open Data API
-as its own toggleable layer. Results are cached on disk (`geocode_cache.json`),
-so re-runs are fast and reproducible; commit the cache and `shelters.json` to
-share the geocoded data. Open `index.html` in any browser; internet is needed
+as its own toggleable layer. Results are cached on disk (`data/geocode_cache.json`),
+so re-runs are fast and reproducible; commit the cache and `data/shelters.json` to
+share the geocoded data. Open `output/toronto-vulnerable-services-map.html` in any browser; internet is needed
 only for map tiles and the live stats panel.
 
 ## What's on the map
@@ -37,12 +37,12 @@ only for map tiles and the live stats panel.
 
 | File | Purpose |
 |------|---------|
-| `services.json` | Curated locations (coords) + directory links — **edit this to update the map** |
-| `build_map.py` | Stdlib-only generator: merges curated + cache + shelters into the HTML template |
-| `fetch_data.py` | Network step (`make data`): geocodes addresses, pulls shelter locations |
-| `geocode_cache.json` | Address → `[lat, lon]` cache produced by `make data` (commit it) |
-| `shelters.json` | Geocoded shelter locations produced by `make data` (commit it) |
-| `index.html` | Generated output (committed so it works without a build) |
+| `data/services.json` | Curated locations (coords) + directory links — **edit this to update the map** |
+| `src/build_map.py` | Generator: merges curated + cache + shelters into the HTML template |
+| `src/fetch_data.py` | Network step (`make data`): geocodes addresses, pulls shelter locations |
+| `data/geocode_cache.json` | Address → `[lat, lon]` cache produced by `make data` (commit it) |
+| `data/shelters.json` | Geocoded shelter locations produced by `make data` (commit it) |
+| `output/toronto-vulnerable-services-map.html` | Generated output (committed so it works without a build) |
 | `Makefile` | `make` builds, `make data` enriches, `make open` opens, `make clean` removes output |
 
 ## Caveats
