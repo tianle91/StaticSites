@@ -1,0 +1,57 @@
+{
+  "_comment": "Curated physical service points for Toronto's vulnerable population. Coordinates are approximate (derived from street addresses) and should be confirmed against the live City pages. Warming/respite sites are SEASONAL and may not be open year-round or every year. Harm-reduction sites are volatile (several Ontario sites closed/relocated in 2025) - verify status before relying on a pin.",
+  "map_center": [43.668, -79.388],
+  "map_zoom": 12,
+  "categories": {
+    "intake":  { "label": "Intake & Walk-in",   "color": "#1f78b4" },
+    "warming": { "label": "Warming Centre",      "color": "#ff7f00" },
+    "respite": { "label": "Winter Respite (24h)", "color": "#e31a1c" },
+    "food":    { "label": "Food & Drop-in",      "color": "#33a02c" },
+    "harm":    { "label": "Harm Reduction",      "color": "#6a3d9a" },
+    "housing": { "label": "Community Housing Office", "color": "#008080" }
+  },
+  "locations": [
+    { "name": "Streets to Homes Assessment & Referral Centre (SHARC)", "category": "intake", "address": "129 Peter St, Toronto", "lat": 43.6476, "lon": -79.3915, "notes": "Walk-in shelter referral & housing help. Also takes referral calls: 416-338-4766.", "url": "https://211ontario.ca/service/94638117/" },
+
+    { "name": "Warming Centre - 81 Elizabeth St", "category": "warming", "address": "81 Elizabeth St, Toronto", "lat": 43.6537, "lon": -79.3838, "notes": "Regular warming centre. Walk-in, pet-friendly, no intake needed. Activated ~-5C or weather warning.", "url": "https://www.toronto.ca/community-people/housing-shelter/homeless-help/toronto-warming-centres/" },
+    { "name": "Warming Centre - 885 Scarborough Golf Club Rd", "category": "warming", "address": "885 Scarborough Golf Club Rd, Toronto", "lat": 43.7476, "lon": -79.2205, "notes": "Regular warming centre.", "url": "https://www.toronto.ca/community-people/housing-shelter/homeless-help/toronto-warming-centres/" },
+    { "name": "Warming Centre - 136 Spadina Rd", "category": "warming", "address": "136 Spadina Rd, Toronto", "lat": 43.6744, "lon": -79.4072, "notes": "Regular warming centre.", "url": "https://www.toronto.ca/community-people/housing-shelter/homeless-help/toronto-warming-centres/" },
+    { "name": "Warming Centre - 349 George St", "category": "warming", "address": "349 George St, Toronto", "lat": 43.6608, "lon": -79.3743, "notes": "Regular warming centre.", "url": "https://www.toronto.ca/community-people/housing-shelter/homeless-help/toronto-warming-centres/" },
+    { "name": "Warming Centre - 12 Holmes Ave", "category": "warming", "address": "12 Holmes Ave, North York", "lat": 43.7806, "lon": -79.4153, "notes": "Regular warming centre.", "url": "https://www.toronto.ca/community-people/housing-shelter/homeless-help/toronto-warming-centres/" },
+    { "name": "Warming Centre - Cecil Community Centre", "category": "warming", "address": "58 Cecil St, Toronto", "lat": 43.6566, "lon": -79.3969, "notes": "Extra cold-weather site, opens when temps reach about -15C.", "url": "https://www.toronto.ca/community-people/housing-shelter/homeless-help/toronto-warming-centres/" },
+    { "name": "Warming Centre - Jimmie Simpson Recreation Centre", "category": "warming", "address": "870 Queen St E, Toronto", "lat": 43.6596, "lon": -79.3433, "notes": "Extra cold-weather site, opens when temps reach about -15C.", "url": "https://www.toronto.ca/community-people/housing-shelter/homeless-help/toronto-warming-centres/" },
+
+    { "name": "Winter Respite - Covenant House (youth)", "category": "respite", "address": "20 Gerrard St E, Toronto", "lat": 43.6616, "lon": -79.3829, "notes": "24h winter respite for vulnerable youth. Operated by Covenant House.", "url": "https://www.toronto.ca/community-people/housing-shelter/homeless-help/about-torontos-shelter-system/winter-services-plan-for-people-experiencing-homelessness/" },
+    { "name": "Winter Respite - Scott Mission (men)", "category": "respite", "address": "502 Spadina Ave, Toronto", "lat": 43.6593, "lon": -79.4012, "notes": "24h winter respite for men. Operated by Scott Mission.", "url": "https://www.toronto.ca/community-people/housing-shelter/homeless-help/about-torontos-shelter-system/winter-services-plan-for-people-experiencing-homelessness/" },
+    { "name": "Winter Respite - Homes First (women)", "category": "respite", "address": "22 Metropolitan Rd, Scarborough", "lat": 43.7793, "lon": -79.2785, "notes": "24h winter respite for women. Operated by Homes First.", "url": "https://www.toronto.ca/community-people/housing-shelter/homeless-help/about-torontos-shelter-system/winter-services-plan-for-people-experiencing-homelessness/" },
+    { "name": "Winter Respite - Better Living Centre", "category": "respite", "address": "195 Princes' Blvd, Exhibition Place, Toronto", "lat": 43.6342, "lon": -79.4178, "notes": "24h winter respite, typically opens mid-December.", "url": "https://www.toronto.ca/community-people/housing-shelter/homeless-help/about-torontos-shelter-system/winter-services-plan-for-people-experiencing-homelessness/" },
+
+    { "name": "The Stop Community Food Centre", "category": "food", "address": "1884 Davenport Rd, Toronto", "lat": 43.6747, "lon": -79.4490, "notes": "Food bank, drop-in meals, community kitchens, good-food market.", "url": "https://www.thestop.org/" },
+
+    { "name": "Kensington Market Overdose Prevention Site (KMOPS)", "category": "harm", "address": "Augusta Ave, Kensington Market, Toronto", "lat": 43.6553, "lon": -79.4019, "notes": "Overdose prevention site (The Neighbourhood Group). VERIFY status/location - Ontario sites have faced closures.", "url": "https://tngcommunityto.org/Programs-Services/Programs/Drop-in-and-Harm-Reduction-Services/Kensington-Market-Overdose-Prevention-Site" },
+    { "name": "Moss Park Consumption & Treatment Service", "category": "harm", "address": "Moss Park area, Toronto", "lat": 43.6562, "lon": -79.3699, "notes": "Run by South Riverdale Community Health Centre. VERIFY current status/address.", "url": "https://www.srchc.ca/programs/harm-reduction/consumption-and-treatment-service-moss-park/" },
+
+    { "name": "Access to Housing Resource Centre", "category": "housing", "address": "176 Elm St, Toronto", "lat": 43.6585, "lon": -79.3870, "notes": "City's RGI / community-housing centralized waitlist - apply & get support. Application Support Centre: 416-338-8888.", "url": "https://www.toronto.ca/community-people/housing-shelter/access-community-housing/rent-geared-to-income-subsidy/applying-for-rent-geared-to-income-housing/" },
+    { "name": "Toronto Community Housing - Head Office", "category": "housing", "address": "931 Yonge St, Toronto", "lat": 43.6770, "lon": -79.3880, "notes": "Largest social-housing provider. Client Care: 416-981-5500.", "url": "https://torontohousing.ca/get-in-touch-tchc" },
+    { "name": "TCHC Tenant Service Hub - West", "category": "housing", "address": "495 Wilson Ave, North York", "lat": 43.7340, "lon": -79.4480, "notes": "In-person tenant services (access off Champlain Blvd).", "url": "https://torontohousing.ca/current-tenants/services-and-support/tenant-service-hubs" },
+    { "name": "TCHC Tenant Service Hub - Central", "category": "housing", "address": "49 Lower Jarvis St, Toronto", "lat": 43.6470, "lon": -79.3690, "notes": "In-person tenant services.", "url": "https://torontohousing.ca/current-tenants/services-and-support/tenant-service-hubs" },
+    { "name": "TCHC Tenant Service Hub - East", "category": "housing", "address": "2739 Victoria Park Ave, Scarborough", "lat": 43.7870, "lon": -79.3110, "notes": "In-person tenant services.", "url": "https://torontohousing.ca/current-tenants/services-and-support/tenant-service-hubs" }
+  ],
+  "directories": [
+    { "name": "Toronto Central Intake (24/7 phone)", "url": "https://www.toronto.ca/community-people/housing-shelter/homeless-help/central-intake/", "note": "Emergency shelter referrals: 416-338-4766 / 1-877-338-3398 / 311." },
+    { "name": "211 Ontario", "url": "https://211ontario.ca/", "note": "Dial 211. Province-wide directory of social services." },
+    { "name": "City of Toronto Homeless Help hub", "url": "https://www.toronto.ca/community-people/housing-shelter/homeless-help/", "note": "Master landing page for shelter/respite/housing services." },
+    { "name": "Warming Centres (live status + e-Updates)", "url": "https://www.toronto.ca/community-people/housing-shelter/homeless-help/toronto-warming-centres/", "note": "Open/close status - sign up for alerts." },
+    { "name": "Winter Services Plan", "url": "https://www.toronto.ca/community-people/housing-shelter/homeless-help/about-torontos-shelter-system/winter-services-plan-for-people-experiencing-homelessness/", "note": "Seasonal respite sites and capacity." },
+    { "name": "Daily Shelter & Overnight Occupancy (Open Data + API)", "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/", "note": "Live per-program occupancy/capacity. Drives the stats panel on this map." },
+    { "name": "Rent-Geared-to-Income (RGI) subsidy", "url": "https://www.toronto.ca/community-people/employment-social-support/housing-support/rent-geared-to-income-subsidy/", "note": "Apply to Toronto's centralized subsidized-housing waitlist." },
+    { "name": "Toronto Community Housing - Subsidized/RGI", "url": "https://www.torontohousing.ca/rent/subsidized-housing", "note": "Largest social-housing provider in the city." },
+    { "name": "Housing Help & Support Services (centre directory)", "url": "https://www.toronto.ca/community-people/housing-shelter/homeless-help/housing-help/", "note": "Find a local Housing Help Centre for eviction prevention, housing search, and RGI application help." },
+    { "name": "Social Housing Waiting List Reports", "url": "https://www.toronto.ca/city-government/data-research-maps/research-reports/housing-and-homelessness-research-and-reports/social-housing-waiting-list-reports/", "note": "Published waitlist statistics." },
+    { "name": "SocialHousingApplication.com", "url": "https://www.socialhousingapplication.com/", "note": "Centralized application for many Ontario service-manager areas." },
+    { "name": "Harm Reduction Supplies & Locations (Toronto Public Health)", "url": "https://www.toronto.ca/community-people/health-wellness-care/health-programs-advice/harm-reduction-supplies-and-locations/", "note": "60+ agencies, 100+ access points." },
+    { "name": "Supervised Consumption Sites Dashboard (Canada)", "url": "https://health-infobase.canada.ca/supervised-consumption-sites/", "note": "National dashboard of authorized sites." },
+    { "name": "Food Banks - Toronto Central Healthline", "url": "https://www.torontocentralhealthline.ca/mapMultipleServices.aspx?id=10572", "note": "Mapped directory of food banks." },
+    { "name": "Everyone Counts - Point-in-Time Counts", "url": "https://housing-infrastructure.canada.ca/homelessness-sans-abri/resources-ressources/point-in-time-denombrement-ponctuel-eng.html", "note": "Nationally coordinated homelessness enumeration." }
+  ]
+}

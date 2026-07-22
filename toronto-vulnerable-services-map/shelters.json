@@ -1,0 +1,934 @@
+{
+  "date": "2025-12-31",
+  "generated_at": "2026-06-07 11:45",
+  "source": "daily-shelter-overnight-service-occupancy-capacity",
+  "locations": [
+    {
+      "name": "SVDP Mary's Home",
+      "category": "shelter",
+      "address": "70 Gerrard St E, Toronto, ON",
+      "lat": 43.6600957,
+      "lon": -79.3783524,
+      "notes": "39 served in 1 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "COSTI Uptown Hotel Program",
+      "category": "shelter",
+      "address": "55 Hallcrown Pl, North York, ON",
+      "lat": 43.7692665,
+      "lon": -79.3224086,
+      "notes": "718 served in 3 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "SA Scarborough Hotel Program",
+      "category": "shelter",
+      "address": "50 Estate Dr, Scarborough, ON",
+      "lat": 43.7830185,
+      "lon": -79.235536,
+      "notes": "130 served in 1 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "Sojourn House Hotel Program",
+      "category": "shelter",
+      "address": "165 Grange Ave, Toronto, ON",
+      "lat": 43.6508959,
+      "lon": -79.4013711,
+      "notes": "217 served in 1 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "Kingston Residence SWS",
+      "category": "shelter",
+      "address": "4674 Kingston Rd, Toronto, ON",
+      "lat": 43.7763895,
+      "lon": -79.1747134,
+      "notes": "131 served in 1 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "Fife House Sherbourne St",
+      "category": "shelter",
+      "address": "490 Sherbourne St, Toronto, ON",
+      "lat": 43.6676261,
+      "lon": -79.3753008,
+      "notes": "9 served in 1 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "HFS Willowdale Centre",
+      "category": "shelter",
+      "address": "5800 Yonge St, North York, ON",
+      "lat": 43.7842498,
+      "lon": -79.4168959,
+      "notes": "228 served in 2 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "CONC Men's Shelter Bloor St W",
+      "category": "shelter",
+      "address": "850 Bloor St W, Toronto, ON",
+      "lat": 43.66249,
+      "lon": -79.4242,
+      "notes": "30 served in 1 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "HFS 195 Princes' Blvd ",
+      "category": "shelter",
+      "address": "195 Princes' Blvd, Toronto, ON",
+      "lat": 43.63209,
+      "lon": -79.4209,
+      "notes": "218 served in 4 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "Scott Mission",
+      "category": "shelter",
+      "address": "502 Spadina Ave, Toronto, ON",
+      "lat": 43.6586665,
+      "lon": -79.4007532,
+      "notes": "65 served in 1 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "Eva's Satellite",
+      "category": "shelter",
+      "address": "25 Canterbury Pl, Toronto, ON",
+      "lat": 43.7728063,
+      "lon": -79.4147491,
+      "notes": "33 served in 1 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "Sagatay ",
+      "category": "shelter",
+      "address": "26 Vaughan Rd, Toronto, ON",
+      "lat": 43.6818715,
+      "lon": -79.4186979,
+      "notes": "15 served in 1 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "Dixon Hall Heyworth House",
+      "category": "shelter",
+      "address": "2714 Danforth Ave, Toronto, ON",
+      "lat": 43.68929,
+      "lon": -79.29835,
+      "notes": "63 served in 2 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "Robertson House",
+      "category": "shelter",
+      "address": "291 Sherbourne St, Toronto, ON",
+      "lat": 43.6605452,
+      "lon": -79.3713799,
+      "notes": "99 served in 1 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "TSSS Seaton House",
+      "category": "shelter",
+      "address": "339 George St, Toronto, ON",
+      "lat": 43.65995,
+      "lon": -79.37426,
+      "notes": "299 served in 4 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "Covenant House - Madison",
+      "category": "shelter",
+      "address": "158 Madison Ave., Toronto, ON",
+      "lat": 43.6739775,
+      "lon": -79.4057805,
+      "notes": "10 served in 1 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "Cornerstone Place",
+      "category": "shelter",
+      "address": "616 Vaughan Rd, Toronto, ON",
+      "lat": 43.6919186,
+      "lon": -79.4398677,
+      "notes": "29 served in 2 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "SVDP Amelie House",
+      "category": "shelter",
+      "address": "126 Pape Ave, Toronto, ON",
+      "lat": 43.6627837,
+      "lon": -79.338277,
+      "notes": "21 served in 1 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "Margaret's 21 Park Rd Respite ",
+      "category": "shelter",
+      "address": "21 Park Rd, Toronto, ON",
+      "lat": 43.6720962,
+      "lon": -79.3844617,
+      "notes": "31 served in 2 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "HFS - Lawrence East Shelter",
+      "category": "shelter",
+      "address": "4117 Lawrence Ave E, Scarborough, ON",
+      "lat": 43.7661878,
+      "lon": -79.1934074,
+      "notes": "88 served in 1 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "TSSS Birkdale Residence",
+      "category": "shelter",
+      "address": "1229 Ellesmere Rd, Toronto, ON",
+      "lat": 43.7683,
+      "lon": -79.26742,
+      "notes": "222 served in 1 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "Kennedy House Youth Shelter",
+      "category": "shelter",
+      "address": "1076 Pape Ave, Toronto, ON",
+      "lat": 43.69092,
+      "lon": -79.34965,
+      "notes": "30 served in 1 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "Fred Victor Centre Transition to Housing Dundas St E",
+      "category": "shelter",
+      "address": "386 Dundas St E, Toronto, ON",
+      "lat": 43.65909,
+      "lon": -79.36822,
+      "notes": "37 served in 1 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "St. Felix Ctr - Adelaide Shelter",
+      "category": "shelter",
+      "address": "629 Adelaide St W, Toronto, ON",
+      "lat": 43.64464,
+      "lon": -79.40504,
+      "notes": "50 served in 1 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "Red Door Family Shelter",
+      "category": "shelter",
+      "address": "189B Booth Ave, Toronto, ON",
+      "lat": 43.66,
+      "lon": -79.34324,
+      "notes": "88 served in 1 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "Covenant House Gerrard St E",
+      "category": "shelter",
+      "address": "20 Gerrard St E, Toronto, ON",
+      "lat": 43.6594996,
+      "lon": -79.3812268,
+      "notes": "132 served in 4 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "Christie Refugee Welcome Centre",
+      "category": "shelter",
+      "address": "43 Christie St, Toronto, ON",
+      "lat": 43.6651723,
+      "lon": -79.4188638,
+      "notes": "52 served in 1 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "Covenant House McGill St",
+      "category": "shelter",
+      "address": "21 McGill St, Toronto, ON",
+      "lat": 43.6598739,
+      "lon": -79.3813273,
+      "notes": "27 served in 1 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "213 Carlton Street",
+      "category": "shelter",
+      "address": "213 Carlton Street, Toronto, Ontario",
+      "lat": 43.66375,
+      "lon": -79.36954,
+      "notes": "23 served in 2 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "CHT Thrive Transitional Shelter",
+      "category": "shelter",
+      "address": "18 Fourteenth Street, Toronto, ON",
+      "lat": 43.59988,
+      "lon": -79.51362,
+      "notes": "62 served in 1 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "Good Shepherd Centre",
+      "category": "shelter",
+      "address": "412 Queen St E, Toronto, ON",
+      "lat": 43.656175,
+      "lon": -79.3624789,
+      "notes": "56 served in 2 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "Progress Avenue Shelter",
+      "category": "shelter",
+      "address": "705 Progress Ave, Toronto, ON",
+      "lat": 43.77671,
+      "lon": -79.24602,
+      "notes": "102 served in 2 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "Na-Me-Res",
+      "category": "shelter",
+      "address": "14 Vaughan Rd, Toronto, ON",
+      "lat": 43.6814254,
+      "lon": -79.4183507,
+      "notes": "65 served in 2 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "Turning Point Youth Services ",
+      "category": "shelter",
+      "address": "95 Wellesley St E, Toronto, ON",
+      "lat": 43.6658231,
+      "lon": -79.3792045,
+      "notes": "35 served in 1 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "Streets to Homes Assessment and Referral Centre (SHARC)",
+      "category": "shelter",
+      "address": "129 Peter St, Toronto, ON",
+      "lat": 43.6487433,
+      "lon": -79.3931384,
+      "notes": "34 served in 1 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "SA Islington Seniors' Shelter",
+      "category": "shelter",
+      "address": "2671 Islington Ave, Toronto, ON",
+      "lat": 43.739153,
+      "lon": -79.5656502,
+      "notes": "83 served in 2 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "TSSS Junction Place",
+      "category": "shelter",
+      "address": "731 Runnymede Rd, Toronto, ON",
+      "lat": 43.6682548,
+      "lon": -79.4828506,
+      "notes": "64 served in 2 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "Native Child & Family Services Toronto",
+      "category": "shelter",
+      "address": "558 Bathurst St, Toronto, ON",
+      "lat": 43.65846,
+      "lon": -79.40881,
+      "notes": "10 served in 1 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "TSSS North York West Hotel Program",
+      "category": "shelter",
+      "address": "1677 Wilson Ave, North York, ON",
+      "lat": 43.7189286,
+      "lon": -79.5148278,
+      "notes": "212 served in 5 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "SVDP Elisa House",
+      "category": "shelter",
+      "address": "60 Newcastle St, Toronto, ON",
+      "lat": 43.6179513,
+      "lon": -79.4973594,
+      "notes": "35 served in 2 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "YouthLink ",
+      "category": "shelter",
+      "address": "747 Warden Ave, Scarborough, ON",
+      "lat": 43.71784,
+      "lon": -79.28283,
+      "notes": "40 served in 3 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "Youth Without Shelter ",
+      "category": "shelter",
+      "address": "6 Warrendale Ct, Etobicoke, ON",
+      "lat": 43.7363042,
+      "lon": -79.5808276,
+      "notes": "53 served in 2 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "Scarborough Women's Shelter - Milner",
+      "category": "shelter",
+      "address": "20 Milner Business Ct, Scarborough, ON",
+      "lat": 43.7879635,
+      "lon": -79.2358105,
+      "notes": "101 served in 1 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "TSSS Downtown Response Program",
+      "category": "shelter",
+      "address": "76 Church St, Toronto, ON",
+      "lat": 43.70605,
+      "lon": -79.51917,
+      "notes": "53 served in 1 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "Wagner Green YMCA",
+      "category": "shelter",
+      "address": "7 Vanauley St, Toronto, ON",
+      "lat": 43.6488641,
+      "lon": -79.3982301,
+      "notes": "40 served in 1 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "CONC Etobicoke Hotel Program",
+      "category": "shelter",
+      "address": "445 Rexdale Blvd, Etobicoke, ON",
+      "lat": 43.7160484,
+      "lon": -79.5939896,
+      "notes": "167 served in 1 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "Good Shepherd Centre West End Hotel Program",
+      "category": "shelter",
+      "address": "335 Jarvis St, Toronto, ON",
+      "lat": 43.6603212,
+      "lon": -79.3755149,
+      "notes": "47 served in 1 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "DH Warming Centre - 81 Elizabeth",
+      "category": "shelter",
+      "address": "81 Elizabeth St., Toronto, ON",
+      "lat": 43.65428,
+      "lon": -79.38452,
+      "notes": "74 served in 1 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "HFS 545 Lake Shore Blvd W Shelter",
+      "category": "shelter",
+      "address": "545 Lake Shore Blvd W, Toronto, ON",
+      "lat": 43.636441,
+      "lon": -79.3987561,
+      "notes": "145 served in 4 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "YWCA Davenport Shelter",
+      "category": "shelter",
+      "address": "348 Davenport Road, Toronto, ON",
+      "lat": 43.6754101,
+      "lon": -79.4013325,
+      "notes": "66 served in 2 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "SVDP St. Clare's Residence",
+      "category": "shelter",
+      "address": "3410 Bayview Ave, Toronto, ON",
+      "lat": 43.7982514,
+      "lon": -79.3954227,
+      "notes": "30 served in 1 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "Street Haven",
+      "category": "shelter",
+      "address": "87 Pembroke St, Toronto, ON",
+      "lat": 43.65923,
+      "lon": -79.37243,
+      "notes": "30 served in 1 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "HFS - Metro Strachan",
+      "category": "shelter",
+      "address": "22 Metropolitan Rd, Toronto, ON",
+      "lat": 43.7695315,
+      "lon": -79.3009115,
+      "notes": "394 served in 2 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "CONC Men's Shelter Lansdowne Ave",
+      "category": "shelter",
+      "address": "973 Lansdowne Ave, Toronto, ON",
+      "lat": 43.6660985,
+      "lon": -79.446011,
+      "notes": "43 served in 2 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "Etobicoke Hotel Site 1",
+      "category": "shelter",
+      "address": "66 Norfinch Dr, North York, ON",
+      "lat": 43.7572753,
+      "lon": -79.5298481,
+      "notes": "199 served in 2 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "YWCA 1st Stop Woodlawn ",
+      "category": "shelter",
+      "address": "80 Woodlawn Ave E, Toronto, ON",
+      "lat": 43.684742,
+      "lon": -79.3896662,
+      "notes": "62 served in 2 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "COSTI Hotel Program Dixon",
+      "category": "shelter",
+      "address": "640 Dixon Rd., Toronto, ON",
+      "lat": 43.6921591,
+      "lon": -79.5765849,
+      "notes": "649 served in 2 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "Fred Victor Mary Sheffield House",
+      "category": "shelter",
+      "address": "512 Jarvis St, Toronto, ON",
+      "lat": 43.6676332,
+      "lon": -79.3792531,
+      "notes": "23 served in 1 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "Sojourn House Ontario St",
+      "category": "shelter",
+      "address": "101 Ontario St, Toronto, ON",
+      "lat": 43.6545261,
+      "lon": -79.3668494,
+      "notes": "163 served in 2 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "TSSS Womens' Residence",
+      "category": "shelter",
+      "address": "674 Dundas St W, Toronto, ON",
+      "lat": 43.6518512,
+      "lon": -79.4036296,
+      "notes": "88 served in 2 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "COSTI Reception Centre",
+      "category": "shelter",
+      "address": "100 Lippincott St, Toronto, ON",
+      "lat": 43.65766,
+      "lon": -79.40716,
+      "notes": "11 served in 2 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "St. Felix Centre 69 Fraser Ave. Respite ",
+      "category": "shelter",
+      "address": "69 Fraser Ave, Toronto, ON",
+      "lat": 43.63787,
+      "lon": -79.42366,
+      "notes": "71 served in 1 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "Scarborough Hotel Program 1",
+      "category": "shelter",
+      "address": "4584 Kingston Rd, Scarborough, ON",
+      "lat": 43.77463,
+      "lon": -79.1839,
+      "notes": "44 served in 1 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "YMCA Sprott House ",
+      "category": "shelter",
+      "address": "21 Walmer Rd, Toronto, ON",
+      "lat": 43.6679008,
+      "lon": -79.4055445,
+      "notes": "25 served in 1 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "SA New Hope Leslieville",
+      "category": "shelter",
+      "address": "29A Leslie St, Toronto, ON",
+      "lat": 43.6621,
+      "lon": -79.32939,
+      "notes": "52 served in 1 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "HFS St. Clair Ave E Shelter",
+      "category": "shelter",
+      "address": "3576 St Clair Ave E, Toronto, ON",
+      "lat": 43.71752,
+      "lon": -79.258,
+      "notes": "48 served in 1 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "HFS Placer",
+      "category": "shelter",
+      "address": "101 Placer Ct, Toronto, ON",
+      "lat": 43.801919,
+      "lon": -79.3413697,
+      "notes": "87 served in 2 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "La Passerelle I.D.E. L'Agapanthe",
+      "category": "shelter",
+      "address": "179 Gerrard St. East, Toronto, ON",
+      "lat": 43.660887,
+      "lon": -79.373341,
+      "notes": "34 served in 1 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "CONC West End Hotel Program",
+      "category": "shelter",
+      "address": "14 Roncesvalles Ave, Toronto, ON",
+      "lat": 43.6390189,
+      "lon": -79.4465143,
+      "notes": "40 served in 1 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "Fred Victor Centre Bethlehem United Shelter",
+      "category": "shelter",
+      "address": "1161 Caledonia Rd, Toronto, ON",
+      "lat": 43.7156276,
+      "lon": -79.4674122,
+      "notes": "68 served in 1 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "Eva's Place",
+      "category": "shelter",
+      "address": "360 Lesmill Rd, Toronto, ON",
+      "lat": 43.763328,
+      "lon": -79.3609144,
+      "notes": "36 served in 1 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "SA Gateway",
+      "category": "shelter",
+      "address": "107 Jarvis St, Toronto, ON",
+      "lat": 43.65231,
+      "lon": -79.37247,
+      "notes": "78 served in 1 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "St. Simon's Clubbe House",
+      "category": "shelter",
+      "address": "556 Sherbourne St, Toronto, ON",
+      "lat": 43.6697144,
+      "lon": -79.3759409,
+      "notes": "29 served in 1 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "TSSS - Warming Centre - Cecil",
+      "category": "shelter",
+      "address": "58 Cecil Street, Toronto, Ontario",
+      "lat": 43.6564521,
+      "lon": -79.3985978,
+      "notes": "15 served in 1 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "Street Haven Downtown Hotel Program",
+      "category": "shelter",
+      "address": "26 Gerrard St E, Toronto, ON",
+      "lat": 43.6595672,
+      "lon": -79.3810055,
+      "notes": "46 served in 1 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "TSSS North Hotel Program",
+      "category": "shelter",
+      "address": "3600 Steeles Ave W, Vaughan, ON",
+      "lat": 43.7721332,
+      "lon": -79.5382614,
+      "notes": "59 served in 1 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "TSSS Fort York Residence",
+      "category": "shelter",
+      "address": "38 Bathurst St, Toronto, ON",
+      "lat": 43.641817,
+      "lon": -79.401972,
+      "notes": "114 served in 3 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "Sistering",
+      "category": "shelter",
+      "address": "962 Bloor St W, Toronto, ON",
+      "lat": 43.6614308,
+      "lon": -79.4288255,
+      "notes": "15 served in 1 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "Dixon Hall Schoolhouse",
+      "category": "shelter",
+      "address": "349 George St, Toronto, ON",
+      "lat": 43.660052,
+      "lon": -79.374465,
+      "notes": "29 served in 1 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "Dixon Hall - Warming Centre North York",
+      "category": "shelter",
+      "address": "12 Holmes Ave, Toronto, ON",
+      "lat": 43.77829,
+      "lon": -79.41425,
+      "notes": "46 served in 1 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "Maxwell Meighen Centre",
+      "category": "shelter",
+      "address": "135 Sherbourne St, Toronto, ON",
+      "lat": 43.6551774,
+      "lon": -79.3694767,
+      "notes": "283 served in 1 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "TSSS Family Residence",
+      "category": "shelter",
+      "address": "4222 Kingston Rd, Toronto, ON",
+      "lat": 43.7607355,
+      "lon": -79.1966999,
+      "notes": "134 served in 1 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "Horizons for Youth",
+      "category": "shelter",
+      "address": "422 Gilbert Ave, Toronto, ON",
+      "lat": 43.68939,
+      "lon": -79.46234,
+      "notes": "44 served in 1 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "HFS Kennedy Rd Women's Shelter",
+      "category": "shelter",
+      "address": "702 Kennedy Rd, Toronto, ON",
+      "lat": 43.72805,
+      "lon": -79.26771,
+      "notes": "61 served in 1 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "885 Scarborough Golf Club Road",
+      "category": "shelter",
+      "address": "885 Scarborough Golf Club Road, Toronto, ON",
+      "lat": 43.77275,
+      "lon": -79.21909,
+      "notes": "67 served in 1 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "Eva's Phoenix",
+      "category": "shelter",
+      "address": "60 Brant St, Toronto, ON",
+      "lat": 43.6471116,
+      "lon": -79.398813,
+      "notes": "49 served in 1 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "TSSS Downtown Hotel Program",
+      "category": "shelter",
+      "address": "77 Ryerson Ave, Toronto, ON",
+      "lat": 43.6500853,
+      "lon": -79.4025175,
+      "notes": "66 served in 1 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "Romero-Edna Lane House",
+      "category": "shelter",
+      "address": "2387 Dundas Street West, Toronto, ON",
+      "lat": 43.6576297,
+      "lon": -79.4530551,
+      "notes": "38 served in 1 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "TSSS Scarborough Village Residence",
+      "category": "shelter",
+      "address": "3306 Kingston Rd, Toronto, ON",
+      "lat": 43.73424,
+      "lon": -79.22349,
+      "notes": "93 served in 1 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "Good Shepherd Centre Barrett House",
+      "category": "shelter",
+      "address": "35 Sydenham St, Toronto, ON",
+      "lat": 43.6567429,
+      "lon": -79.3623502,
+      "notes": "5 served in 1 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "The Scott Mission - Kensington location",
+      "category": "shelter",
+      "address": "346 Spadina Ave., Toronto, ON",
+      "lat": 43.65425,
+      "lon": -79.398877,
+      "notes": "71 served in 1 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "Fife House Denison Ave",
+      "category": "shelter",
+      "address": "70 Denison Ave, Toronto, ON",
+      "lat": 43.65022,
+      "lon": -79.40175,
+      "notes": "5 served in 1 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "Dixon Hall 351 Lake Shore Blvd E Respite",
+      "category": "shelter",
+      "address": "351 Lake Shore Blvd E, Toronto, ON",
+      "lat": 43.6478384,
+      "lon": -79.3593537,
+      "notes": "78 served in 1 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "Matthew House - Eunice House",
+      "category": "shelter",
+      "address": "30 Eunice Rd, North York, ON",
+      "lat": 43.7717399,
+      "lon": -79.3706609,
+      "notes": "7 served in 1 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "SA Evangeline Residence",
+      "category": "shelter",
+      "address": "2808 Dundas St W, Toronto, ON",
+      "lat": 43.665538,
+      "lon": -79.4631271,
+      "notes": "85 served in 1 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "Fred Victor Uptown Hotel Program",
+      "category": "shelter",
+      "address": "185 Yorkland Blvd, North York, ON",
+      "lat": 43.7713127,
+      "lon": -79.3354933,
+      "notes": "291 served in 1 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "Fred Victor Centre Fatima House",
+      "category": "shelter",
+      "address": "1059 College Street, Toronto, ON",
+      "lat": 43.6527199,
+      "lon": -79.4308147,
+      "notes": "36 served in 1 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "Jimmie Simpson CC",
+      "category": "shelter",
+      "address": "870 Queen St E, Toronto, ON",
+      "lat": 43.660407,
+      "lon": -79.345308,
+      "notes": "7 served in 1 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "Christie Ossington - Spadina Rd",
+      "category": "shelter",
+      "address": "136 Spadina Rd, Toronto, ON",
+      "lat": 43.6731024,
+      "lon": -79.4066484,
+      "notes": "22 served in 1 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "Adelaide Resource Centre for Women",
+      "category": "shelter",
+      "address": "67 Adelaide St E, Toronto, ON",
+      "lat": 43.6509,
+      "lon": -79.37518,
+      "notes": "47 served in 1 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "Matthew House - Dundas House",
+      "category": "shelter",
+      "address": "981 Dundas St W, Toronto, ON",
+      "lat": 43.6502416,
+      "lon": -79.4152827,
+      "notes": "3 served in 1 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "Fred Victor Centre 1A Strachan Ave Respite",
+      "category": "shelter",
+      "address": "1A Strachan Ave, Toronto, ON",
+      "lat": 43.6354438,
+      "lon": -79.4087611,
+      "notes": "68 served in 1 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    },
+    {
+      "name": "Native Child & Family - Spadina",
+      "category": "shelter",
+      "address": "111 Spadina Rd, Toronto, ON",
+      "lat": 43.6711723,
+      "lon": -79.4053915,
+      "notes": "14 served in 1 program(s) on 2025-12-31.",
+      "url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+    }
+  ]
+}

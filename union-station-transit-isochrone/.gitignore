@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+preview.png
+# generated r5py intermediate (committed outputs are isochrones.geojson + index.html)
+reachability.json
+# r5py inputs (large OSM extracts + GTFS feeds) and its build cache
+data/*
+!data/README.md
+*.osm.pbf
+*.mapdb
+*.mapdb.p

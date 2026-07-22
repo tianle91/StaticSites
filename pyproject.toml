@@ -1,0 +1,30 @@
+[project]
+name = "staticsites"
+version = "0.0.0"
+description = "One shared Python environment for every project in this repo."
+# r5py needs >= 3.10; 3.11 is what CI runs, so pin the floor there.
+requires-python = ">=3.11"
+
+# Every project's runtime dependencies live here, in one place. Most projects are
+# stdlib-only and pull nothing from this list -- they use the shared virtualenv
+# purely for a modern interpreter.
+dependencies = [
+    # margin-sp500-m2-visualization
+    "matplotlib>=3.8",
+    "openpyxl>=3.1",
+    "pandas>=2.1",
+    "plotly>=5.20",
+    "requests>=2.31",
+    "yfinance>=0.2.40",
+    # union-station-transit-isochrone (`make data` only -- needs a Java 21 JDK too)
+    "geopandas>=0.14",
+    "r5py>=1.1",
+    "shapely>=2.0",
+]
+
+[dependency-groups]
+dev = ["pytest>=8.0"]
+
+[tool.uv]
+# The repo root is an environment, not a distributable package -- nothing to build.
+package = false

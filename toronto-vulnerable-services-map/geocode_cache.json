@@ -1,0 +1,492 @@
+{
+  "129 Peter St, Toronto": [
+    43.6487433,
+    -79.3931384
+  ],
+  "81 Elizabeth St, Toronto": [
+    43.65428,
+    -79.38452
+  ],
+  "885 Scarborough Golf Club Rd, Toronto": [
+    43.77275,
+    -79.21909
+  ],
+  "136 Spadina Rd, Toronto": [
+    43.6731024,
+    -79.4066484
+  ],
+  "349 George St, Toronto": [
+    43.660052,
+    -79.374465
+  ],
+  "12 Holmes Ave, North York": [
+    43.77829,
+    -79.41425
+  ],
+  "58 Cecil St, Toronto": [
+    43.6564521,
+    -79.3985978
+  ],
+  "870 Queen St E, Toronto": [
+    43.660407,
+    -79.345308
+  ],
+  "20 Gerrard St E, Toronto": [
+    43.6594996,
+    -79.3812268
+  ],
+  "502 Spadina Ave, Toronto": [
+    43.6586665,
+    -79.4007532
+  ],
+  "22 Metropolitan Rd, Scarborough": [
+    43.7695315,
+    -79.3009115
+  ],
+  "195 Princes' Blvd, Exhibition Place, Toronto": [
+    43.63209,
+    -79.4209
+  ],
+  "1884 Davenport Rd, Toronto": [
+    43.6708617,
+    -79.4538219
+  ],
+  "Augusta Ave, Kensington Market, Toronto": [
+    43.6562916,
+    -79.4027371
+  ],
+  "Moss Park area, Toronto": null,
+  "176 Elm St, Toronto": [
+    43.656213,
+    -79.390593
+  ],
+  "931 Yonge St, Toronto": [
+    43.6755382,
+    -79.3885175
+  ],
+  "495 Wilson Ave, North York": [
+    43.7345794,
+    -79.4451127
+  ],
+  "49 Lower Jarvis St, Toronto": [
+    43.64732,
+    -79.37034
+  ],
+  "2739 Victoria Park Ave, Scarborough": [
+    43.778342,
+    -79.3233289
+  ],
+  "70 Gerrard St E, Toronto, ON": [
+    43.6600957,
+    -79.3783524
+  ],
+  "55 Hallcrown Pl, North York, ON": [
+    43.7692665,
+    -79.3224086
+  ],
+  "50 Estate Dr, Scarborough, ON": [
+    43.7830185,
+    -79.235536
+  ],
+  "165 Grange Ave, Toronto, ON": [
+    43.6508959,
+    -79.4013711
+  ],
+  "4674 Kingston Rd, Toronto, ON": [
+    43.7763895,
+    -79.1747134
+  ],
+  "490 Sherbourne St, Toronto, ON": [
+    43.6676261,
+    -79.3753008
+  ],
+  "5800 Yonge St, North York, ON": [
+    43.7842498,
+    -79.4168959
+  ],
+  "850 Bloor St W, Toronto, ON": [
+    43.66249,
+    -79.4242
+  ],
+  "195 Princes' Blvd, Toronto, ON": [
+    43.63209,
+    -79.4209
+  ],
+  "502 Spadina Ave, Toronto, ON": [
+    43.6586665,
+    -79.4007532
+  ],
+  "25 Canterbury Pl, Toronto, ON": [
+    43.7728063,
+    -79.4147491
+  ],
+  "26 Vaughan Rd, Toronto, ON": [
+    43.6818715,
+    -79.4186979
+  ],
+  "2714 Danforth Ave, Toronto, ON": [
+    43.68929,
+    -79.29835
+  ],
+  "291 Sherbourne St, Toronto, ON": [
+    43.6605452,
+    -79.3713799
+  ],
+  "339 George St, Toronto, ON": [
+    43.65995,
+    -79.37426
+  ],
+  "158 Madison Ave., Toronto, ON": [
+    43.6739775,
+    -79.4057805
+  ],
+  "616 Vaughan Rd, Toronto, ON": [
+    43.6919186,
+    -79.4398677
+  ],
+  "126 Pape Ave, Toronto, ON": [
+    43.6627837,
+    -79.338277
+  ],
+  "21 Park Rd, Toronto, ON": [
+    43.6720962,
+    -79.3844617
+  ],
+  "4117 Lawrence Ave E, Scarborough, ON": [
+    43.7661878,
+    -79.1934074
+  ],
+  "1229 Ellesmere Rd, Toronto, ON": [
+    43.7683,
+    -79.26742
+  ],
+  "1076 Pape Ave, Toronto, ON": [
+    43.69092,
+    -79.34965
+  ],
+  "386 Dundas St E, Toronto, ON": [
+    43.65909,
+    -79.36822
+  ],
+  "629 Adelaide St W, Toronto, ON": [
+    43.64464,
+    -79.40504
+  ],
+  "189B Booth Ave, Toronto, ON": [
+    43.66,
+    -79.34324
+  ],
+  "20 Gerrard St E, Toronto, ON": [
+    43.6594996,
+    -79.3812268
+  ],
+  "43 Christie St, Toronto, ON": [
+    43.6651723,
+    -79.4188638
+  ],
+  "21 McGill St, Toronto, ON": [
+    43.6598739,
+    -79.3813273
+  ],
+  "213 Carlton Street, Toronto, Ontario": [
+    43.66375,
+    -79.36954
+  ],
+  "18 Fourteenth Street, Toronto, ON": [
+    43.59988,
+    -79.51362
+  ],
+  "412 Queen St E, Toronto, ON": [
+    43.656175,
+    -79.3624789
+  ],
+  "705 Progress Ave, Toronto, ON": [
+    43.77671,
+    -79.24602
+  ],
+  "14 Vaughan Rd, Toronto, ON": [
+    43.6814254,
+    -79.4183507
+  ],
+  "95 Wellesley St E, Toronto, ON": [
+    43.6658231,
+    -79.3792045
+  ],
+  "129 Peter St, Toronto, ON": [
+    43.6487433,
+    -79.3931384
+  ],
+  "2671 Islington Ave, Toronto, ON": [
+    43.739153,
+    -79.5656502
+  ],
+  "731 Runnymede Rd, Toronto, ON": [
+    43.6682548,
+    -79.4828506
+  ],
+  "558 Bathurst St, Toronto, ON": [
+    43.65846,
+    -79.40881
+  ],
+  "1677 Wilson Ave, North York, ON": [
+    43.7189286,
+    -79.5148278
+  ],
+  "60 Newcastle St, Toronto, ON": [
+    43.6179513,
+    -79.4973594
+  ],
+  "747 Warden Ave, Scarborough, ON": [
+    43.71784,
+    -79.28283
+  ],
+  "6 Warrendale Ct, Etobicoke, ON": [
+    43.7363042,
+    -79.5808276
+  ],
+  "20 Milner Business Ct, Scarborough, ON": [
+    43.7879635,
+    -79.2358105
+  ],
+  "76 Church St, Toronto, ON": [
+    43.70605,
+    -79.51917
+  ],
+  "7 Vanauley St, Toronto, ON": [
+    43.6488641,
+    -79.3982301
+  ],
+  "445 Rexdale Blvd, Etobicoke, ON": [
+    43.7160484,
+    -79.5939896
+  ],
+  "335 Jarvis St, Toronto, ON": [
+    43.6603212,
+    -79.3755149
+  ],
+  "81 Elizabeth St., Toronto, ON": [
+    43.65428,
+    -79.38452
+  ],
+  "545 Lake Shore Blvd W, Toronto, ON": [
+    43.636441,
+    -79.3987561
+  ],
+  "348 Davenport Road, Toronto, ON": [
+    43.6754101,
+    -79.4013325
+  ],
+  "3410 Bayview Ave, Toronto, ON": [
+    43.7982514,
+    -79.3954227
+  ],
+  "87 Pembroke St, Toronto, ON": [
+    43.65923,
+    -79.37243
+  ],
+  "22 Metropolitan Rd, Toronto, ON": [
+    43.7695315,
+    -79.3009115
+  ],
+  "973 Lansdowne Ave, Toronto, ON": [
+    43.6660985,
+    -79.446011
+  ],
+  "66 Norfinch Dr, North York, ON": [
+    43.7572753,
+    -79.5298481
+  ],
+  "80 Woodlawn Ave E, Toronto, ON": [
+    43.684742,
+    -79.3896662
+  ],
+  "640 Dixon Rd., Toronto, ON": [
+    43.6921591,
+    -79.5765849
+  ],
+  "512 Jarvis St, Toronto, ON": [
+    43.6676332,
+    -79.3792531
+  ],
+  "101 Ontario St, Toronto, ON": [
+    43.6545261,
+    -79.3668494
+  ],
+  "674 Dundas St W, Toronto, ON": [
+    43.6518512,
+    -79.4036296
+  ],
+  "100 Lippincott St, Toronto, ON": [
+    43.65766,
+    -79.40716
+  ],
+  "69 Fraser Ave, Toronto, ON": [
+    43.63787,
+    -79.42366
+  ],
+  "4584 Kingston Rd, Scarborough, ON": [
+    43.77463,
+    -79.1839
+  ],
+  "21 Walmer Rd, Toronto, ON": [
+    43.6679008,
+    -79.4055445
+  ],
+  "29A Leslie St, Toronto, ON": [
+    43.6621,
+    -79.32939
+  ],
+  "3576 St Clair Ave E, Toronto, ON": [
+    43.71752,
+    -79.258
+  ],
+  "101 Placer Ct, Toronto, ON": [
+    43.801919,
+    -79.3413697
+  ],
+  "179 Gerrard St. East, Toronto, ON": [
+    43.660887,
+    -79.373341
+  ],
+  "14 Roncesvalles Ave, Toronto, ON": [
+    43.6390189,
+    -79.4465143
+  ],
+  "1161 Caledonia Rd, Toronto, ON": [
+    43.7156276,
+    -79.4674122
+  ],
+  "360 Lesmill Rd, Toronto, ON": [
+    43.763328,
+    -79.3609144
+  ],
+  "107 Jarvis St, Toronto, ON": [
+    43.65231,
+    -79.37247
+  ],
+  "556 Sherbourne St, Toronto, ON": [
+    43.6697144,
+    -79.3759409
+  ],
+  "58 Cecil Street, Toronto, Ontario": [
+    43.6564521,
+    -79.3985978
+  ],
+  "26 Gerrard St E, Toronto, ON": [
+    43.6595672,
+    -79.3810055
+  ],
+  "3600 Steeles Ave W, Vaughan, ON": [
+    43.7721332,
+    -79.5382614
+  ],
+  "38 Bathurst St, Toronto, ON": [
+    43.641817,
+    -79.401972
+  ],
+  "962 Bloor St W, Toronto, ON": [
+    43.6614308,
+    -79.4288255
+  ],
+  "349 George St, Toronto, ON": [
+    43.660052,
+    -79.374465
+  ],
+  "354 George St, Scarborough, ON": null,
+  "12 Holmes Ave, Toronto, ON": [
+    43.77829,
+    -79.41425
+  ],
+  "135 Sherbourne St, Toronto, ON": [
+    43.6551774,
+    -79.3694767
+  ],
+  "4222 Kingston Rd, Toronto, ON": [
+    43.7607355,
+    -79.1966999
+  ],
+  "422 Gilbert Ave, Toronto, ON": [
+    43.68939,
+    -79.46234
+  ],
+  "702 Kennedy Rd, Toronto, ON": [
+    43.72805,
+    -79.26771
+  ],
+  "885 Scarborough Golf Club Road, Toronto, ON": [
+    43.77275,
+    -79.21909
+  ],
+  "60 Brant St, Toronto, ON": [
+    43.6471116,
+    -79.398813
+  ],
+  "77 Ryerson Ave, Toronto, ON": [
+    43.6500853,
+    -79.4025175
+  ],
+  "2387 Dundas Street West, Toronto, ON": [
+    43.6576297,
+    -79.4530551
+  ],
+  "3306 Kingston Rd, Toronto, ON": [
+    43.73424,
+    -79.22349
+  ],
+  "35 Sydenham St, Toronto, ON": [
+    43.6567429,
+    -79.3623502
+  ],
+  "346 Spadina Ave., Toronto, ON": [
+    43.65425,
+    -79.398877
+  ],
+  "70 Denison Ave, Toronto, ON": [
+    43.65022,
+    -79.40175
+  ],
+  "351 Lake Shore Blvd E, Toronto, ON": [
+    43.6478384,
+    -79.3593537
+  ],
+  "30 Eunice Rd, North York, ON": [
+    43.7717399,
+    -79.3706609
+  ],
+  "2808 Dundas St W, Toronto, ON": [
+    43.665538,
+    -79.4631271
+  ],
+  "185 Yorkland Blvd, North York, ON": [
+    43.7713127,
+    -79.3354933
+  ],
+  "1059 College Street, Toronto, ON": [
+    43.6527199,
+    -79.4308147
+  ],
+  "870 Queen St E, Toronto, ON": [
+    43.660407,
+    -79.345308
+  ],
+  "136 Spadina Rd, Toronto, ON": [
+    43.6731024,
+    -79.4066484
+  ],
+  "67 Adelaide St E, Toronto, ON": [
+    43.6509,
+    -79.37518
+  ],
+  "981 Dundas St W, Toronto, ON": [
+    43.6502416,
+    -79.4152827
+  ],
+  "1A Strachan Ave, Toronto, ON": [
+    43.6354438,
+    -79.4087611
+  ],
+  "111 Spadina Rd, Toronto, ON": [
+    43.6711723,
+    -79.4053915
+  ]
+}
