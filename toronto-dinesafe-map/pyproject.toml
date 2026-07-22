@@ -1,7 +1,7 @@
 [project]
 name = "toronto-dinesafe-map"
 version = "0.0.0"
-description = "Interactive map of Toronto DineSafe food-safety inspection results."
+description = "Toronto DineSafe food-safety inspections — one pin per establishment, coloured by its latest outcome (Pass / Conditional Pass / Closed), searchable by name / type / address."
 requires-python = ">=3.11"
 
 # Runtime dependencies are only needed by `make data` (the network step); the
@@ -21,3 +21,10 @@ package = false
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
+
+[tool.staticsite]
+# Homepage-listing metadata, aggregated into the repo-root sites.json by
+# ../generate_manifest.py. `title` is the link text; the blurb shown after it is
+# [project].description with the leading "<title> — " stripped, so description
+# must start with "<title> — ".
+title = "Toronto DineSafe food-safety inspections"

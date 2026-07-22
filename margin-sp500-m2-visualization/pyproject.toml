@@ -1,7 +1,7 @@
 [project]
 name = "margin-sp500-m2-visualization"
 version = "0.0.0"
-description = "FINRA margin debt vs. S&P 500, M2, CPI, and PPI, rebased to a configurable anchor date."
+description = "Margin debt vs. the S&P 500 — FINRA margin debt against the S&P 500, M2, CPI, and PPI, rebased to a chosen anchor date."
 requires-python = ">=3.11"
 
 dependencies = [
@@ -22,3 +22,10 @@ package = false
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
+
+[tool.staticsite]
+# Homepage-listing metadata, aggregated into the repo-root sites.json by
+# ../generate_manifest.py. `title` is the link text; the blurb shown after it is
+# [project].description with the leading "<title> — " stripped, so description
+# must start with "<title> — ".
+title = "Margin debt vs. the S&P 500"

@@ -1,7 +1,7 @@
 [project]
 name = "toronto-vulnerable-services-map"
 version = "0.0.0"
-description = "Toronto/Ontario services for vulnerable populations: shelters, respite, drop-ins, harm reduction."
+description = "Toronto services for vulnerable populations — shelters, warming & respite centres, drop-ins, harm reduction, housing supports."
 requires-python = ">=3.11"
 
 # Only `make data` needs these; building the map from data/ is stdlib-only.
@@ -19,3 +19,10 @@ package = false
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
+
+[tool.staticsite]
+# Homepage-listing metadata, aggregated into the repo-root sites.json by
+# ../generate_manifest.py. `title` is the link text; the blurb shown after it is
+# [project].description with the leading "<title> — " stripped, so description
+# must start with "<title> — ".
+title = "Toronto services for vulnerable populations"

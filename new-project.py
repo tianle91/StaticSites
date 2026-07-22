@@ -33,7 +33,7 @@ FILES["pyproject.toml"] = '''\
 [project]
 name = "__PROJECT__"
 version = "0.0.0"
-description = "__TITLE__."
+description = "__TITLE__ — TODO: one-line blurb for the homepage listing."
 requires-python = ">=3.11"
 
 # Runtime dependencies. Say why each one is here.
@@ -49,6 +49,13 @@ package = false
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
+
+[tool.staticsite]
+# Homepage-listing metadata, aggregated into the repo-root sites.json by
+# ../generate_manifest.py. `title` is the link text; the blurb shown after it is
+# [project].description with the leading "<title> — " stripped, so description
+# must start with "<title> — ".
+title = "__TITLE__"
 '''
 
 FILES["Makefile"] = '''\
@@ -340,7 +347,9 @@ Created {name}/ in the standard layout. Next:
 
 Then replace the placeholders: src/fetch_data.py (the real upstream fetch),
 src/build_site.py (the real rendering), the TODOs in README.md, and add a row
-for the project to the table in ../README.md.
+for the project to the table in ../README.md. Set the homepage blurb in
+pyproject.toml ([project].description + [tool.staticsite].title), then run
+`make manifest` from the repo root to add the project to sites.json.
 """.format(name=name))
 
 

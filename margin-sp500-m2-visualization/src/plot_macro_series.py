@@ -23,6 +23,11 @@ OUTPUT_DIR = ROOT / "output"
 SERIES_CSV = ROOT / "data" / "series.csv"
 PULLED_STAMP = ROOT / "data" / "generated_at.txt"  # written by fetch_data.py
 
+# Browser tab / bookmark title for the HTML chart. Plotly's to_html() emits a
+# document with an empty <head> and no <title>, so we inject this one -- every
+# sibling site has a <title>, and downstream tooling reads it.
+PAGE_TITLE = "Margin Debt vs. the S&amp;P 500, M2, CPI &amp; PPI"
+
 
 def data_pulled_date() -> str:
     """The date the committed data was pulled (stamped by `make data`), falling
@@ -293,6 +298,9 @@ def render_html(rebased: pd.DataFrame, out_path: Path) -> None:
         full_html=True,
         config={"scrollZoom": True, "displaylogo": False, "responsive": True},
     )
+    # Plotly's full_html output has an empty <head> with no <title>; give the
+    # page one so the browser tab/bookmark isn't blank.
+    html = html.replace("<head>", "<head><title>" + PAGE_TITLE + "</title>", 1)
     # Append a clickable "Data sources" footer so the standalone page documents
     # and links its provenance, not just the README.
     links = " · ".join(

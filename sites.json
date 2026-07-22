@@ -1,0 +1,32 @@
+[
+  {
+    "slug": "margin-sp500-m2-visualization",
+    "title": "Margin debt vs. the S&P 500",
+    "description": "FINRA margin debt against the S&P 500, M2, CPI, and PPI, rebased to a chosen anchor date.",
+    "output": "margin-sp500-m2-visualization/output/margin-sp500-m2-visualization.html"
+  },
+  {
+    "slug": "ontario-physiotherapy-clinics-map",
+    "title": "Ontario OHIP physiotherapy clinics",
+    "description": "the 255 publicly-funded clinics and hospitals, searchable by name / city / postal code.",
+    "output": "ontario-physiotherapy-clinics-map/output/ontario-physiotherapy-clinics-map.html"
+  },
+  {
+    "slug": "toronto-dinesafe-map",
+    "title": "Toronto DineSafe food-safety inspections",
+    "description": "one pin per establishment, coloured by its latest outcome (Pass / Conditional Pass / Closed), searchable by name / type / address.",
+    "output": "toronto-dinesafe-map/output/toronto-dinesafe-map.html"
+  },
+  {
+    "slug": "toronto-vulnerable-services-map",
+    "title": "Toronto services for vulnerable populations",
+    "description": "shelters, warming & respite centres, drop-ins, harm reduction, housing supports.",
+    "output": "toronto-vulnerable-services-map/output/toronto-vulnerable-services-map.html"
+  },
+  {
+    "slug": "union-station-transit-isochrone",
+    "title": "Union Station commute-shed",
+    "description": "where you can reach Toronto's Union Station by transit in 30 / 60 / 90 / 120 minutes.",
+    "output": "union-station-transit-isochrone/output/union-station-transit-isochrone.html"
+  }
+]
