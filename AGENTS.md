@@ -74,6 +74,11 @@ Rules that go with it:
   artifacts share the stem (`output/<project>.png`).
 - **`output/` is committed.** These sites are meant to work straight from a
   clone. Rebuild and commit the output whenever you change a builder.
+- **The site documents its own data sources.** Every generated page carries a
+  "Data sources" section that names each upstream source and **links** it, so a
+  reader who only has the HTML can see and follow the provenance — not just the
+  README. Keep it in sync with the README's "Data sources" section. The
+  scaffolder writes a placeholder version to fill in.
 - **`data/` is committed** where it is small enough (curated JSON, geocode
   caches, fetched CSV). Large binary inputs — OSM extracts, GTFS feeds — are
   gitignored, with a `data/README.md` recording how to obtain them.

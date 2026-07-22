@@ -3,7 +3,7 @@
 An interactive Leaflet map of city/provincial services for vulnerable
 populations: emergency shelter access, warming & winter respite centres,
 food/drop-ins, harm reduction, and housing supports. Companion to
-[Toronto Vulnerable Services Sources](./Toronto%20Vulnerable%20Services%20Sources.md).
+[Toronto Vulnerable Services Sources](./data/SOURCES.md).
 
 ## Run
 

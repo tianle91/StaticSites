@@ -1,0 +1,322 @@
+#!/usr/bin/env python3
+"""Build a self-contained interactive Leaflet map of Toronto's DineSafe
+food-safety inspection results from data/dinesafe.json.
+
+Stdlib only - no pip install, no network needed at build time. One pin per
+establishment, coloured by the result of its most recent inspection (Pass /
+Conditional Pass / Closed). Markers are drawn on a canvas renderer because the
+full city dataset is ~16k establishments; plain DOM markers would be too heavy.
+
+Coordinates and the per-establishment reduction come from `make data`
+(fetch_data.py). Statuses reflect the latest inspection on record and can change
+- always confirm current status on the official DineSafe site before relying on
+a pin.
+"""
+import json
+import pathlib
+
+ROOT = pathlib.Path(__file__).resolve().parent.parent  # project root (src/ is one level down)
+DATA_DIR = ROOT / "data"
+OUT_DIR = ROOT / "output"
+DATA = json.loads((DATA_DIR / "dinesafe.json").read_text(encoding="utf-8"))
+
+# DineSafe reports one of three establishment statuses; anything else is grouped
+# under "Other" so an unexpected value never silently drops a pin.
+STATUS_CATEGORIES = {
+    "pass": {"label": "Pass", "color": "#2e7d32"},
+    "conditional": {"label": "Conditional Pass", "color": "#f39c12"},
+    "closed": {"label": "Closed / Suspended", "color": "#c0392b"},
+    "other": {"label": "Other / Unknown", "color": "#777777"},
+}
+
+
+def status_key(status: str) -> str:
+    s = (status or "").strip().lower()
+    if s.startswith("pass"):
+        return "pass"
+    if "conditional" in s:
+        return "conditional"
+    if "close" in s or "suspend" in s:
+        return "closed"
+    return "other"
+
+
+# Attach a category key to each establishment and drop rows without a location.
+establishments = []
+counts = {k: 0 for k in STATUS_CATEGORIES}
+for e in DATA.get("establishments", []):
+    if e.get("lat") is None or e.get("lon") is None:
+        continue
+    key = status_key(e.get("status"))
+    e = dict(e)
+    e["cat"] = key
+    counts[key] += 1
+    establishments.append(e)
+
+CENTER = [43.6532, -79.3832]  # downtown Toronto; the user's location recenters when permitted
+ZOOM = 13
+
+PAYLOAD = json.dumps(
+    {
+        "categories": STATUS_CATEGORIES,
+        "establishments": establishments,
+        "center": CENTER,
+        "zoom": ZOOM,
+        "meta": {
+            "generated_at": DATA.get("generated_at", ""),
+            "source_page": DATA.get("source_page", "https://open.toronto.ca/dataset/dinesafe/"),
+            "total": len(establishments),
+            "counts": counts,
+            "sample": bool(DATA.get("sample")),
+        },
+    },
+    ensure_ascii=False,
+)
+
+HTML = """<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Toronto DineSafe Food-Safety Inspections</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+<style>
+  html, body { margin: 0; height: 100%; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+  #map { position: absolute; inset: 0; }
+  .panel {
+    position: absolute; top: 10px; right: 10px; z-index: 1000; width: 320px;
+    max-height: calc(100% - 20px); overflow: auto; background: #fff;
+    border-radius: 8px; box-shadow: 0 1px 6px rgba(0,0,0,.3); padding: 12px 14px;
+  }
+  .panel h1 { font-size: 16px; margin: 0 0 4px; }
+  .panel h2 { font-size: 13px; margin: 14px 0 6px; text-transform: uppercase; letter-spacing: .03em; color: #555; }
+  .panel p { font-size: 12px; color: #444; margin: 4px 0; }
+  .panel a { color: #1f78b4; text-decoration: none; }
+  .panel a:hover { text-decoration: underline; }
+  .sources { font-size: 12px; color: #444; margin: 4px 0; padding-left: 18px; }
+  .sources li { margin: 3px 0; }
+  #stats { font-size: 12px; background: #f3f7fb; border: 1px solid #d6e4f0; border-radius: 6px; padding: 8px; }
+  #stats b { font-size: 16px; color: #1f78b4; }
+  #search { width: 100%; box-sizing: border-box; margin-top: 10px; padding: 6px 8px;
+    font-size: 13px; border: 1px solid #ccc; border-radius: 6px; }
+  .legend-row { display: flex; align-items: center; font-size: 12px; margin: 3px 0; }
+  .dot { width: 12px; height: 12px; border-radius: 50%; margin-right: 7px; border: 1px solid rgba(0,0,0,.3); }
+  .sample-banner { background: #fff6e5; border: 1px solid #f0c976; color: #7a5200;
+    font-size: 12px; border-radius: 6px; padding: 8px; margin-bottom: 8px; }
+  .leaflet-popup-content { font-size: 13px; }
+  .leaflet-popup-content .cat { font-size: 11px; text-transform: uppercase; letter-spacing: .03em; font-weight: 600; }
+  details > summary { cursor: pointer; font-weight: 600; font-size: 13px; margin-top: 10px; }
+  .toggle { position: absolute; top: 10px; right: 10px; z-index: 1001; display: none;
+    background: #fff; border: none; border-radius: 6px; padding: 8px 10px; box-shadow: 0 1px 6px rgba(0,0,0,.3); cursor: pointer; }
+  @media (max-width: 620px) {
+    .panel { width: auto; left: 10px; right: 10px; max-height: 55%; display: none; }
+    .toggle { display: block; }
+  }
+</style>
+</head>
+<body>
+<div id="map"></div>
+<button class="toggle" id="toggle">Info</button>
+<div class="panel" id="panel">
+  <h1>Toronto DineSafe Inspections</h1>
+  <p>Food-safety inspection results for Toronto restaurants, food stores and other
+     establishments, coloured by the outcome of the most recent inspection.</p>
+
+  <div id="sample-banner" class="sample-banner" style="display:none"></div>
+  <div id="stats"></div>
+  <input id="search" type="search" placeholder="Filter by name, type or address&hellip;" autocomplete="off" />
+
+  <h2>Legend</h2>
+  <div id="legend"></div>
+
+  <h2>Data sources</h2>
+  <ul class="sources">
+    <li>Inspection results &mdash;
+      <a id="source" href="https://open.toronto.ca/dataset/dinesafe/" target="_blank" rel="noopener">DineSafe, Toronto Open Data</a>
+      (Toronto Public Health)</li>
+    <li>Program details &mdash;
+      <a href="https://www.toronto.ca/community-people/health-wellness-care/health-programs-advice/food-safety/dinesafe/" target="_blank" rel="noopener">City of Toronto &mdash; DineSafe</a></li>
+    <li>Geocoding &amp; map tiles &mdash; &copy;
+      <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors
+      (via Nominatim)</li>
+  </ul>
+  <p id="generated" style="color:#666"></p>
+
+  <details>
+    <summary>Notes &amp; caveats</summary>
+    <p>Each pin shows an establishment's <b>most recent</b> inspection outcome on
+       record; statuses change as re-inspections happen, so confirm current status
+       on the <a href="https://www.toronto.ca/community-people/health-wellness-care/health-programs-advice/food-safety/dinesafe/" target="_blank" rel="noopener">official DineSafe site</a>
+       before relying on a pin. A <b>Conditional Pass</b> means minor infractions
+       were found and must be corrected; <b>Closed</b> means the establishment was
+       ordered closed at the time of inspection (it may have since reopened).
+       Locations come from the dataset's own coordinates where present, otherwise
+       geocoded from the address, so some pins are approximate.</p>
+  </details>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+  integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script>
+const DATA = __PAYLOAD__;
+
+// preferCanvas: the full DineSafe set is ~16k points; canvas keeps it smooth.
+const map = L.map('map', { preferCanvas: true }).setView(DATA.center, DATA.zoom);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 19, attribution: '&copy; OpenStreetMap contributors'
+}).addTo(map);
+
+// One toggleable layer per status category.
+const layers = {};
+for (const key in DATA.categories) layers[key] = L.layerGroup().addTo(map);
+
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"]/g, c =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+}
+
+// Keep marker + record together so the search box can filter without rebuilding.
+const entries = [];
+for (const e of DATA.establishments) {
+  const cat = DATA.categories[e.cat] || { label: e.status, color: '#777' };
+  const marker = L.circleMarker([e.lat, e.lon], {
+    radius: 6, color: '#fff', weight: 1, fillColor: cat.color, fillOpacity: 0.9
+  });
+  const infr = (e.infractions ? e.infractions + ' infraction' + (e.infractions === 1 ? '' : 's') : 'No infractions') +
+               ' at last inspection';
+  const popup =
+    '<b>' + esc(e.name) + '</b><br>' +
+    '<span class="cat" style="color:' + cat.color + '">' + esc(cat.label) + '</span>' +
+    (e.type ? ' &middot; ' + esc(e.type) : '') + '<br>' +
+    (e.address ? esc(e.address) + '<br>' : '') +
+    (e.last_inspection ? '<span style="color:#555">Last inspected ' + esc(e.last_inspection) + '</span><br>' : '') +
+    '<span style="color:#555">' + esc(infr) + '</span><br>' +
+    '<a href="https://www.google.com/maps/dir/?api=1&destination=' +
+      encodeURIComponent(e.address ? e.address + ', Toronto, ON' : (e.lat + ',' + e.lon)) +
+      '" target="_blank" rel="noopener">Directions &rarr;</a> &middot; ' +
+    '<a href="https://www.toronto.ca/community-people/health-wellness-care/health-programs-advice/food-safety/dinesafe/" target="_blank" rel="noopener">DineSafe</a>';
+  marker.bindPopup(popup);
+  marker.addTo(layers[e.cat]);
+  entries.push({ marker, rec: e, cat: e.cat,
+    haystack: [e.name, e.type, e.address].join(' ').toLowerCase() });
+}
+// Open at the default downtown view (ZOOM above) rather than fitting all ~18k
+// city-wide pins, which would zoom right back out; a search still fits its matches.
+
+// Layer toggle control + legend (with per-status counts).
+const overlays = {};
+const legend = document.getElementById('legend');
+for (const key in DATA.categories) {
+  const c = DATA.categories[key];
+  const n = DATA.meta.counts[key] || 0;
+  if (!n) continue;  // hide empty categories
+  overlays[c.label + ' (' + n + ')'] = layers[key];
+  const row = document.createElement('div');
+  row.className = 'legend-row';
+  row.innerHTML = '<span class="dot" style="background:' + c.color + '"></span>' +
+                  c.label + ' <span style="color:#888">&middot; ' + n + '</span>';
+  legend.appendChild(row);
+}
+L.control.layers(null, overlays, { collapsed: false }).addTo(map);
+
+// Header stats + provenance.
+const stats = document.getElementById('stats');
+function renderStats(shown) {
+  stats.innerHTML = '<b>' + shown.toLocaleString() + '</b> of ' +
+    DATA.meta.total.toLocaleString() + ' establishment' + (DATA.meta.total === 1 ? '' : 's') + ' shown';
+}
+renderStats(entries.length);
+document.getElementById('source').href = DATA.meta.source_page;
+document.getElementById('generated').textContent = DATA.meta.generated_at
+  ? 'Data pulled ' + DATA.meta.generated_at : '';
+if (DATA.meta.sample) {
+  const b = document.getElementById('sample-banner');
+  b.style.display = 'block';
+  b.innerHTML = '<b>Sample data.</b> This is a small placeholder set with fictional ' +
+    'establishments. Run <code>make data</code> to load the live DineSafe dataset.';
+}
+
+// Search box: hide non-matching markers in place (layer toggles still apply).
+const search = document.getElementById('search');
+search.addEventListener('input', () => {
+  const q = search.value.trim().toLowerCase();
+  let shown = 0;
+  const visible = [];
+  for (const en of entries) {
+    const match = !q || en.haystack.includes(q);
+    const layer = layers[en.cat];
+    if (match) {
+      if (!layer.hasLayer(en.marker)) layer.addLayer(en.marker);
+      shown++;
+      visible.push([en.rec.lat, en.rec.lon]);
+    } else if (layer.hasLayer(en.marker)) {
+      layer.removeLayer(en.marker);
+    }
+  }
+  renderStats(shown);
+  if (q && visible.length) map.fitBounds(visible, { padding: [40, 40], maxZoom: 15 });
+});
+
+// Center on the user's location when available/permitted (button + auto-attempt).
+let youMarker = null;
+function locate() {
+  if (!navigator.geolocation) return;
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      const ll = [pos.coords.latitude, pos.coords.longitude];
+      if (youMarker) youMarker.setLatLng(ll);
+      else youMarker = L.circleMarker(ll, { radius: 8, color: '#fff', weight: 2,
+        fillColor: '#2b8cbe', fillOpacity: 1 }).addTo(map).bindPopup('You are here');
+      map.setView(ll, 14);
+    },
+    () => {},  // denied/unavailable: keep the city-wide view
+    { enableHighAccuracy: true, timeout: 8000 }
+  );
+}
+const LocateControl = L.Control.extend({
+  options: { position: 'topleft' },
+  onAdd() {
+    const a = L.DomUtil.create('a', 'leaflet-bar leaflet-control');
+    a.href = '#';
+    a.title = 'Center on my location';
+    a.innerHTML = '&#9678;';
+    a.style.cssText = 'width:30px;height:30px;line-height:30px;text-align:center;font-size:18px;background:#fff;';
+    L.DomEvent.on(a, 'click', e => { L.DomEvent.preventDefault(e); locate(); });
+    return a;
+  },
+});
+map.addControl(new LocateControl());
+locate();  // use the user's location if the browser provides it
+
+// Mobile info toggle.
+const panel = document.getElementById('panel');
+const toggle = document.getElementById('toggle');
+toggle.addEventListener('click', () => {
+  const shown = panel.style.display === 'block';
+  panel.style.display = shown ? 'none' : 'block';
+  toggle.textContent = shown ? 'Info' : 'Close';
+});
+</script>
+</body>
+</html>
+"""
+
+
+def main() -> None:
+    # Escape "<" so a field value like "</script>" (or "<!--") in the embedded
+    # JSON can't close the <script> element and break the page. These become
+    # < inside the JSON string literals, leaving the parsed data unchanged.
+    payload = PAYLOAD.replace("<", "\\u003c")
+    out = HTML.replace("__PAYLOAD__", payload)
+    OUT_DIR.mkdir(parents=True, exist_ok=True)
+    target = OUT_DIR / "toronto-dinesafe-map.html"
+    target.write_text(out, encoding="utf-8")
+    breakdown = ", ".join(
+        f"{counts[k]} {STATUS_CATEGORIES[k]['label']}" for k in STATUS_CATEGORIES if counts[k]
+    )
+    print(f"Wrote {target} ({len(establishments)} establishments: {breakdown})")
+
+
+if __name__ == "__main__":
+    main()

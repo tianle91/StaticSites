@@ -6,6 +6,7 @@ transit_model.json.
 Stdlib only - no pip install, no network needed at build time. The generated
 index.html needs the internet only for OpenStreetMap tiles.
 """
+import datetime
 import json
 import pathlib
 
@@ -35,12 +36,23 @@ MODE_LABEL = {
     "bus": "Bus",
 }
 
+def _generated_at() -> str:
+    """When the reachability bands were last computed by `make data`. Prefer the
+    stamp in the model; fall back to the data file's date so the page always
+    carries a data-pulled date."""
+    stamp = MODEL.get("generated_at")
+    if stamp:
+        return str(stamp)[:10]
+    return datetime.date.fromtimestamp((DATA_DIR / "transit_model.json").stat().st_mtime).isoformat()
+
+
 PAYLOAD = json.dumps({
     "geo": GEO,
     "origin": MODEL["origin"],
     "bands": MODEL["bands"],
     "nodes": MODEL["nodes"],
     "service_assumption": MODEL["service_assumption"],
+    "generated_at": _generated_at(),
     "stations": STATIONS,
     "mode_color": MODE_COLOR,
     "mode_label": MODE_LABEL,
@@ -67,6 +79,8 @@ HTML = """<!DOCTYPE html>
   .panel p { font-size: 12px; color: #444; margin: 4px 0; }
   .panel a { color: #1f78b4; text-decoration: none; }
   .panel a:hover { text-decoration: underline; }
+  .sources { font-size: 12px; color: #444; margin: 4px 0; padding-left: 18px; }
+  .sources li { margin: 3px 0; }
   .legend-row { display: flex; align-items: center; font-size: 12px; margin: 4px 0; }
   .swatch { width: 14px; height: 14px; border-radius: 3px; margin-right: 8px; border: 1px solid rgba(0,0,0,.25); }
   .dot { width: 11px; height: 11px; border-radius: 50%; margin-right: 8px; border: 1px solid rgba(0,0,0,.3); }
@@ -109,6 +123,23 @@ HTML = """<!DOCTYPE html>
 
   <h2>Assumptions</h2>
   <p id="assume"></p>
+
+  <h2>Data sources</h2>
+  <ul class="sources">
+    <li>Street &amp; walk network:
+      <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>
+      (&copy; OpenStreetMap contributors), via a
+      <a href="https://download.geofabrik.de/north-america/canada/ontario.html" target="_blank" rel="noopener">Geofabrik</a> extract</li>
+    <li>TTC subway / streetcar / bus schedules (GTFS):
+      <a href="https://open.toronto.ca/dataset/ttc-routes-and-schedules/" target="_blank" rel="noopener">Toronto Open Data</a></li>
+    <li>GO Transit &amp; UP Express schedules (GTFS):
+      <a href="https://www.metrolinx.com/en/about-us/open-data" target="_blank" rel="noopener">Metrolinx Open Data</a></li>
+    <li>Multimodal transit routing:
+      <a href="https://r5py.readthedocs.io/" target="_blank" rel="noopener">r5py</a> (Conveyal R5)</li>
+    <li>Map tiles: &copy;
+      <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors</li>
+  </ul>
+  <p id="generated" style="color:#666;font-size:12px"></p>
 
   <details>
     <summary>Method &amp; caveats</summary>
@@ -205,6 +236,8 @@ for (const m of presentModes) {
   modes.appendChild(row);
 }
 document.getElementById('assume').textContent = DATA.service_assumption;
+document.getElementById('generated').textContent = DATA.generated_at
+  ? 'Data pulled ' + DATA.generated_at : '';
 
 // --- Point-in-polygon: which band contains a clicked point? ---
 function pointInRing(lon, lat, ring) {
@@ -338,7 +371,10 @@ toggle.addEventListener('click', () => {
 
 
 def main():
-    out = HTML.replace("__PAYLOAD__", PAYLOAD)
+    # Escape "<" so a field value like "</script>" (or "<!--") in the embedded
+    # JSON can't close the <script> element and break the page. These become
+    # < inside the JSON string literals, leaving the parsed data unchanged.
+    out = HTML.replace("__PAYLOAD__", PAYLOAD.replace("<", "\\u003c"))
     target = OUT_DIR / "union-station-transit-isochrone.html"
     target.write_text(out, encoding="utf-8")
     n_nodes = sum(1 for n in MODEL["nodes"] if n["mode"] != "origin")

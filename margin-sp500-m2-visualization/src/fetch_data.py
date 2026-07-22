@@ -14,6 +14,7 @@ The result is a monthly grid indexed by month-end, committed to the repo so that
 from __future__ import annotations
 
 import io
+from datetime import date
 from pathlib import Path
 
 import pandas as pd
@@ -23,6 +24,7 @@ import yfinance as yf
 ROOT = Path(__file__).resolve().parents[1]
 DATA_DIR = ROOT / "data"
 SERIES_CSV = DATA_DIR / "series.csv"
+PULLED_STAMP = DATA_DIR / "generated_at.txt"
 
 FINRA_MARGIN_XLSX = "https://www.finra.org/sites/default/files/2021-03/margin-statistics.xlsx"
 FRED_CSV = "https://fred.stlouisfed.org/graph/fredgraph.csv?id={series}"
@@ -89,6 +91,7 @@ def main() -> None:
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     frame.index.name = "date"
     frame.to_csv(SERIES_CSV)
+    PULLED_STAMP.write_text(date.today().isoformat() + "\n", encoding="utf-8")
     print(f"Wrote {SERIES_CSV} with {len(frame)} monthly rows "
           f"({frame.index.min():%Y-%m} to {frame.index.max():%Y-%m}).")
     print("Done. Now run `make` to re-render the charts.")

@@ -90,8 +90,11 @@ HTML = """<!DOCTYPE html>
   <h2>Legend</h2>
   <div id="legend"></div>
 
-  <h2>Source</h2>
-  <p><a id="source" href="#" target="_blank" rel="noopener">ontario.ca &mdash; publicly-funded physiotherapy clinic locations</a></p>
+  <h2>Data sources</h2>
+  <p><a id="source" href="#" target="_blank" rel="noopener">ontario.ca &mdash; publicly-funded physiotherapy clinic locations</a>
+     (via the <a href="https://data.ontario.ca/dataset/publicly-funded-physiotherapy-clinics" target="_blank" rel="noopener">Ontario Open Data</a> CKAN datastore)</p>
+  <p style="color:#666">Coordinates geocoded with &copy;
+     <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> Nominatim; map tiles &copy; OpenStreetMap contributors.</p>
   <p id="generated" style="color:#666"></p>
 
   <details>
@@ -256,7 +259,10 @@ toggle.addEventListener('click', () => {
 
 
 def main() -> None:
-    out = HTML.replace("__PAYLOAD__", PAYLOAD)
+    # Escape "<" so a field value like "</script>" (or "<!--") in the embedded
+    # JSON can't close the <script> element and break the page. These become
+    # < inside the JSON string literals, leaving the parsed data unchanged.
+    out = HTML.replace("__PAYLOAD__", PAYLOAD.replace("<", "\\u003c"))
     target = OUT_DIR / "ontario-physiotherapy-clinics-map.html"
     target.write_text(out, encoding="utf-8")
     by_cat = {}

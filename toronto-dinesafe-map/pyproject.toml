@@ -1,0 +1,23 @@
+[project]
+name = "toronto-dinesafe-map"
+version = "0.0.0"
+description = "Interactive map of Toronto DineSafe food-safety inspection results."
+requires-python = ">=3.11"
+
+# Runtime dependencies are only needed by `make data` (the network step); the
+# offline `make`/`make test` build is stdlib-only.
+dependencies = [
+    "requests>=2.31",  # pulls the DineSafe table from Toronto Open Data's CKAN API
+    "geopy>=2.4",      # Nominatim client + rate limiter for rows missing coordinates
+]
+
+[dependency-groups]
+dev = ["pytest>=8.0"]
+
+[tool.uv]
+# This project is an environment, not a distributable package -- nothing to build.
+package = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

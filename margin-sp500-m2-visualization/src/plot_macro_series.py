@@ -21,6 +21,19 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT_DIR = ROOT / "output"
 SERIES_CSV = ROOT / "data" / "series.csv"
+PULLED_STAMP = ROOT / "data" / "generated_at.txt"  # written by fetch_data.py
+
+
+def data_pulled_date() -> str:
+    """The date the committed data was pulled (stamped by `make data`), falling
+    back to the CSV's own modification date so every chart carries a data date."""
+    if PULLED_STAMP.exists():
+        stamp = PULLED_STAMP.read_text(encoding="utf-8").strip()
+        if stamp:
+            return stamp[:10]
+    if SERIES_CSV.exists():
+        return date.fromtimestamp(SERIES_CSV.stat().st_mtime).isoformat()
+    return ""
 
 START = pd.Timestamp("2000-01-01")
 
@@ -78,6 +91,16 @@ SERIES_COLORS = {
     "Margin debit (FINRA, $m)": "#d62728",
     "S&P 500 (^GSPC, month-end)": "#2ca02c",
 }
+
+# Data sources, shown on the rendered chart itself so a reader who only has the
+# image/page can see (and follow) where each series came from. (label, url).
+DATA_SOURCES: list[tuple[str, str]] = [
+    ("FINRA margin statistics", "https://www.finra.org/investors/learn-to-invest/advanced-investing/margin-statistics"),
+    ("FRED M2 (M2SL)", "https://fred.stlouisfed.org/series/M2SL"),
+    ("FRED CPI (CPIAUCSL)", "https://fred.stlouisfed.org/series/CPIAUCSL"),
+    ("FRED PPI (PPIACO)", "https://fred.stlouisfed.org/series/PPIACO"),
+    ("S&P 500 via Yahoo Finance (^GSPC)", "https://finance.yahoo.com/quote/%5EGSPC"),
+]
 
 
 def build_rebased(rebase_anchor: pd.Timestamp) -> pd.DataFrame:
@@ -165,7 +188,17 @@ def render_png(rebased: pd.DataFrame, out_path: Path) -> None:
     ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
     ax.legend(loc="upper left", frameon=True, fontsize=9)
     fig.autofmt_xdate()
-    fig.tight_layout()
+    fig.tight_layout(rect=(0, 0.03, 1, 1))
+
+    # Attribute the data sources on the image itself (URLs can't be clickable in a
+    # PNG, but a reader with only the picture can still see where the data is from).
+    pulled = data_pulled_date()
+    fig.text(
+        0.5, 0.005,
+        (f"Data pulled {pulled} · " if pulled else "")
+        + "Data sources: " + " · ".join(f"{label} ({url})" for label, url in DATA_SOURCES),
+        ha="center", va="bottom", fontsize=6.5, color="#666666",
+    )
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(out_path, bbox_inches="tight")
@@ -255,12 +288,26 @@ def render_html(rebased: pd.DataFrame, out_path: Path) -> None:
     )
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    fig.write_html(
-        out_path,
+    html = fig.to_html(
         include_plotlyjs="cdn",
         full_html=True,
         config={"scrollZoom": True, "displaylogo": False, "responsive": True},
     )
+    # Append a clickable "Data sources" footer so the standalone page documents
+    # and links its provenance, not just the README.
+    links = " · ".join(
+        f'<a href="{url}" target="_blank" rel="noopener">{label}</a>'
+        for label, url in DATA_SOURCES
+    )
+    pulled = data_pulled_date()
+    pulled_html = f"Data pulled {pulled} &middot; " if pulled else ""
+    footer = (
+        '<footer style="font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;'
+        'font-size:12px;color:#666;text-align:center;padding:8px 16px 16px">'
+        + pulled_html + "<strong>Data sources:</strong> " + links + "</footer>"
+    )
+    html = html.replace("</body>", footer + "</body>", 1)
+    out_path.write_text(html, encoding="utf-8")
 
 
 def build_chart(out_path: Path, rebase_anchor: pd.Timestamp) -> None:

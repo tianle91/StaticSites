@@ -1,6 +1,11 @@
 {
   "_comment": "Curated rapid-transit reachability graph from Union Station, Toronto. Each node is a transit station with its typical transit travel time (minutes) to/from Union (used for station-marker popups; approximate, all-day). The committed bands are a REVERSE isochrone (travel time TO Union, arriving weekday morning peak ~09:00) computed by `make data` via r5py from OSM + GTFS; build_isochrones.py contours that grid. Coordinates are approximate (good to ~city scale). Without reachability.json, build_isochrones.py falls back to buffering these station times.",
-  "origin": { "name": "Union Station", "lat": 43.6453, "lon": -79.3806 },
+  "generated_at": "2026-07-22",
+  "origin": {
+    "name": "Union Station",
+    "lat": 43.6453,
+    "lon": -79.3806
+  },
   "service_assumption": "Travel time TO Union, arriving weekday ~09:00 (morning peak). Subway ~2-3 min headway, GO/UP at peak frequencies incl. peak-direction-only lines.",
   "params": {
     "walk_speed_m_per_min": 80,
@@ -8,154 +13,1067 @@
     "circle_points": 40
   },
   "bands": [
-    { "minutes": 30,  "label": "≤ 30 min",  "color": "#1a9850" },
-    { "minutes": 60,  "label": "≤ 1 hour",  "color": "#fee08b" },
-    { "minutes": 90,  "label": "≤ 1.5 hours", "color": "#fc8d59" },
-    { "minutes": 120, "label": "≤ 2 hours",  "color": "#d73027" }
+    {
+      "minutes": 30,
+      "label": "≤ 30 min",
+      "color": "#1a9850"
+    },
+    {
+      "minutes": 60,
+      "label": "≤ 1 hour",
+      "color": "#fee08b"
+    },
+    {
+      "minutes": 90,
+      "label": "≤ 1.5 hours",
+      "color": "#fc8d59"
+    },
+    {
+      "minutes": 120,
+      "label": "≤ 2 hours",
+      "color": "#d73027"
+    }
   ],
   "nodes": [
-    { "name": "Union Station", "mode": "origin", "line": "Origin", "minutes": 0, "lat": 43.6453, "lon": -79.3806 },
-
-    { "name": "King", "mode": "subway", "line": "Line 1", "minutes": 3, "lat": 43.6492, "lon": -79.3779 },
-    { "name": "Queen", "mode": "subway", "line": "Line 1", "minutes": 5, "lat": 43.6525, "lon": -79.3793 },
-    { "name": "Dundas", "mode": "subway", "line": "Line 1", "minutes": 7, "lat": 43.6561, "lon": -79.3807 },
-    { "name": "College", "mode": "subway", "line": "Line 1", "minutes": 9, "lat": 43.6614, "lon": -79.3832 },
-    { "name": "Wellesley", "mode": "subway", "line": "Line 1", "minutes": 11, "lat": 43.6655, "lon": -79.3838 },
-    { "name": "Bloor-Yonge", "mode": "subway", "line": "Line 1", "minutes": 13, "lat": 43.6709, "lon": -79.3857 },
-    { "name": "Rosedale", "mode": "subway", "line": "Line 1", "minutes": 15, "lat": 43.6772, "lon": -79.3886 },
-    { "name": "Summerhill", "mode": "subway", "line": "Line 1", "minutes": 17, "lat": 43.6824, "lon": -79.3905 },
-    { "name": "St Clair", "mode": "subway", "line": "Line 1", "minutes": 19, "lat": 43.6878, "lon": -79.3931 },
-    { "name": "Davisville", "mode": "subway", "line": "Line 1", "minutes": 22, "lat": 43.6976, "lon": -79.3973 },
-    { "name": "Eglinton", "mode": "subway", "line": "Line 1", "minutes": 24, "lat": 43.7054, "lon": -79.3986 },
-    { "name": "Lawrence", "mode": "subway", "line": "Line 1", "minutes": 28, "lat": 43.7253, "lon": -79.4024 },
-    { "name": "York Mills", "mode": "subway", "line": "Line 1", "minutes": 31, "lat": 43.7440, "lon": -79.4067 },
-    { "name": "Sheppard-Yonge", "mode": "subway", "line": "Line 1", "minutes": 34, "lat": 43.7615, "lon": -79.4111 },
-    { "name": "North York Centre", "mode": "subway", "line": "Line 1", "minutes": 36, "lat": 43.7689, "lon": -79.4131 },
-    { "name": "Finch", "mode": "subway", "line": "Line 1", "minutes": 38, "lat": 43.7805, "lon": -79.4149 },
-
-    { "name": "St Andrew", "mode": "subway", "line": "Line 1", "minutes": 2, "lat": 43.6479, "lon": -79.3849 },
-    { "name": "Osgoode", "mode": "subway", "line": "Line 1", "minutes": 4, "lat": 43.6510, "lon": -79.3866 },
-    { "name": "St Patrick", "mode": "subway", "line": "Line 1", "minutes": 6, "lat": 43.6549, "lon": -79.3884 },
-    { "name": "Queen's Park", "mode": "subway", "line": "Line 1", "minutes": 8, "lat": 43.6597, "lon": -79.3906 },
-    { "name": "Museum", "mode": "subway", "line": "Line 1", "minutes": 11, "lat": 43.6672, "lon": -79.3936 },
-    { "name": "St George", "mode": "subway", "line": "Line 1", "minutes": 13, "lat": 43.6681, "lon": -79.3996 },
-    { "name": "Spadina", "mode": "subway", "line": "Line 1", "minutes": 15, "lat": 43.6674, "lon": -79.4039 },
-    { "name": "Dupont", "mode": "subway", "line": "Line 1", "minutes": 17, "lat": 43.6748, "lon": -79.4071 },
-    { "name": "St Clair West", "mode": "subway", "line": "Line 1", "minutes": 20, "lat": 43.6840, "lon": -79.4156 },
-    { "name": "Eglinton West (Cedarvale)", "mode": "subway", "line": "Line 1", "minutes": 24, "lat": 43.6987, "lon": -79.4358 },
-    { "name": "Glencairn", "mode": "subway", "line": "Line 1", "minutes": 27, "lat": 43.7088, "lon": -79.4408 },
-    { "name": "Lawrence West", "mode": "subway", "line": "Line 1", "minutes": 29, "lat": 43.7159, "lon": -79.4445 },
-    { "name": "Yorkdale", "mode": "subway", "line": "Line 1", "minutes": 31, "lat": 43.7248, "lon": -79.4476 },
-    { "name": "Wilson", "mode": "subway", "line": "Line 1", "minutes": 33, "lat": 43.7344, "lon": -79.4500 },
-    { "name": "Sheppard West", "mode": "subway", "line": "Line 1", "minutes": 36, "lat": 43.7497, "lon": -79.4623 },
-    { "name": "Downsview Park", "mode": "subway", "line": "Line 1", "minutes": 38, "lat": 43.7522, "lon": -79.4789 },
-    { "name": "Finch West", "mode": "subway", "line": "Line 1", "minutes": 40, "lat": 43.7651, "lon": -79.4905 },
-    { "name": "York University", "mode": "subway", "line": "Line 1", "minutes": 41, "lat": 43.7740, "lon": -79.4995 },
-    { "name": "Pioneer Village", "mode": "subway", "line": "Line 1", "minutes": 42, "lat": 43.7760, "lon": -79.5012 },
-    { "name": "Vaughan Metropolitan Centre", "mode": "subway", "line": "Line 1", "minutes": 44, "lat": 43.7942, "lon": -79.5274 },
-
-    { "name": "Bathurst", "mode": "subway", "line": "Line 2", "minutes": 17, "lat": 43.6665, "lon": -79.4112 },
-    { "name": "Christie", "mode": "subway", "line": "Line 2", "minutes": 19, "lat": 43.6644, "lon": -79.4185 },
-    { "name": "Ossington", "mode": "subway", "line": "Line 2", "minutes": 21, "lat": 43.6622, "lon": -79.4263 },
-    { "name": "Dufferin", "mode": "subway", "line": "Line 2", "minutes": 23, "lat": 43.6601, "lon": -79.4356 },
-    { "name": "Lansdowne", "mode": "subway", "line": "Line 2", "minutes": 25, "lat": 43.6591, "lon": -79.4426 },
-    { "name": "Dundas West", "mode": "subway", "line": "Line 2", "minutes": 27, "lat": 43.6571, "lon": -79.4526 },
-    { "name": "Keele", "mode": "subway", "line": "Line 2", "minutes": 29, "lat": 43.6557, "lon": -79.4597 },
-    { "name": "High Park", "mode": "subway", "line": "Line 2", "minutes": 31, "lat": 43.6539, "lon": -79.4663 },
-    { "name": "Runnymede", "mode": "subway", "line": "Line 2", "minutes": 33, "lat": 43.6519, "lon": -79.4759 },
-    { "name": "Jane", "mode": "subway", "line": "Line 2", "minutes": 35, "lat": 43.6497, "lon": -79.4839 },
-    { "name": "Old Mill", "mode": "subway", "line": "Line 2", "minutes": 37, "lat": 43.6504, "lon": -79.4948 },
-    { "name": "Royal York", "mode": "subway", "line": "Line 2", "minutes": 39, "lat": 43.6483, "lon": -79.5113 },
-    { "name": "Islington", "mode": "subway", "line": "Line 2", "minutes": 41, "lat": 43.6452, "lon": -79.5237 },
-    { "name": "Kipling", "mode": "subway", "line": "Line 2", "minutes": 43, "lat": 43.6371, "lon": -79.5357 },
-
-    { "name": "Sherbourne", "mode": "subway", "line": "Line 2", "minutes": 16, "lat": 43.6722, "lon": -79.3766 },
-    { "name": "Castle Frank", "mode": "subway", "line": "Line 2", "minutes": 18, "lat": 43.6736, "lon": -79.3686 },
-    { "name": "Broadview", "mode": "subway", "line": "Line 2", "minutes": 20, "lat": 43.6769, "lon": -79.3589 },
-    { "name": "Chester", "mode": "subway", "line": "Line 2", "minutes": 22, "lat": 43.6784, "lon": -79.3526 },
-    { "name": "Pape", "mode": "subway", "line": "Line 2", "minutes": 24, "lat": 43.6797, "lon": -79.3450 },
-    { "name": "Donlands", "mode": "subway", "line": "Line 2", "minutes": 26, "lat": 43.6810, "lon": -79.3382 },
-    { "name": "Greenwood", "mode": "subway", "line": "Line 2", "minutes": 28, "lat": 43.6824, "lon": -79.3304 },
-    { "name": "Coxwell", "mode": "subway", "line": "Line 2", "minutes": 30, "lat": 43.6841, "lon": -79.3229 },
-    { "name": "Woodbine", "mode": "subway", "line": "Line 2", "minutes": 32, "lat": 43.6867, "lon": -79.3127 },
-    { "name": "Main Street", "mode": "subway", "line": "Line 2", "minutes": 34, "lat": 43.6890, "lon": -79.3017 },
-    { "name": "Victoria Park", "mode": "subway", "line": "Line 2", "minutes": 36, "lat": 43.6952, "lon": -79.2887 },
-    { "name": "Warden", "mode": "subway", "line": "Line 2", "minutes": 39, "lat": 43.7113, "lon": -79.2796 },
-    { "name": "Kennedy", "mode": "subway", "line": "Line 2", "minutes": 42, "lat": 43.7323, "lon": -79.2636 },
-
-    { "name": "Bayview", "mode": "subway", "line": "Line 4", "minutes": 37, "lat": 43.7672, "lon": -79.3866 },
-    { "name": "Bessarion", "mode": "subway", "line": "Line 4", "minutes": 39, "lat": 43.7692, "lon": -79.3766 },
-    { "name": "Leslie", "mode": "subway", "line": "Line 4", "minutes": 41, "lat": 43.7710, "lon": -79.3654 },
-    { "name": "Don Mills", "mode": "subway", "line": "Line 4", "minutes": 43, "lat": 43.7757, "lon": -79.3464 },
-
-    { "name": "Exhibition GO", "mode": "go", "line": "Lakeshore West", "minutes": 8, "lat": 43.6342, "lon": -79.4186 },
-    { "name": "Mimico GO", "mode": "go", "line": "Lakeshore West", "minutes": 16, "lat": 43.6166, "lon": -79.4990 },
-    { "name": "Long Branch GO", "mode": "go", "line": "Lakeshore West", "minutes": 22, "lat": 43.5928, "lon": -79.5430 },
-    { "name": "Port Credit GO", "mode": "go", "line": "Lakeshore West", "minutes": 27, "lat": 43.5547, "lon": -79.5870 },
-    { "name": "Clarkson GO", "mode": "go", "line": "Lakeshore West", "minutes": 33, "lat": 43.5158, "lon": -79.6362 },
-    { "name": "Oakville GO", "mode": "go", "line": "Lakeshore West", "minutes": 40, "lat": 43.4561, "lon": -79.6833 },
-    { "name": "Bronte GO", "mode": "go", "line": "Lakeshore West", "minutes": 46, "lat": 43.4007, "lon": -79.7120 },
-    { "name": "Appleby GO", "mode": "go", "line": "Lakeshore West", "minutes": 50, "lat": 43.3812, "lon": -79.7710 },
-    { "name": "Burlington GO", "mode": "go", "line": "Lakeshore West", "minutes": 55, "lat": 43.3349, "lon": -79.8070 },
-    { "name": "Aldershot GO", "mode": "go", "line": "Lakeshore West", "minutes": 60, "lat": 43.3107, "lon": -79.8470 },
-    { "name": "Hamilton (West Harbour) GO", "mode": "go", "line": "Lakeshore West", "minutes": 70, "lat": 43.2675, "lon": -79.8650 },
-
-    { "name": "Danforth GO", "mode": "go", "line": "Lakeshore East", "minutes": 10, "lat": 43.6857, "lon": -79.3126 },
-    { "name": "Scarborough GO", "mode": "go", "line": "Lakeshore East", "minutes": 18, "lat": 43.7338, "lon": -79.2592 },
-    { "name": "Eglinton GO", "mode": "go", "line": "Lakeshore East", "minutes": 22, "lat": 43.7390, "lon": -79.2650 },
-    { "name": "Guildwood GO", "mode": "go", "line": "Lakeshore East", "minutes": 27, "lat": 43.7549, "lon": -79.1986 },
-    { "name": "Rouge Hill GO", "mode": "go", "line": "Lakeshore East", "minutes": 33, "lat": 43.7796, "lon": -79.1330 },
-    { "name": "Pickering GO", "mode": "go", "line": "Lakeshore East", "minutes": 38, "lat": 43.8316, "lon": -79.0866 },
-    { "name": "Ajax GO", "mode": "go", "line": "Lakeshore East", "minutes": 43, "lat": 43.8530, "lon": -79.0290 },
-    { "name": "Whitby GO", "mode": "go", "line": "Lakeshore East", "minutes": 50, "lat": 43.8640, "lon": -78.9430 },
-    { "name": "Oshawa GO", "mode": "go", "line": "Lakeshore East", "minutes": 58, "lat": 43.8770, "lon": -78.8530 },
-
-    { "name": "Bloor GO", "mode": "go", "line": "Kitchener", "minutes": 9, "lat": 43.6577, "lon": -79.4503 },
-    { "name": "Weston GO", "mode": "go", "line": "Kitchener", "minutes": 18, "lat": 43.7000, "lon": -79.5110 },
-    { "name": "Etobicoke North GO", "mode": "go", "line": "Kitchener", "minutes": 22, "lat": 43.7060, "lon": -79.5570 },
-    { "name": "Malton GO", "mode": "go", "line": "Kitchener", "minutes": 28, "lat": 43.7060, "lon": -79.6390 },
-    { "name": "Bramalea GO", "mode": "go", "line": "Kitchener", "minutes": 34, "lat": 43.7140, "lon": -79.6900 },
-    { "name": "Brampton GO", "mode": "go", "line": "Kitchener", "minutes": 40, "lat": 43.6910, "lon": -79.7560 },
-    { "name": "Mount Pleasant GO", "mode": "go", "line": "Kitchener", "minutes": 45, "lat": 43.6630, "lon": -79.7960 },
-    { "name": "Georgetown GO", "mode": "go", "line": "Kitchener", "minutes": 60, "lat": 43.6470, "lon": -79.9180 },
-    { "name": "Guelph Central GO", "mode": "go", "line": "Kitchener", "minutes": 85, "lat": 43.5430, "lon": -80.2470 },
-    { "name": "Kitchener GO", "mode": "go", "line": "Kitchener", "minutes": 100, "lat": 43.4530, "lon": -80.5160 },
-
-    { "name": "Bloor UP", "mode": "up", "line": "UP Express", "minutes": 9, "lat": 43.6577, "lon": -79.4503 },
-    { "name": "Weston UP", "mode": "up", "line": "UP Express", "minutes": 14, "lat": 43.7000, "lon": -79.5110 },
-    { "name": "Pearson Airport UP", "mode": "up", "line": "UP Express", "minutes": 25, "lat": 43.6777, "lon": -79.6248 },
-
-    { "name": "Downsview Park GO", "mode": "go", "line": "Barrie", "minutes": 22, "lat": 43.7522, "lon": -79.4789 },
-    { "name": "Rutherford GO", "mode": "go", "line": "Barrie", "minutes": 35, "lat": 43.8430, "lon": -79.5230 },
-    { "name": "Maple GO", "mode": "go", "line": "Barrie", "minutes": 40, "lat": 43.8560, "lon": -79.5140 },
-    { "name": "King City GO", "mode": "go", "line": "Barrie", "minutes": 48, "lat": 43.9210, "lon": -79.5290 },
-    { "name": "Aurora GO", "mode": "go", "line": "Barrie", "minutes": 55, "lat": 44.0000, "lon": -79.4630 },
-    { "name": "Newmarket GO", "mode": "go", "line": "Barrie", "minutes": 62, "lat": 44.0480, "lon": -79.4830 },
-    { "name": "East Gwillimbury GO", "mode": "go", "line": "Barrie", "minutes": 70, "lat": 44.1050, "lon": -79.4380 },
-    { "name": "Bradford GO", "mode": "go", "line": "Barrie", "minutes": 80, "lat": 44.1140, "lon": -79.5790 },
-    { "name": "Barrie South GO", "mode": "go", "line": "Barrie", "minutes": 95, "lat": 44.3290, "lon": -79.6470 },
-    { "name": "Allandale Waterfront GO", "mode": "go", "line": "Barrie", "minutes": 100, "lat": 44.3680, "lon": -79.6900 },
-
-    { "name": "Kennedy GO", "mode": "go", "line": "Stouffville", "minutes": 22, "lat": 43.7320, "lon": -79.2640 },
-    { "name": "Agincourt GO", "mode": "go", "line": "Stouffville", "minutes": 28, "lat": 43.7860, "lon": -79.2860 },
-    { "name": "Milliken GO", "mode": "go", "line": "Stouffville", "minutes": 33, "lat": 43.8230, "lon": -79.3010 },
-    { "name": "Unionville GO", "mode": "go", "line": "Stouffville", "minutes": 40, "lat": 43.8650, "lon": -79.3170 },
-    { "name": "Markham GO", "mode": "go", "line": "Stouffville", "minutes": 45, "lat": 43.8700, "lon": -79.2620 },
-    { "name": "Mount Joy GO", "mode": "go", "line": "Stouffville", "minutes": 50, "lat": 43.8920, "lon": -79.2520 },
-    { "name": "Stouffville GO", "mode": "go", "line": "Stouffville", "minutes": 60, "lat": 43.9700, "lon": -79.2440 },
-
-    { "name": "Kipling GO", "mode": "go", "line": "Milton", "minutes": 17, "lat": 43.6360, "lon": -79.5360 },
-    { "name": "Dixie GO", "mode": "go", "line": "Milton", "minutes": 24, "lat": 43.6260, "lon": -79.5800 },
-    { "name": "Cooksville GO", "mode": "go", "line": "Milton", "minutes": 30, "lat": 43.5870, "lon": -79.6170 },
-    { "name": "Erindale GO", "mode": "go", "line": "Milton", "minutes": 35, "lat": 43.5760, "lon": -79.6580 },
-    { "name": "Streetsville GO", "mode": "go", "line": "Milton", "minutes": 40, "lat": 43.5840, "lon": -79.7100 },
-    { "name": "Meadowvale GO", "mode": "go", "line": "Milton", "minutes": 45, "lat": 43.5990, "lon": -79.7460 },
-    { "name": "Lisgar GO", "mode": "go", "line": "Milton", "minutes": 50, "lat": 43.5840, "lon": -79.7790 },
-    { "name": "Milton GO", "mode": "go", "line": "Milton", "minutes": 58, "lat": 43.5230, "lon": -79.8830 },
-
-    { "name": "Oriole GO", "mode": "go", "line": "Richmond Hill", "minutes": 28, "lat": 43.7770, "lon": -79.3640 },
-    { "name": "Old Cummer GO", "mode": "go", "line": "Richmond Hill", "minutes": 33, "lat": 43.7960, "lon": -79.3760 },
-    { "name": "Langstaff GO", "mode": "go", "line": "Richmond Hill", "minutes": 40, "lat": 43.8470, "lon": -79.4220 },
-    { "name": "Richmond Hill GO", "mode": "go", "line": "Richmond Hill", "minutes": 45, "lat": 43.8720, "lon": -79.4270 }
+    {
+      "name": "Union Station",
+      "mode": "origin",
+      "line": "Origin",
+      "minutes": 0,
+      "lat": 43.6453,
+      "lon": -79.3806
+    },
+    {
+      "name": "King",
+      "mode": "subway",
+      "line": "Line 1",
+      "minutes": 3,
+      "lat": 43.6492,
+      "lon": -79.3779
+    },
+    {
+      "name": "Queen",
+      "mode": "subway",
+      "line": "Line 1",
+      "minutes": 5,
+      "lat": 43.6525,
+      "lon": -79.3793
+    },
+    {
+      "name": "Dundas",
+      "mode": "subway",
+      "line": "Line 1",
+      "minutes": 7,
+      "lat": 43.6561,
+      "lon": -79.3807
+    },
+    {
+      "name": "College",
+      "mode": "subway",
+      "line": "Line 1",
+      "minutes": 9,
+      "lat": 43.6614,
+      "lon": -79.3832
+    },
+    {
+      "name": "Wellesley",
+      "mode": "subway",
+      "line": "Line 1",
+      "minutes": 11,
+      "lat": 43.6655,
+      "lon": -79.3838
+    },
+    {
+      "name": "Bloor-Yonge",
+      "mode": "subway",
+      "line": "Line 1",
+      "minutes": 13,
+      "lat": 43.6709,
+      "lon": -79.3857
+    },
+    {
+      "name": "Rosedale",
+      "mode": "subway",
+      "line": "Line 1",
+      "minutes": 15,
+      "lat": 43.6772,
+      "lon": -79.3886
+    },
+    {
+      "name": "Summerhill",
+      "mode": "subway",
+      "line": "Line 1",
+      "minutes": 17,
+      "lat": 43.6824,
+      "lon": -79.3905
+    },
+    {
+      "name": "St Clair",
+      "mode": "subway",
+      "line": "Line 1",
+      "minutes": 19,
+      "lat": 43.6878,
+      "lon": -79.3931
+    },
+    {
+      "name": "Davisville",
+      "mode": "subway",
+      "line": "Line 1",
+      "minutes": 22,
+      "lat": 43.6976,
+      "lon": -79.3973
+    },
+    {
+      "name": "Eglinton",
+      "mode": "subway",
+      "line": "Line 1",
+      "minutes": 24,
+      "lat": 43.7054,
+      "lon": -79.3986
+    },
+    {
+      "name": "Lawrence",
+      "mode": "subway",
+      "line": "Line 1",
+      "minutes": 28,
+      "lat": 43.7253,
+      "lon": -79.4024
+    },
+    {
+      "name": "York Mills",
+      "mode": "subway",
+      "line": "Line 1",
+      "minutes": 31,
+      "lat": 43.744,
+      "lon": -79.4067
+    },
+    {
+      "name": "Sheppard-Yonge",
+      "mode": "subway",
+      "line": "Line 1",
+      "minutes": 34,
+      "lat": 43.7615,
+      "lon": -79.4111
+    },
+    {
+      "name": "North York Centre",
+      "mode": "subway",
+      "line": "Line 1",
+      "minutes": 36,
+      "lat": 43.7689,
+      "lon": -79.4131
+    },
+    {
+      "name": "Finch",
+      "mode": "subway",
+      "line": "Line 1",
+      "minutes": 38,
+      "lat": 43.7805,
+      "lon": -79.4149
+    },
+    {
+      "name": "St Andrew",
+      "mode": "subway",
+      "line": "Line 1",
+      "minutes": 2,
+      "lat": 43.6479,
+      "lon": -79.3849
+    },
+    {
+      "name": "Osgoode",
+      "mode": "subway",
+      "line": "Line 1",
+      "minutes": 4,
+      "lat": 43.651,
+      "lon": -79.3866
+    },
+    {
+      "name": "St Patrick",
+      "mode": "subway",
+      "line": "Line 1",
+      "minutes": 6,
+      "lat": 43.6549,
+      "lon": -79.3884
+    },
+    {
+      "name": "Queen's Park",
+      "mode": "subway",
+      "line": "Line 1",
+      "minutes": 8,
+      "lat": 43.6597,
+      "lon": -79.3906
+    },
+    {
+      "name": "Museum",
+      "mode": "subway",
+      "line": "Line 1",
+      "minutes": 11,
+      "lat": 43.6672,
+      "lon": -79.3936
+    },
+    {
+      "name": "St George",
+      "mode": "subway",
+      "line": "Line 1",
+      "minutes": 13,
+      "lat": 43.6681,
+      "lon": -79.3996
+    },
+    {
+      "name": "Spadina",
+      "mode": "subway",
+      "line": "Line 1",
+      "minutes": 15,
+      "lat": 43.6674,
+      "lon": -79.4039
+    },
+    {
+      "name": "Dupont",
+      "mode": "subway",
+      "line": "Line 1",
+      "minutes": 17,
+      "lat": 43.6748,
+      "lon": -79.4071
+    },
+    {
+      "name": "St Clair West",
+      "mode": "subway",
+      "line": "Line 1",
+      "minutes": 20,
+      "lat": 43.684,
+      "lon": -79.4156
+    },
+    {
+      "name": "Eglinton West (Cedarvale)",
+      "mode": "subway",
+      "line": "Line 1",
+      "minutes": 24,
+      "lat": 43.6987,
+      "lon": -79.4358
+    },
+    {
+      "name": "Glencairn",
+      "mode": "subway",
+      "line": "Line 1",
+      "minutes": 27,
+      "lat": 43.7088,
+      "lon": -79.4408
+    },
+    {
+      "name": "Lawrence West",
+      "mode": "subway",
+      "line": "Line 1",
+      "minutes": 29,
+      "lat": 43.7159,
+      "lon": -79.4445
+    },
+    {
+      "name": "Yorkdale",
+      "mode": "subway",
+      "line": "Line 1",
+      "minutes": 31,
+      "lat": 43.7248,
+      "lon": -79.4476
+    },
+    {
+      "name": "Wilson",
+      "mode": "subway",
+      "line": "Line 1",
+      "minutes": 33,
+      "lat": 43.7344,
+      "lon": -79.45
+    },
+    {
+      "name": "Sheppard West",
+      "mode": "subway",
+      "line": "Line 1",
+      "minutes": 36,
+      "lat": 43.7497,
+      "lon": -79.4623
+    },
+    {
+      "name": "Downsview Park",
+      "mode": "subway",
+      "line": "Line 1",
+      "minutes": 38,
+      "lat": 43.7522,
+      "lon": -79.4789
+    },
+    {
+      "name": "Finch West",
+      "mode": "subway",
+      "line": "Line 1",
+      "minutes": 40,
+      "lat": 43.7651,
+      "lon": -79.4905
+    },
+    {
+      "name": "York University",
+      "mode": "subway",
+      "line": "Line 1",
+      "minutes": 41,
+      "lat": 43.774,
+      "lon": -79.4995
+    },
+    {
+      "name": "Pioneer Village",
+      "mode": "subway",
+      "line": "Line 1",
+      "minutes": 42,
+      "lat": 43.776,
+      "lon": -79.5012
+    },
+    {
+      "name": "Vaughan Metropolitan Centre",
+      "mode": "subway",
+      "line": "Line 1",
+      "minutes": 44,
+      "lat": 43.7942,
+      "lon": -79.5274
+    },
+    {
+      "name": "Bathurst",
+      "mode": "subway",
+      "line": "Line 2",
+      "minutes": 17,
+      "lat": 43.6665,
+      "lon": -79.4112
+    },
+    {
+      "name": "Christie",
+      "mode": "subway",
+      "line": "Line 2",
+      "minutes": 19,
+      "lat": 43.6644,
+      "lon": -79.4185
+    },
+    {
+      "name": "Ossington",
+      "mode": "subway",
+      "line": "Line 2",
+      "minutes": 21,
+      "lat": 43.6622,
+      "lon": -79.4263
+    },
+    {
+      "name": "Dufferin",
+      "mode": "subway",
+      "line": "Line 2",
+      "minutes": 23,
+      "lat": 43.6601,
+      "lon": -79.4356
+    },
+    {
+      "name": "Lansdowne",
+      "mode": "subway",
+      "line": "Line 2",
+      "minutes": 25,
+      "lat": 43.6591,
+      "lon": -79.4426
+    },
+    {
+      "name": "Dundas West",
+      "mode": "subway",
+      "line": "Line 2",
+      "minutes": 27,
+      "lat": 43.6571,
+      "lon": -79.4526
+    },
+    {
+      "name": "Keele",
+      "mode": "subway",
+      "line": "Line 2",
+      "minutes": 29,
+      "lat": 43.6557,
+      "lon": -79.4597
+    },
+    {
+      "name": "High Park",
+      "mode": "subway",
+      "line": "Line 2",
+      "minutes": 31,
+      "lat": 43.6539,
+      "lon": -79.4663
+    },
+    {
+      "name": "Runnymede",
+      "mode": "subway",
+      "line": "Line 2",
+      "minutes": 33,
+      "lat": 43.6519,
+      "lon": -79.4759
+    },
+    {
+      "name": "Jane",
+      "mode": "subway",
+      "line": "Line 2",
+      "minutes": 35,
+      "lat": 43.6497,
+      "lon": -79.4839
+    },
+    {
+      "name": "Old Mill",
+      "mode": "subway",
+      "line": "Line 2",
+      "minutes": 37,
+      "lat": 43.6504,
+      "lon": -79.4948
+    },
+    {
+      "name": "Royal York",
+      "mode": "subway",
+      "line": "Line 2",
+      "minutes": 39,
+      "lat": 43.6483,
+      "lon": -79.5113
+    },
+    {
+      "name": "Islington",
+      "mode": "subway",
+      "line": "Line 2",
+      "minutes": 41,
+      "lat": 43.6452,
+      "lon": -79.5237
+    },
+    {
+      "name": "Kipling",
+      "mode": "subway",
+      "line": "Line 2",
+      "minutes": 43,
+      "lat": 43.6371,
+      "lon": -79.5357
+    },
+    {
+      "name": "Sherbourne",
+      "mode": "subway",
+      "line": "Line 2",
+      "minutes": 16,
+      "lat": 43.6722,
+      "lon": -79.3766
+    },
+    {
+      "name": "Castle Frank",
+      "mode": "subway",
+      "line": "Line 2",
+      "minutes": 18,
+      "lat": 43.6736,
+      "lon": -79.3686
+    },
+    {
+      "name": "Broadview",
+      "mode": "subway",
+      "line": "Line 2",
+      "minutes": 20,
+      "lat": 43.6769,
+      "lon": -79.3589
+    },
+    {
+      "name": "Chester",
+      "mode": "subway",
+      "line": "Line 2",
+      "minutes": 22,
+      "lat": 43.6784,
+      "lon": -79.3526
+    },
+    {
+      "name": "Pape",
+      "mode": "subway",
+      "line": "Line 2",
+      "minutes": 24,
+      "lat": 43.6797,
+      "lon": -79.345
+    },
+    {
+      "name": "Donlands",
+      "mode": "subway",
+      "line": "Line 2",
+      "minutes": 26,
+      "lat": 43.681,
+      "lon": -79.3382
+    },
+    {
+      "name": "Greenwood",
+      "mode": "subway",
+      "line": "Line 2",
+      "minutes": 28,
+      "lat": 43.6824,
+      "lon": -79.3304
+    },
+    {
+      "name": "Coxwell",
+      "mode": "subway",
+      "line": "Line 2",
+      "minutes": 30,
+      "lat": 43.6841,
+      "lon": -79.3229
+    },
+    {
+      "name": "Woodbine",
+      "mode": "subway",
+      "line": "Line 2",
+      "minutes": 32,
+      "lat": 43.6867,
+      "lon": -79.3127
+    },
+    {
+      "name": "Main Street",
+      "mode": "subway",
+      "line": "Line 2",
+      "minutes": 34,
+      "lat": 43.689,
+      "lon": -79.3017
+    },
+    {
+      "name": "Victoria Park",
+      "mode": "subway",
+      "line": "Line 2",
+      "minutes": 36,
+      "lat": 43.6952,
+      "lon": -79.2887
+    },
+    {
+      "name": "Warden",
+      "mode": "subway",
+      "line": "Line 2",
+      "minutes": 39,
+      "lat": 43.7113,
+      "lon": -79.2796
+    },
+    {
+      "name": "Kennedy",
+      "mode": "subway",
+      "line": "Line 2",
+      "minutes": 42,
+      "lat": 43.7323,
+      "lon": -79.2636
+    },
+    {
+      "name": "Bayview",
+      "mode": "subway",
+      "line": "Line 4",
+      "minutes": 37,
+      "lat": 43.7672,
+      "lon": -79.3866
+    },
+    {
+      "name": "Bessarion",
+      "mode": "subway",
+      "line": "Line 4",
+      "minutes": 39,
+      "lat": 43.7692,
+      "lon": -79.3766
+    },
+    {
+      "name": "Leslie",
+      "mode": "subway",
+      "line": "Line 4",
+      "minutes": 41,
+      "lat": 43.771,
+      "lon": -79.3654
+    },
+    {
+      "name": "Don Mills",
+      "mode": "subway",
+      "line": "Line 4",
+      "minutes": 43,
+      "lat": 43.7757,
+      "lon": -79.3464
+    },
+    {
+      "name": "Exhibition GO",
+      "mode": "go",
+      "line": "Lakeshore West",
+      "minutes": 8,
+      "lat": 43.6342,
+      "lon": -79.4186
+    },
+    {
+      "name": "Mimico GO",
+      "mode": "go",
+      "line": "Lakeshore West",
+      "minutes": 16,
+      "lat": 43.6166,
+      "lon": -79.499
+    },
+    {
+      "name": "Long Branch GO",
+      "mode": "go",
+      "line": "Lakeshore West",
+      "minutes": 22,
+      "lat": 43.5928,
+      "lon": -79.543
+    },
+    {
+      "name": "Port Credit GO",
+      "mode": "go",
+      "line": "Lakeshore West",
+      "minutes": 27,
+      "lat": 43.5547,
+      "lon": -79.587
+    },
+    {
+      "name": "Clarkson GO",
+      "mode": "go",
+      "line": "Lakeshore West",
+      "minutes": 33,
+      "lat": 43.5158,
+      "lon": -79.6362
+    },
+    {
+      "name": "Oakville GO",
+      "mode": "go",
+      "line": "Lakeshore West",
+      "minutes": 40,
+      "lat": 43.4561,
+      "lon": -79.6833
+    },
+    {
+      "name": "Bronte GO",
+      "mode": "go",
+      "line": "Lakeshore West",
+      "minutes": 46,
+      "lat": 43.4007,
+      "lon": -79.712
+    },
+    {
+      "name": "Appleby GO",
+      "mode": "go",
+      "line": "Lakeshore West",
+      "minutes": 50,
+      "lat": 43.3812,
+      "lon": -79.771
+    },
+    {
+      "name": "Burlington GO",
+      "mode": "go",
+      "line": "Lakeshore West",
+      "minutes": 55,
+      "lat": 43.3349,
+      "lon": -79.807
+    },
+    {
+      "name": "Aldershot GO",
+      "mode": "go",
+      "line": "Lakeshore West",
+      "minutes": 60,
+      "lat": 43.3107,
+      "lon": -79.847
+    },
+    {
+      "name": "Hamilton (West Harbour) GO",
+      "mode": "go",
+      "line": "Lakeshore West",
+      "minutes": 70,
+      "lat": 43.2675,
+      "lon": -79.865
+    },
+    {
+      "name": "Danforth GO",
+      "mode": "go",
+      "line": "Lakeshore East",
+      "minutes": 10,
+      "lat": 43.6857,
+      "lon": -79.3126
+    },
+    {
+      "name": "Scarborough GO",
+      "mode": "go",
+      "line": "Lakeshore East",
+      "minutes": 18,
+      "lat": 43.7338,
+      "lon": -79.2592
+    },
+    {
+      "name": "Eglinton GO",
+      "mode": "go",
+      "line": "Lakeshore East",
+      "minutes": 22,
+      "lat": 43.739,
+      "lon": -79.265
+    },
+    {
+      "name": "Guildwood GO",
+      "mode": "go",
+      "line": "Lakeshore East",
+      "minutes": 27,
+      "lat": 43.7549,
+      "lon": -79.1986
+    },
+    {
+      "name": "Rouge Hill GO",
+      "mode": "go",
+      "line": "Lakeshore East",
+      "minutes": 33,
+      "lat": 43.7796,
+      "lon": -79.133
+    },
+    {
+      "name": "Pickering GO",
+      "mode": "go",
+      "line": "Lakeshore East",
+      "minutes": 38,
+      "lat": 43.8316,
+      "lon": -79.0866
+    },
+    {
+      "name": "Ajax GO",
+      "mode": "go",
+      "line": "Lakeshore East",
+      "minutes": 43,
+      "lat": 43.853,
+      "lon": -79.029
+    },
+    {
+      "name": "Whitby GO",
+      "mode": "go",
+      "line": "Lakeshore East",
+      "minutes": 50,
+      "lat": 43.864,
+      "lon": -78.943
+    },
+    {
+      "name": "Oshawa GO",
+      "mode": "go",
+      "line": "Lakeshore East",
+      "minutes": 58,
+      "lat": 43.877,
+      "lon": -78.853
+    },
+    {
+      "name": "Bloor GO",
+      "mode": "go",
+      "line": "Kitchener",
+      "minutes": 9,
+      "lat": 43.6577,
+      "lon": -79.4503
+    },
+    {
+      "name": "Weston GO",
+      "mode": "go",
+      "line": "Kitchener",
+      "minutes": 18,
+      "lat": 43.7,
+      "lon": -79.511
+    },
+    {
+      "name": "Etobicoke North GO",
+      "mode": "go",
+      "line": "Kitchener",
+      "minutes": 22,
+      "lat": 43.706,
+      "lon": -79.557
+    },
+    {
+      "name": "Malton GO",
+      "mode": "go",
+      "line": "Kitchener",
+      "minutes": 28,
+      "lat": 43.706,
+      "lon": -79.639
+    },
+    {
+      "name": "Bramalea GO",
+      "mode": "go",
+      "line": "Kitchener",
+      "minutes": 34,
+      "lat": 43.714,
+      "lon": -79.69
+    },
+    {
+      "name": "Brampton GO",
+      "mode": "go",
+      "line": "Kitchener",
+      "minutes": 40,
+      "lat": 43.691,
+      "lon": -79.756
+    },
+    {
+      "name": "Mount Pleasant GO",
+      "mode": "go",
+      "line": "Kitchener",
+      "minutes": 45,
+      "lat": 43.663,
+      "lon": -79.796
+    },
+    {
+      "name": "Georgetown GO",
+      "mode": "go",
+      "line": "Kitchener",
+      "minutes": 60,
+      "lat": 43.647,
+      "lon": -79.918
+    },
+    {
+      "name": "Guelph Central GO",
+      "mode": "go",
+      "line": "Kitchener",
+      "minutes": 85,
+      "lat": 43.543,
+      "lon": -80.247
+    },
+    {
+      "name": "Kitchener GO",
+      "mode": "go",
+      "line": "Kitchener",
+      "minutes": 100,
+      "lat": 43.453,
+      "lon": -80.516
+    },
+    {
+      "name": "Bloor UP",
+      "mode": "up",
+      "line": "UP Express",
+      "minutes": 9,
+      "lat": 43.6577,
+      "lon": -79.4503
+    },
+    {
+      "name": "Weston UP",
+      "mode": "up",
+      "line": "UP Express",
+      "minutes": 14,
+      "lat": 43.7,
+      "lon": -79.511
+    },
+    {
+      "name": "Pearson Airport UP",
+      "mode": "up",
+      "line": "UP Express",
+      "minutes": 25,
+      "lat": 43.6777,
+      "lon": -79.6248
+    },
+    {
+      "name": "Downsview Park GO",
+      "mode": "go",
+      "line": "Barrie",
+      "minutes": 22,
+      "lat": 43.7522,
+      "lon": -79.4789
+    },
+    {
+      "name": "Rutherford GO",
+      "mode": "go",
+      "line": "Barrie",
+      "minutes": 35,
+      "lat": 43.843,
+      "lon": -79.523
+    },
+    {
+      "name": "Maple GO",
+      "mode": "go",
+      "line": "Barrie",
+      "minutes": 40,
+      "lat": 43.856,
+      "lon": -79.514
+    },
+    {
+      "name": "King City GO",
+      "mode": "go",
+      "line": "Barrie",
+      "minutes": 48,
+      "lat": 43.921,
+      "lon": -79.529
+    },
+    {
+      "name": "Aurora GO",
+      "mode": "go",
+      "line": "Barrie",
+      "minutes": 55,
+      "lat": 44.0,
+      "lon": -79.463
+    },
+    {
+      "name": "Newmarket GO",
+      "mode": "go",
+      "line": "Barrie",
+      "minutes": 62,
+      "lat": 44.048,
+      "lon": -79.483
+    },
+    {
+      "name": "East Gwillimbury GO",
+      "mode": "go",
+      "line": "Barrie",
+      "minutes": 70,
+      "lat": 44.105,
+      "lon": -79.438
+    },
+    {
+      "name": "Bradford GO",
+      "mode": "go",
+      "line": "Barrie",
+      "minutes": 80,
+      "lat": 44.114,
+      "lon": -79.579
+    },
+    {
+      "name": "Barrie South GO",
+      "mode": "go",
+      "line": "Barrie",
+      "minutes": 95,
+      "lat": 44.329,
+      "lon": -79.647
+    },
+    {
+      "name": "Allandale Waterfront GO",
+      "mode": "go",
+      "line": "Barrie",
+      "minutes": 100,
+      "lat": 44.368,
+      "lon": -79.69
+    },
+    {
+      "name": "Kennedy GO",
+      "mode": "go",
+      "line": "Stouffville",
+      "minutes": 22,
+      "lat": 43.732,
+      "lon": -79.264
+    },
+    {
+      "name": "Agincourt GO",
+      "mode": "go",
+      "line": "Stouffville",
+      "minutes": 28,
+      "lat": 43.786,
+      "lon": -79.286
+    },
+    {
+      "name": "Milliken GO",
+      "mode": "go",
+      "line": "Stouffville",
+      "minutes": 33,
+      "lat": 43.823,
+      "lon": -79.301
+    },
+    {
+      "name": "Unionville GO",
+      "mode": "go",
+      "line": "Stouffville",
+      "minutes": 40,
+      "lat": 43.865,
+      "lon": -79.317
+    },
+    {
+      "name": "Markham GO",
+      "mode": "go",
+      "line": "Stouffville",
+      "minutes": 45,
+      "lat": 43.87,
+      "lon": -79.262
+    },
+    {
+      "name": "Mount Joy GO",
+      "mode": "go",
+      "line": "Stouffville",
+      "minutes": 50,
+      "lat": 43.892,
+      "lon": -79.252
+    },
+    {
+      "name": "Stouffville GO",
+      "mode": "go",
+      "line": "Stouffville",
+      "minutes": 60,
+      "lat": 43.97,
+      "lon": -79.244
+    },
+    {
+      "name": "Kipling GO",
+      "mode": "go",
+      "line": "Milton",
+      "minutes": 17,
+      "lat": 43.636,
+      "lon": -79.536
+    },
+    {
+      "name": "Dixie GO",
+      "mode": "go",
+      "line": "Milton",
+      "minutes": 24,
+      "lat": 43.626,
+      "lon": -79.58
+    },
+    {
+      "name": "Cooksville GO",
+      "mode": "go",
+      "line": "Milton",
+      "minutes": 30,
+      "lat": 43.587,
+      "lon": -79.617
+    },
+    {
+      "name": "Erindale GO",
+      "mode": "go",
+      "line": "Milton",
+      "minutes": 35,
+      "lat": 43.576,
+      "lon": -79.658
+    },
+    {
+      "name": "Streetsville GO",
+      "mode": "go",
+      "line": "Milton",
+      "minutes": 40,
+      "lat": 43.584,
+      "lon": -79.71
+    },
+    {
+      "name": "Meadowvale GO",
+      "mode": "go",
+      "line": "Milton",
+      "minutes": 45,
+      "lat": 43.599,
+      "lon": -79.746
+    },
+    {
+      "name": "Lisgar GO",
+      "mode": "go",
+      "line": "Milton",
+      "minutes": 50,
+      "lat": 43.584,
+      "lon": -79.779
+    },
+    {
+      "name": "Milton GO",
+      "mode": "go",
+      "line": "Milton",
+      "minutes": 58,
+      "lat": 43.523,
+      "lon": -79.883
+    },
+    {
+      "name": "Oriole GO",
+      "mode": "go",
+      "line": "Richmond Hill",
+      "minutes": 28,
+      "lat": 43.777,
+      "lon": -79.364
+    },
+    {
+      "name": "Old Cummer GO",
+      "mode": "go",
+      "line": "Richmond Hill",
+      "minutes": 33,
+      "lat": 43.796,
+      "lon": -79.376
+    },
+    {
+      "name": "Langstaff GO",
+      "mode": "go",
+      "line": "Richmond Hill",
+      "minutes": 40,
+      "lat": 43.847,
+      "lon": -79.422
+    },
+    {
+      "name": "Richmond Hill GO",
+      "mode": "go",
+      "line": "Richmond Hill",
+      "minutes": 45,
+      "lat": 43.872,
+      "lon": -79.427
+    }
   ]
 }
