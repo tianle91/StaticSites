@@ -72,8 +72,19 @@ follows the standard needs no CI changes.
 
 ## Adding a project
 
-1. Create `<project>/` with the layout above.
-2. `cd <project> && uv init --bare && uv add <deps>` — then add the pytest config
-   block from [AGENTS.md](AGENTS.md) to `pyproject.toml`.
-3. Copy a `Makefile` from a sibling project and adjust the inputs and outputs.
-4. Add a row to the table at the top of this README.
+Use the scaffolder — it is the recommended way to start a project, and it writes
+the layout and target contract above for you:
+
+```bash
+./new-project.py my-new-map
+cd my-new-map && make && make test    # both pass immediately
+```
+
+The generated project is a working end-to-end placeholder: `src/fetch_data.py`
+writes `data/`, `src/build_site.py` renders `output/my-new-map.html` from it, and
+a smoke test covers the build. Replace those three with the real thing, fill in
+the `TODO`s in the project's `README.md`, and add a row to the table at the top
+of this README. CI picks the project up automatically — no workflow changes.
+
+Do not hand-roll a new project directory; scaffolding it is what keeps the four
+(and counting) projects identical in shape.

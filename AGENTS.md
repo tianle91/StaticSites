@@ -18,6 +18,30 @@ file. **Do not add one.** If two projects need the same helper, duplicating it i
 the right call here. Scope a change to a single project and read that project's
 own `README.md` first.
 
+The only repo-level code is [`new-project.py`](new-project.py), the scaffolder —
+see below.
+
+## Creating a project
+
+**Always scaffold; never hand-roll the directory.**
+
+```bash
+./new-project.py my-new-map
+```
+
+That writes the full standard layout and a working end-to-end placeholder, so
+`cd my-new-map && make && make test` passes immediately and CI picks it up with
+no workflow changes. Then replace `src/fetch_data.py` (the real upstream fetch),
+`src/build_site.py` (the real rendering), and the `TODO`s in the project's
+`README.md`, and add a row to the table in [README.md](README.md).
+
+The script is stdlib-only and runs on the system `python3` on purpose — there is
+no environment to set up before you can use it.
+
+**If you change the standard, change the scaffolder too.** Its templates are the
+executable copy of everything specified below; a divergence between them means
+the next project starts out wrong.
+
 ## The standard layout
 
 Every project has exactly this shape. It is what makes CI generic and what lets a
