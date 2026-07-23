@@ -1,8 +1,9 @@
 # data/
 
 `series.csv` is the committed quarterly grid the build renders from: columns
-`m2`, `sp500`, `dgs3mo`, `dgs2`, `dgs10`, `dgs30`, and one `fcf_<TICKER>` per
-basket member, indexed by calendar-quarter-end.
+`m2`, `sp500`, `dgs3mo`, `dgs2`, `dgs10`, `dgs30`, and one `fcf_<TICKER>` and
+`cash_<TICKER>` per basket member (free cash flow and quarter-end cash balance),
+indexed by calendar-quarter-end.
 
 `fcf_source.txt` (when present) records where the committed FCF numbers came
 from, as `label|url`, so the chart's "Data sources" footer attributes them
