@@ -27,9 +27,9 @@ make data     # refetch SEC EDGAR + FRED into data/series.csv (requires internet
 `uv` creates this project's `.venv` on first run. Targets follow the repo
 standard — see the [repo README](../README.md).
 
-`make data` pulls company fundamentals from SEC EDGAR, which asks every caller to
-identify itself. Set `SEC_USER_AGENT` to a string with your contact (requests
-without one get a 403):
+`make data` pulls company fundamentals from SEC EDGAR, which requires every
+caller to identify itself. **`SEC_USER_AGENT` is mandatory** — `make data` fails
+immediately if it is unset (SEC returns a 403 to unidentified requests):
 
 ```sh
 SEC_USER_AGENT="fcf-macro-indicators you@example.com" make data

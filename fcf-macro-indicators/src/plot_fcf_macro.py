@@ -26,12 +26,6 @@ ROOT = Path(__file__).resolve().parents[1]
 OUTPUT_DIR = ROOT / "output"
 SERIES_CSV = ROOT / "data" / "series.csv"
 PULLED_STAMP = ROOT / "data" / "generated_at.txt"  # written by fetch_data.py
-# Sentinel marking data/series.csv as illustrative sample values rather than a
-# real upstream pull. Present only when the committed CSV was generated without
-# network access; `make data` (fetch_data.py) deletes it on a successful real
-# fetch, so a real render is never watermarked. See data/README.md.
-SAMPLE_SENTINEL = ROOT / "data" / "SAMPLE_DATA.txt"
-SAMPLE_BANNER = "ILLUSTRATIVE SAMPLE DATA — not real; run `make data` to replace"
 
 # Browser tab / bookmark title for the HTML chart. Plotly's to_html() emits a
 # document with an empty <head> and no <title>, so we inject this one.
@@ -106,11 +100,6 @@ def data_pulled_date() -> str:
     if SERIES_CSV.exists():
         return date.fromtimestamp(SERIES_CSV.stat().st_mtime).isoformat()
     return ""
-
-
-def is_sample_data() -> bool:
-    """True when the committed series.csv is the labeled sample, not a real pull."""
-    return SAMPLE_SENTINEL.exists()
 
 
 def _quarter_end(ts: pd.Timestamp) -> pd.Timestamp:
@@ -201,19 +190,12 @@ def render_png(rebased: pd.DataFrame, out_path: Path) -> None:
 
     ax.axhline(100.0, color="#999999", linewidth=0.8, linestyle="--", alpha=0.7, zorder=1)
 
-    if is_sample_data():
-        ax.text(
-            0.5, 0.5, "SAMPLE DATA", transform=ax.transAxes,
-            fontsize=52, color="#d62728", alpha=0.12, rotation=24,
-            ha="center", va="center", zorder=0, fontweight="bold",
-        )
-
-    title = ("Free cash flow vs. M2, the S&P 500, and the Treasury curve "
-             f"(rebased to 100 at {anchor:%Y-%m-%d})")
-    if is_sample_data():
-        title = SAMPLE_BANNER + "\n" + title
-    ax.set_title(title, fontsize=12, pad=12,
-                 color="#d62728" if is_sample_data() else "black")
+    ax.set_title(
+        "Free cash flow vs. M2, the S&P 500, and the Treasury curve "
+        f"(rebased to 100 at {anchor:%Y-%m-%d})",
+        fontsize=12,
+        pad=12,
+    )
     ax.set_ylabel(f"Index (100 = each series at {anchor:%Y-%m-%d})", fontsize=10)
     ax.set_xlabel("Quarter-end")
     ax.xaxis.set_major_locator(mdates.MonthLocator(interval=3))
@@ -257,21 +239,11 @@ def render_html(rebased: pd.DataFrame, out_path: Path) -> None:
 
     fig.add_hline(y=100.0, line=dict(color="#999999", width=0.8, dash="dash"))
 
-    title_text = ("Free cash flow vs. M2, the S&P 500, and the Treasury curve "
-                  f"(rebased to 100 at {anchor:%Y-%m-%d})")
-    if is_sample_data():
-        title_text = (f"<span style='color:#d62728'>{SAMPLE_BANNER}</span><br>"
-                      + title_text)
-        fig.add_annotation(
-            text="SAMPLE DATA", xref="paper", yref="paper", x=0.5, y=0.5,
-            showarrow=False, font=dict(size=60, color="rgba(214,39,40,0.12)"),
-            textangle=-24,
-        )
-
     fig.update_layout(
         template="plotly_white",
         title=dict(
-            text=title_text,
+            text=("Free cash flow vs. M2, the S&P 500, and the Treasury curve "
+                  f"(rebased to 100 at {anchor:%Y-%m-%d})"),
             font=dict(size=14),
         ),
         hovermode="x unified",

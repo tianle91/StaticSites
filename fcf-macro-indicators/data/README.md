@@ -4,19 +4,17 @@
 `m2`, `sp500`, `dgs3mo`, `dgs2`, `dgs10`, `dgs30`, and one `fcf_<TICKER>` per
 basket member, indexed by calendar-quarter-end.
 
-## ⚠️ The committed series.csv is SAMPLE DATA
+`fcf_source.txt` (when present) records where the committed FCF numbers came
+from, as `label|url`, so the chart's "Data sources" footer attributes them
+accurately. `generated_at.txt` records the pull date.
 
-`SAMPLE_DATA.txt` is present, which means `series.csv` holds **illustrative
-placeholder values, not a real upstream pull** — it was generated in a build
-environment that could not reach FRED or Yahoo Finance. Every chart rendered
-from it is watermarked "SAMPLE DATA".
-
-Replace it with real data from a networked machine:
+Refresh from upstream on a networked machine:
 
 ```sh
-make data      # writes a real series.csv from FRED + Yahoo and removes SAMPLE_DATA.txt
-make           # re-render; the watermark disappears once the sentinel is gone
+SEC_USER_AGENT="fcf-macro-indicators you@example.com" make data
+make
 ```
 
 `make data` regenerates `series.csv` from the sources listed in the project
-README's "Data sources" section.
+README's "Data sources" section (SEC EDGAR for FCF, FRED for M2 and yields,
+Yahoo Finance for the S&P 500).

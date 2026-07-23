@@ -45,9 +45,6 @@ PULLED_STAMP = DATA_DIR / "generated_at.txt"
 FCF_SOURCE_FILE = DATA_DIR / "fcf_source.txt"
 FCF_SOURCE = ("Company free cash flow (OCF - CapEx) from SEC EDGAR XBRL"
               "|https://www.sec.gov/edgar/sec-api-documentation")
-# Present when the committed CSV is the labeled sample (see data/README.md); a
-# real fetch here removes it so the render stops being watermarked.
-SAMPLE_SENTINEL = DATA_DIR / "SAMPLE_DATA.txt"
 
 FRED_CSV = "https://fred.stlouisfed.org/graph/fredgraph.csv?id={series}"
 
@@ -74,11 +71,9 @@ END = pd.Timestamp.today().normalize() + pd.Timedelta(days=1)
 SEC_TICKERS_URL = "https://www.sec.gov/files/company_tickers.json"
 SEC_CONCEPT_URL = "https://data.sec.gov/api/xbrl/companyconcept/CIK{cik:010d}/us-gaap/{tag}.json"
 # SEC requires a descriptive User-Agent with contact info; a library default gets
-# a 403. Keep a real contact OUT of the committed repo -- supply it at run time.
-SEC_USER_AGENT = os.environ.get(
-    "SEC_USER_AGENT",
-    "StaticSites fcf-macro-indicators (contact: set SEC_USER_AGENT env var)",
-)
+# a 403. It is mandatory and kept OUT of the committed repo -- supply it at run
+# time via this env var (see _require_sec_user_agent).
+SEC_USER_AGENT_ENV = "SEC_USER_AGENT"
 # Operating-cash-flow XBRL tags, tried in order (filers differ / rename tags).
 OCF_TAGS = [
     "NetCashProvidedByUsedInOperatingActivities",
@@ -130,9 +125,26 @@ def _fetch_sp500_quarterly() -> pd.Series:
     return q.astype(float)
 
 
+def _require_sec_user_agent() -> str:
+    """SEC contact string from the environment, or a hard failure. Required: SEC
+    rejects callers that don't identify themselves (403), so refuse to proceed
+    rather than send a placeholder."""
+    ua = os.environ.get(SEC_USER_AGENT_ENV, "").strip()
+    if not ua:
+        raise SystemExit(
+            f"{SEC_USER_AGENT_ENV} is not set. SEC EDGAR requires every automated "
+            "caller to identify itself with contact info (unidentified requests get "
+            "a 403), so this fetch will not run without it.\n"
+            "Set it and re-run, e.g.:\n"
+            f'    {SEC_USER_AGENT_ENV}="fcf-macro-indicators you@example.com" make data'
+        )
+    return ua
+
+
 def _sec_session() -> requests.Session:
     s = requests.Session()
-    s.headers.update({"User-Agent": SEC_USER_AGENT, "Accept-Encoding": "gzip, deflate"})
+    s.headers.update({"User-Agent": _require_sec_user_agent(),
+                      "Accept-Encoding": "gzip, deflate"})
     return s
 
 
@@ -225,6 +237,10 @@ def main() -> None:
     args = parser.parse_args()
     tickers = [t.strip().upper() for t in args.tickers.split(",") if t.strip()]
 
+    # Fail fast if the SEC identifier is missing, before spending any time on the
+    # macro fetches -- the FCF pull can't succeed without it.
+    _require_sec_user_agent()
+
     print(f"Fetching M2, the {'/'.join(YIELD_SERIES)} yield curve, S&P 500, "
           f"and SEC EDGAR FCF for {', '.join(tickers)}...")
 
@@ -234,9 +250,6 @@ def main() -> None:
     columns["sp500"] = _fetch_sp500_quarterly()
 
     session = _sec_session()
-    if SEC_USER_AGENT.endswith("env var)"):
-        print("  NOTE: SEC_USER_AGENT is unset -- SEC asks callers to identify themselves. "
-              "Set it to e.g. 'fcf-macro-indicators you@example.com'.")
     cik_map = _load_ticker_cik_map(session)
     for ticker in tickers:
         try:
@@ -257,8 +270,6 @@ def main() -> None:
     frame.to_csv(SERIES_CSV)
     PULLED_STAMP.write_text(date.today().isoformat() + "\n", encoding="utf-8")
     FCF_SOURCE_FILE.write_text(FCF_SOURCE + "\n", encoding="utf-8")
-    # This is a real upstream pull, so drop the sample-data watermark sentinel.
-    SAMPLE_SENTINEL.unlink(missing_ok=True)
 
     fcf_cols = [c for c in frame.columns if c.startswith("fcf_")]
     print(f"Wrote {SERIES_CSV} with {len(frame)} quarterly rows "
