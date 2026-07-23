@@ -1,5 +1,11 @@
 [
   {
+    "slug": "fcf-macro-indicators",
+    "title": "Free cash flow vs. the macro backdrop",
+    "description": "quarterly free cash flow of a basket of large public companies against M2 money supply, the S&P 500, and the 3M / 2Y / 10Y / 30Y Treasury curve, rebased to a chosen anchor date.",
+    "output": "fcf-macro-indicators/output/fcf-macro-indicators.html"
+  },
+  {
     "slug": "margin-sp500-m2-visualization",
     "title": "Margin debt vs. the S&P 500",
     "description": "FINRA margin debt against the S&P 500, M2, CPI, and PPI, rebased to a chosen anchor date.",

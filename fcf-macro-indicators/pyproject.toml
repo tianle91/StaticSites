@@ -1,0 +1,32 @@
+[project]
+name = "fcf-macro-indicators"
+version = "0.0.0"
+description = "Free cash flow vs. the macro backdrop — quarterly free cash flow of a basket of large public companies against M2 money supply, the S&P 500, and the 3M / 2Y / 10Y / 30Y Treasury curve, rebased to a chosen anchor date."
+requires-python = ">=3.11"
+
+# Runtime dependencies. Say why each one is here.
+dependencies = [
+    "matplotlib>=3.8",  # static PNG render
+    "pandas>=2.1",      # align every series on one quarterly grid
+    "plotly>=5.20",     # zoomable/pannable HTML chart
+    "requests>=2.31",   # pull FRED series as CSV over HTTP
+    "yfinance>=0.2.40", # company cash-flow statements + S&P 500 levels
+]
+
+[dependency-groups]
+dev = ["pytest>=8.0"]
+
+[tool.uv]
+# This project is an environment, not a distributable package -- nothing to build.
+package = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.staticsite]
+# Homepage-listing metadata, aggregated into the repo-root sites.json by
+# ../generate_manifest.py. `title` is the link text; the blurb shown after it is
+# [project].description with the leading "<title> — " stripped, so description
+# must start with "<title> — ".
+title = "Free cash flow vs. the macro backdrop"
