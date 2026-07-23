@@ -37,7 +37,7 @@ PAGE_TITLE = "Free Cash Flow vs. M2, the S&amp;P 500 &amp; the Treasury Curve"
 SERIES_COLORS = {
     "Aggregate FCF (basket sum)": "#d62728",
     "M2 money supply (FRED: M2SL)": "#1f77b4",
-    "S&P 500 (^SPX)": "#2ca02c",
+    "S&P 500 (^GSPC)": "#2ca02c",
     "3M Treasury yield (FRED: DGS3MO)": "#c5b0d5",
     "2Y Treasury yield (FRED: DGS2)": "#9467bd",
     "10Y Treasury yield (FRED: DGS10)": "#6a3d9a",
@@ -47,7 +47,7 @@ SERIES_COLORS = {
 # Display label -> CSV column for the straight-through (non-derived) series.
 MACRO_COLUMNS = {
     "M2 money supply (FRED: M2SL)": "m2",
-    "S&P 500 (^SPX)": "sp500",
+    "S&P 500 (^GSPC)": "sp500",
     "3M Treasury yield (FRED: DGS3MO)": "dgs3mo",
     "2Y Treasury yield (FRED: DGS2)": "dgs2",
     "10Y Treasury yield (FRED: DGS10)": "dgs10",
@@ -72,7 +72,7 @@ MACRO_SOURCES: list[tuple[str, str]] = [
     ("FRED 2Y Treasury (DGS2)", "https://fred.stlouisfed.org/series/DGS2"),
     ("FRED 10Y Treasury (DGS10)", "https://fred.stlouisfed.org/series/DGS10"),
     ("FRED 30Y Treasury (DGS30)", "https://fred.stlouisfed.org/series/DGS30"),
-    ("S&P 500 via Stooq (^SPX)", "https://stooq.com/q/?s=%5Espx"),
+    ("S&P 500 via Yahoo Finance (^GSPC)", "https://finance.yahoo.com/quote/%5EGSPC"),
 ]
 
 

@@ -80,8 +80,8 @@ SEC_USER_AGENT="fcf-macro-indicators you@example.com" \
   [`DGS2`](https://fred.stlouisfed.org/series/DGS2),
   [`DGS10`](https://fred.stlouisfed.org/series/DGS10),
   [`DGS30`](https://fred.stlouisfed.org/series/DGS30), via `pandas-datareader`.
-- **S&P 500** — level from [Stooq `^SPX`](https://stooq.com/q/?s=%5Espx) (keyless
-  daily CSV).
+- **S&P 500** — level via [Yahoo Finance `^GSPC`](https://finance.yahoo.com/quote/%5EGSPC)
+  (`yfinance`); keyless with deep history.
 
 `make data` writes all of them into `data/series.csv`, which is committed so
 `make` renders offline and reproducibly.

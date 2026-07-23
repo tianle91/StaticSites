@@ -5,7 +5,7 @@ Sources:
   - Free cash flow, per company   -- SEC EDGAR XBRL company facts (OCF - CapEx)
   - Money supply (M2)             -- FRED M2SL           (monthly, via pandas-datareader)
   - Treasury yields, by term      -- FRED DGS3MO/2/10/30 (daily,   via pandas-datareader)
-  - S&P 500 index level           -- Stooq ^SPX          (daily)
+  - S&P 500 index level           -- yfinance (^GSPC)    (daily)
 
 Everything is aligned onto one **calendar-quarter-end** grid, because free cash
 flow is only reported quarterly -- it is the coarsest series and sets the grid.
@@ -26,7 +26,6 @@ without one get 403). Set SEC_USER_AGENT to e.g. "my-app you@example.com".
 from __future__ import annotations
 
 import argparse
-import io
 import os
 import time
 from datetime import date
@@ -35,6 +34,7 @@ from pathlib import Path
 import pandas as pd
 import pandas_datareader.data as web
 import requests
+import yfinance as yf
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA_DIR = ROOT / "data"
@@ -45,10 +45,6 @@ PULLED_STAMP = DATA_DIR / "generated_at.txt"
 FCF_SOURCE_FILE = DATA_DIR / "fcf_source.txt"
 FCF_SOURCE = ("Company free cash flow (OCF - CapEx) from SEC EDGAR XBRL"
               "|https://www.sec.gov/edgar/sec-api-documentation")
-
-# Stooq daily download for the S&P 500 index (^SPX); keyless, deep history. "^"
-# is percent-encoded so the query string survives as-is.
-STOOQ_SP500_CSV = "https://stooq.com/q/d/l/?s=%5Espx&i=d"
 
 # FRED series id -> our column name. M2 money supply plus the Treasury term
 # structure (constant-maturity nominal yields, short end -> long end).
@@ -119,20 +115,15 @@ def _fetch_fred_quarterly() -> pd.DataFrame:
 
 
 def _fetch_sp500_quarterly() -> pd.Series:
-    """S&P 500 quarter-end close from Stooq's keyless daily CSV (^SPX)."""
-    r = requests.get(STOOQ_SP500_CSV, timeout=120)
-    r.raise_for_status()
-    df = pd.read_csv(io.BytesIO(r.content))
-    if "Close" not in df.columns or "Date" not in df.columns or df.empty:
-        raise RuntimeError("Stooq returned no S&P 500 data (unexpected response for ^SPX).")
-    s = pd.Series(
-        pd.to_numeric(df["Close"], errors="coerce").values,
-        index=pd.to_datetime(df["Date"]),
-    ).dropna().sort_index()
-    s = s.loc[(s.index >= START) & (s.index <= END)]
-    if s.empty:
-        raise RuntimeError("No S&P 500 observations from Stooq in range.")
-    return _quarter_last(s).astype(float)
+    """S&P 500 quarter-end close from Yahoo Finance (^GSPC) via yfinance -- the
+    keyless, deep-history source that reliably serves the index level."""
+    hist = yf.Ticker("^GSPC").history(start=START, end=END, auto_adjust=False, actions=False)
+    if hist.empty:
+        raise RuntimeError("No S&P 500 data returned from Yahoo Finance (^GSPC).")
+    px = hist["Close"].sort_index()
+    if isinstance(px.index, pd.DatetimeIndex) and px.index.tz is not None:
+        px.index = pd.to_datetime(px.index.date)
+    return _quarter_last(px).astype(float)
 
 
 def _require_sec_user_agent() -> str:
@@ -251,7 +242,7 @@ def main() -> None:
     # macro fetches -- the FCF pull can't succeed without it.
     _require_sec_user_agent()
 
-    print("Fetching M2 + the Treasury curve (FRED), the S&P 500 (Stooq), "
+    print("Fetching M2 + the Treasury curve (FRED), the S&P 500 (Yahoo), "
           f"and SEC EDGAR FCF for {', '.join(tickers)}...")
 
     columns: dict[str, pd.Series] = dict(_fetch_fred_quarterly().items())

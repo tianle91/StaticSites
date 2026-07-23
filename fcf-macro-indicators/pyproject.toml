@@ -10,7 +10,8 @@ dependencies = [
     "pandas>=2.1",             # align every series on one quarterly grid
     "pandas-datareader>=0.11", # keyless FRED pulls (M2, Treasury yields)
     "plotly>=5.20",            # zoomable/pannable HTML chart
-    "requests>=2.31",          # SEC EDGAR XBRL API + Stooq S&P 500 CSV over HTTP
+    "requests>=2.31",          # SEC EDGAR XBRL API over HTTP
+    "yfinance>=0.2",           # S&P 500 level (^GSPC); keyless, deep history
 ]
 
 [dependency-groups]
