@@ -7,6 +7,8 @@ from plot_fcf_macro import (
     _INVERSION_SHORT,
     _baseline_level,
     _quarter_end,
+    _rebase_control,
+    _rebase_script,
     _rebase_to_anchor,
     _split_columns,
     aggregate_cash,
@@ -119,6 +121,35 @@ class InversionSpansTest(unittest.TestCase):
     def test_empty_when_yield_columns_absent(self) -> None:
         frame = pd.DataFrame({"m2": [1.0]}, index=pd.to_datetime(["2024-03-31"]))
         self.assertEqual(inversion_spans(frame), [])
+
+
+class RebaseControlTest(unittest.TestCase):
+    def _rebased(self) -> pd.DataFrame:
+        idx = pd.to_datetime(["2024-03-31", "2024-06-30", "2024-09-30"])
+        raw = pd.DataFrame(
+            {"Aggregate FCF (basket sum)": [10.0, 20.0, 40.0],
+             "10Y Treasury yield (FRED: DGS10)": [4.0, 4.2, 4.1]},
+            index=idx,
+        )
+        # The rebased frame the renderer holds; only attrs are needed by the helpers.
+        rebased = raw.copy()
+        rebased.attrs["raw"] = raw
+        rebased.attrs["anchor"] = pd.Timestamp("2024-06-30")
+        return rebased
+
+    def test_control_lists_every_quarter_and_marks_the_anchor(self) -> None:
+        html = _rebase_control(self._rebased())
+        self.assertEqual(html.count("<option"), 3)
+        self.assertIn('value="2024-06-30" selected', html)
+        self.assertEqual(html.count("selected"), 1)
+
+    def test_script_embeds_raw_level_data_only(self) -> None:
+        script = _rebase_script(self._rebased(), "chart-id")
+        self.assertIn("chart-id", script)
+        self.assertIn("Aggregate FCF (basket sum)", script)
+        # Yields are not rebased, so their raw data must not be embedded.
+        self.assertNotIn("DGS10", script)
+        self.assertIn("Plotly.restyle", script)
 
 
 if __name__ == "__main__":

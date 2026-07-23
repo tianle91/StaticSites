@@ -17,6 +17,7 @@ with `make data`.
 from __future__ import annotations
 
 import argparse
+import json
 from datetime import date
 from pathlib import Path
 
@@ -256,6 +257,9 @@ def build_rebased(rebase_anchor: pd.Timestamp | None) -> pd.DataFrame:
     })
     rebased.attrs["anchor"] = anchor
     rebased.attrs["tickers"] = basket_tickers(frame)
+    # Raw (un-rebased) aligned values, so the HTML chart can re-rebase the level
+    # panel client-side when the viewer picks a different anchor quarter.
+    rebased.attrs["raw"] = aligned
     return rebased
 
 
@@ -433,12 +437,15 @@ def render_html(rebased: pd.DataFrame, out_path: Path) -> None:
     fig.update_yaxes(title_text="Yield (%)", fixedrange=False, showspikes=False, row=2, col=1)
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
+    div_id = "fcf-chart"
     html = fig.to_html(
         include_plotlyjs="cdn",
         full_html=True,
+        div_id=div_id,
         config={"scrollZoom": True, "displaylogo": False, "responsive": True},
     )
     html = html.replace("<head>", "<head><title>" + PAGE_TITLE + "</title>", 1)
+    html = html.replace("<body>", "<body>" + _rebase_control(rebased), 1)
     links = " · ".join(
         f'<a href="{url}" target="_blank" rel="noopener">{label}</a>'
         for label, url in data_sources()
@@ -450,8 +457,57 @@ def render_html(rebased: pd.DataFrame, out_path: Path) -> None:
         'font-size:12px;color:#666;text-align:center;padding:8px 16px 16px">'
         + pulled_html + "<strong>Data sources:</strong> " + links + "</footer>"
     )
-    html = html.replace("</body>", footer + "</body>", 1)
+    html = html.replace("</body>", footer + _rebase_script(rebased, div_id) + "</body>", 1)
     out_path.write_text(html, encoding="utf-8")
+
+
+def _rebase_control(rebased: pd.DataFrame) -> str:
+    """A dropdown of every anchor quarter in the window, for re-rebasing live."""
+    raw = rebased.attrs["raw"]
+    anchor = rebased.attrs["anchor"]
+    options = "".join(
+        f'<option value="{d:%Y-%m-%d}"{" selected" if d == anchor else ""}>'
+        f"{d.to_period('Q')} ({d:%Y-%m-%d})</option>"
+        for d in raw.index
+    )
+    return (
+        '<div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;'
+        'font-size:13px;color:#333;text-align:center;padding:10px 16px 0">'
+        '<label for="rebase-select"><strong>Rebase levels to 100 at:</strong></label> '
+        f'<select id="rebase-select" style="font-size:13px;padding:2px 4px">{options}</select>'
+        "</div>"
+    )
+
+
+def _rebase_script(rebased: pd.DataFrame, div_id: str) -> str:
+    """JS that re-rebases the level traces to the picked anchor, entirely client-
+    side (no rebuild): index i = 100 * raw[i] / raw[anchor]. Level traces are the
+    first ones added, so their indices are 0..len(level_cols)-1; the yield and
+    inversion traces are left untouched."""
+    raw = rebased.attrs["raw"]
+    level_cols, _ = _split_columns(rebased.columns)
+    payload = {
+        "dates": [f"{d:%Y-%m-%d}" for d in raw.index],
+        "labels": level_cols,
+        "raw": {c: [float(v) for v in raw[c]] for c in level_cols},
+        "idx": list(range(len(level_cols))),
+    }
+    return (
+        '<script type="text/javascript">(function(){'
+        f"var D={json.dumps(payload)};"
+        f'var gd=document.getElementById("{div_id}");'
+        'var sel=document.getElementById("rebase-select");'
+        "if(!gd||!sel)return;"
+        "function rebase(iso){"
+        "var ai=D.dates.indexOf(iso);if(ai<0)return;"
+        "var ys=D.labels.map(function(l){var r=D.raw[l];var b=r[ai];"
+        "return r.map(function(v){return b?100*v/b:null;});});"
+        "Plotly.restyle(gd,{y:ys},D.idx);"
+        'Plotly.relayout(gd,{"yaxis.title.text":"Index (100 @ "+iso+")",'
+        '"annotations[0].text":"Levels rebased to 100 at "+iso});}'
+        "sel.addEventListener(\"change\",function(){rebase(this.value);});"
+        "})();</script>"
+    )
 
 
 def build_chart(out_path: Path, rebase_anchor: pd.Timestamp | None) -> None:
