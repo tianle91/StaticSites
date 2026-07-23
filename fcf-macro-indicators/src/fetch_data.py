@@ -3,16 +3,16 @@
 
 Sources:
   - Free cash flow, per company   -- SEC EDGAR XBRL company facts (OCF - CapEx)
-  - Money supply (M2)             -- FRED M2SL           (monthly)
-  - Treasury yields, by term      -- FRED DGS3MO/2/10/30 (daily)
-  - S&P 500 index level           -- yfinance (^GSPC)    (daily)
+  - Money supply (M2)             -- FRED M2SL           (monthly, via pandas-datareader)
+  - Treasury yields, by term      -- FRED DGS3MO/2/10/30 (daily,   via pandas-datareader)
+  - S&P 500 index level           -- Stooq ^SPX          (daily)
 
 Everything is aligned onto one **calendar-quarter-end** grid, because free cash
 flow is only reported quarterly -- it is the coarsest series and sets the grid.
 
 FCF is reconstructed from each company's SEC XBRL filings as quarterly operating
 cash flow minus capital expenditure, back to the ~2009 start of the XBRL mandate
--- far deeper than the ~5 quarters yfinance exposes. Cash-flow statements are
+-- far deeper than the ~5 quarters a scraped-quote source exposes. Cash-flow statements are
 filed year-to-date (Q2 = 6 months, Q3 = 9 months, and Q4 is never filed alone),
 so discrete quarters are recovered by differencing within each fiscal year.
 
@@ -33,8 +33,8 @@ from datetime import date
 from pathlib import Path
 
 import pandas as pd
+import pandas_datareader.data as web
 import requests
-import yfinance as yf
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA_DIR = ROOT / "data"
@@ -46,11 +46,14 @@ FCF_SOURCE_FILE = DATA_DIR / "fcf_source.txt"
 FCF_SOURCE = ("Company free cash flow (OCF - CapEx) from SEC EDGAR XBRL"
               "|https://www.sec.gov/edgar/sec-api-documentation")
 
-FRED_CSV = "https://fred.stlouisfed.org/graph/fredgraph.csv?id={series}"
+# Stooq daily download for the S&P 500 index (^SPX); keyless, deep history. "^"
+# is percent-encoded so the query string survives as-is.
+STOOQ_SP500_CSV = "https://stooq.com/q/d/l/?s=%5Espx&i=d"
 
-# The Treasury term structure we chart, FRED id -> column name. Constant-maturity
-# nominal yields at the short end, belly, and long end of the curve.
-YIELD_SERIES = {
+# FRED series id -> our column name. M2 money supply plus the Treasury term
+# structure (constant-maturity nominal yields, short end -> long end).
+FRED_SERIES = {
+    "M2SL": "m2",
     "DGS3MO": "dgs3mo",
     "DGS2": "dgs2",
     "DGS10": "dgs10",
@@ -98,31 +101,38 @@ def _to_quarter_end(idx: pd.DatetimeIndex) -> pd.DatetimeIndex:
     return idx.to_period("Q").to_timestamp(how="end").normalize()
 
 
-def _fetch_fred_quarterly(series_id: str) -> pd.Series:
-    """Download a FRED series and take its last observation in each quarter."""
-    r = requests.get(FRED_CSV.format(series=series_id), timeout=120)
-    r.raise_for_status()
-    df = pd.read_csv(io.BytesIO(r.content), parse_dates=["observation_date"])
-    if series_id not in df.columns:
-        raise KeyError(f"Column {series_id} missing from FRED CSV response.")
-    s = df.set_index("observation_date")[series_id]
-    # FRED marks missing daily values (weekends/holidays) with ".", read as NaN.
-    s = pd.to_numeric(s, errors="coerce").dropna().sort_index()
-    s = s.loc[(s.index >= START) & (s.index <= END)]
-    q = s.groupby(_to_quarter_end(pd.DatetimeIndex(s.index))).last()
-    return q.astype(float)
+def _quarter_last(frame: pd.DataFrame | pd.Series) -> pd.DataFrame | pd.Series:
+    """Last available observation in each calendar quarter. Forward-fills first so
+    a quarter-end falling on a weekend/holiday (NaN on FRED daily series) still
+    carries the prior business day's value."""
+    obj = frame.sort_index().ffill()
+    idx = pd.DatetimeIndex(obj.index)
+    return obj.groupby(_to_quarter_end(idx)).last()
+
+
+def _fetch_fred_quarterly() -> pd.DataFrame:
+    """M2 and the Treasury curve from FRED (keyless), one column per series,
+    reduced to quarter-end values."""
+    raw = web.DataReader(list(FRED_SERIES), "fred", START, END)
+    raw = raw.rename(columns=FRED_SERIES)
+    return _quarter_last(raw).astype(float)
 
 
 def _fetch_sp500_quarterly() -> pd.Series:
-    tkr = yf.Ticker("^GSPC")
-    hist = tkr.history(start=START, end=END, auto_adjust=False, actions=False)
-    if hist.empty:
-        raise RuntimeError("No S&P 500 data returned from Yahoo Finance (^GSPC).")
-    px = hist["Close"].sort_index()
-    if isinstance(px.index, pd.DatetimeIndex) and px.index.tz is not None:
-        px.index = pd.to_datetime(px.index.date)
-    q = px.groupby(_to_quarter_end(pd.DatetimeIndex(px.index))).last()
-    return q.astype(float)
+    """S&P 500 quarter-end close from Stooq's keyless daily CSV (^SPX)."""
+    r = requests.get(STOOQ_SP500_CSV, timeout=120)
+    r.raise_for_status()
+    df = pd.read_csv(io.BytesIO(r.content))
+    if "Close" not in df.columns or "Date" not in df.columns or df.empty:
+        raise RuntimeError("Stooq returned no S&P 500 data (unexpected response for ^SPX).")
+    s = pd.Series(
+        pd.to_numeric(df["Close"], errors="coerce").values,
+        index=pd.to_datetime(df["Date"]),
+    ).dropna().sort_index()
+    s = s.loc[(s.index >= START) & (s.index <= END)]
+    if s.empty:
+        raise RuntimeError("No S&P 500 observations from Stooq in range.")
+    return _quarter_last(s).astype(float)
 
 
 def _require_sec_user_agent() -> str:
@@ -241,12 +251,10 @@ def main() -> None:
     # macro fetches -- the FCF pull can't succeed without it.
     _require_sec_user_agent()
 
-    print(f"Fetching M2, the {'/'.join(YIELD_SERIES)} yield curve, S&P 500, "
+    print("Fetching M2 + the Treasury curve (FRED), the S&P 500 (Stooq), "
           f"and SEC EDGAR FCF for {', '.join(tickers)}...")
 
-    columns: dict[str, pd.Series] = {"m2": _fetch_fred_quarterly("M2SL")}
-    for fred_id, col in YIELD_SERIES.items():
-        columns[col] = _fetch_fred_quarterly(fred_id)
+    columns: dict[str, pd.Series] = dict(_fetch_fred_quarterly().items())
     columns["sp500"] = _fetch_sp500_quarterly()
 
     session = _sec_session()
