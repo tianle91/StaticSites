@@ -3,11 +3,16 @@ import unittest
 import pandas as pd
 
 from plot_fcf_macro import (
+    _INVERSION_LONG,
+    _INVERSION_SHORT,
     _baseline_level,
     _quarter_end,
     _rebase_to_anchor,
+    _split_columns,
     aggregate_cash,
     aggregate_fcf,
+    basket_tickers,
+    inversion_spans,
 )
 
 
@@ -73,6 +78,47 @@ class AggregateCashTest(unittest.TestCase):
         # so a CSV predating the cash columns still renders.
         frame = pd.DataFrame({"m2": [1.0]}, index=pd.to_datetime(["2024-03-31"]))
         self.assertTrue(aggregate_cash(frame).empty)
+
+
+class BasketTickersTest(unittest.TestCase):
+    def test_reads_tickers_off_fcf_columns(self) -> None:
+        frame = pd.DataFrame(columns=["m2", "fcf_AAA", "cash_AAA", "fcf_BBB", "sp500"])
+        self.assertEqual(basket_tickers(frame), ["AAA", "BBB"])
+
+
+class SplitColumnsTest(unittest.TestCase):
+    def test_partitions_levels_from_yields(self) -> None:
+        cols = [
+            "Aggregate FCF (basket sum)",
+            "M2 money supply (FRED: M2SL)",
+            "10Y Treasury yield (FRED: DGS10)",
+            "2Y Treasury yield (FRED: DGS2)",
+        ]
+        levels, yields = _split_columns(cols)
+        self.assertEqual(levels, ["Aggregate FCF (basket sum)", "M2 money supply (FRED: M2SL)"])
+        self.assertEqual(yields, ["10Y Treasury yield (FRED: DGS10)", "2Y Treasury yield (FRED: DGS2)"])
+
+
+class InversionSpansTest(unittest.TestCase):
+    def _frame(self, long_vals, short_vals) -> pd.DataFrame:
+        idx = pd.period_range("2022Q1", periods=len(long_vals), freq="Q").to_timestamp(how="end").normalize()
+        return pd.DataFrame({_INVERSION_LONG: long_vals, _INVERSION_SHORT: short_vals}, index=idx)
+
+    def test_flags_and_merges_contiguous_inverted_quarters(self) -> None:
+        # 10Y < 2Y in the middle two quarters only -> one merged span covering them.
+        frame = self._frame([4.0, 3.0, 3.0, 4.0], [3.0, 3.5, 3.5, 3.0])
+        spans = inversion_spans(frame)
+        self.assertEqual(len(spans), 1)
+        start, end = spans[0]
+        self.assertTrue(start < frame.index[1] < frame.index[2] < end)
+
+    def test_no_span_when_never_inverted(self) -> None:
+        frame = self._frame([4.0, 4.0], [3.0, 3.0])
+        self.assertEqual(inversion_spans(frame), [])
+
+    def test_empty_when_yield_columns_absent(self) -> None:
+        frame = pd.DataFrame({"m2": [1.0]}, index=pd.to_datetime(["2024-03-31"]))
+        self.assertEqual(inversion_spans(frame), [])
 
 
 if __name__ == "__main__":

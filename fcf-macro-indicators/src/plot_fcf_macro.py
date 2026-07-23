@@ -78,6 +78,36 @@ def _split_columns(columns) -> tuple[list[str], list[str]]:
     yields = [c for c in columns if c in YIELD_LABELS]
     return levels, yields
 
+
+# Yield-curve inversion is shaded where the long rate sits below the short rate.
+# The canonical recession signal is the 2s10s spread (10Y minus 2Y) going negative.
+_INVERSION_LONG = "10Y Treasury yield (FRED: DGS10)"
+_INVERSION_SHORT = "2Y Treasury yield (FRED: DGS2)"
+INVERSION_LABEL = "Yield-curve inversion (10Y < 2Y)"
+INVERSION_COLOR = "#d62728"
+
+
+def inversion_spans(frame: pd.DataFrame) -> list[tuple[pd.Timestamp, pd.Timestamp]]:
+    """Contiguous [start, end] date spans where 10Y < 2Y (an inverted 2s10s curve).
+    Each quarter-end that is inverted is widened by ~half a quarter so a lone
+    inverted quarter is still a visible band and adjacent ones merge into one."""
+    if _INVERSION_LONG not in frame or _INVERSION_SHORT not in frame:
+        return []
+    inverted = (frame[_INVERSION_LONG] < frame[_INVERSION_SHORT]).to_numpy()
+    idx = pd.DatetimeIndex(frame.index)
+    half = pd.Timedelta(days=46)
+    spans: list[tuple[pd.Timestamp, pd.Timestamp]] = []
+    run_start: pd.Timestamp | None = None
+    for i, inv in enumerate(inverted):
+        if inv and run_start is None:
+            run_start = idx[i]
+        elif not inv and run_start is not None:
+            spans.append((run_start - half, idx[i - 1] + half))
+            run_start = None
+    if run_start is not None:
+        spans.append((run_start - half, idx[-1] + half))
+    return spans
+
 # Where the FCF numbers came from is recorded by fetch_data.py in this marker
 # ("label|url"), so the footer attributes the committed data accurately whatever
 # produced it. Absent (e.g. an older pull) -> the Yahoo default below.
@@ -256,6 +286,14 @@ def render_png(rebased: pd.DataFrame, out_path: Path) -> None:
     for col in yield_cols:
         ax_yld.plot(rebased.index, rebased[col], label=col, color=SERIES_COLORS[col],
                     linewidth=1.7, marker="o", markersize=4)
+
+    # Shade inverted-curve periods as a band across both panels.
+    spans = inversion_spans(rebased)
+    for i, (x0, x1) in enumerate(spans):
+        for ax in (ax_lvl, ax_yld):
+            ax.axvspan(x0, x1, color=INVERSION_COLOR, alpha=0.09, zorder=0,
+                       label=INVERSION_LABEL if (i == 0 and ax is ax_yld) else None)
+
     ax_yld.set_ylabel("Treasury yield (%)", fontsize=10)
     ax_yld.set_xlabel("Quarter-end")
     ax_yld.legend(loc="upper left", frameon=True, fontsize=9, ncol=2)
@@ -324,6 +362,24 @@ def render_html(rebased: pd.DataFrame, out_path: Path) -> None:
         )
 
     fig.add_hline(y=100.0, line=dict(color="#999999", width=0.8, dash="dash"), row=1, col=1)
+
+    # Shade inverted-curve periods as a full-height band spanning both panels, plus
+    # one dummy trace so the shading gets a legend entry.
+    spans = inversion_spans(rebased)
+    for x0, x1 in spans:
+        fig.add_vrect(x0=x0, x1=x1, fillcolor=INVERSION_COLOR, opacity=0.09,
+                      line_width=0, layer="below")
+    if spans:
+        fig.add_trace(
+            go.Scatter(
+                x=[None], y=[None], mode="markers", name=INVERSION_LABEL,
+                legendgroup="yields",
+                marker=dict(size=12, symbol="square",
+                            color="rgba(214,39,40,0.28)", line=dict(width=0)),
+                hoverinfo="skip",
+            ),
+            row=2, col=1,
+        )
 
     basket = (f"Aggregates sum {len(tickers)} companies: {', '.join(tickers)}"
               if tickers else "")

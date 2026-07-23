@@ -7,10 +7,19 @@ a basket of large public companies (Apple, Microsoft, Alphabet, Amazon, Meta by
 default), sums each into one basket-aggregate series, and plots them against the
 macro variables they are usually discussed alongside — **M2 money supply**, the
 **S&P 500**, and the Treasury yield curve at four terms (**3-month, 2-year,
-10-year, 30-year**). Every series is rebased to 100 at a common anchor quarter,
-so the chart shows how corporate cash generation and cash on hand have moved
-*relative to* liquidity, equity prices, and the cost of money across the term
-structure.
+10-year, 30-year**).
+
+The chart is **two panels sharing one x-axis**:
+
+- **Top — levels rebased to 100** at a common anchor quarter (aggregate FCF,
+  aggregate cash, M2, S&P 500), so it shows how corporate cash generation and cash
+  on hand have moved *relative to* liquidity and equity prices. The basket members
+  behind the aggregate lines are named in the subtitle.
+- **Bottom — the Treasury curve as raw yields (%)**, not rebased: yields already
+  share a natural scale, and rebasing them to a near-zero-rate anchor (the 3-month
+  bill was ~0.03% in 2014) would blow that line up into the thousands. Periods when
+  the curve is **inverted** (10Y &lt; 2Y — the 2s10s recession signal) are shaded
+  as a band across both panels.
 
 ![free cash flow vs. M2, the S&P 500, and the Treasury curve](output/fcf-macro-indicators.png)
 
@@ -51,8 +60,8 @@ SEC_USER_AGENT="fcf-macro-indicators you@example.com" \
 
 - **drag** a region to zoom, **scroll** to zoom, **double-click** to reset
 - use the **range slider** under the axis, or the **3y / 5y / 10y / All** buttons
-- toggle **Linear / Log** on the y-axis (log helps when a decade of M2/S&P growth
-  compresses the recent range)
+- toggle **Levels: Linear / Log** on the top panel's y-axis (log helps when a
+  decade of M2/S&P growth compresses the recent range)
 - click legend entries to hide or isolate a series; hover for aligned values
 
 ## Layout
@@ -73,7 +82,11 @@ SEC_USER_AGENT="fcf-macro-indicators you@example.com" \
   quarterly **Operating Cash Flow − Capital Expenditure**
   (`NetCashProvidedByUsedInOperatingActivities` −
   `PaymentsToAcquirePropertyPlantAndEquipment`), back to the ~2009 start of the
-  XBRL mandate. Keyless; SEC only asks for a `User-Agent` with contact info.
+  XBRL mandate. Each concept's candidate tags are **merged across the full
+  history**, because filers rename tags over time (Amazon's capex moved from
+  `PaymentsToAcquirePropertyPlantAndEquipment` to `PaymentsToAcquireProductiveAssets`
+  in 2017; Apple the reverse) — using only the first tag would truncate the series
+  to one era. Keyless; SEC only asks for a `User-Agent` with contact info.
 - **Cash & cash equivalents** — the quarter-end balance from the same SEC filings
   (`CashAndCashEquivalentsAtCarryingValue`, falling back to the
   restricted-cash-inclusive line). A balance-sheet *instant*, taken as-reported.
@@ -92,25 +105,30 @@ SEC_USER_AGENT="fcf-macro-indicators you@example.com" \
 
 ## Caveats
 
-- **Quarterly reconstruction (FCF only).** SEC cash-flow statements are filed
-  year-to-date (Q2 = 6 months, Q3 = 9 months, and Q4 is never filed on its own),
-  so discrete quarters are recovered by differencing within each fiscal year
-  (Q2 = H1 − Q1, … , Q4 = FY − 9M). A fiscal year missing a leg omits the
-  quarters that depend on it.
+- **Quarterly reconstruction (FCF only).** SEC cash-flow statements are usually
+  filed year-to-date (Q2 = 6 months, Q3 = 9 months, and Q4 is never filed on its
+  own), so discrete quarters are recovered by differencing consecutive legs that
+  share a fiscal-year start (Q2 = H1 − Q1, … , Q4 = FY − 9M). Where a filer instead
+  reports a native three-month leg (Amazon does), it is taken directly. Legs are
+  matched by the period they actually cover, not by SEC's `fy`/`fp` labels — those
+  describe the *filing*, so prior-year comparatives are mislabelled. A fiscal year
+  missing a leg omits the quarters that depend on it.
 - **Cash is a level, FCF is a flow.** Cash & equivalents is a balance-sheet
   *instant* — the amount on hand at the quarter-end date, taken as-reported with
-  no differencing — whereas FCF is generated *during* the quarter. Both are
-  rebased to 100, so the chart compares their growth, not their magnitudes.
+  no differencing — whereas FCF is generated *during* the quarter. Both are among
+  the top-panel level series rebased to 100, so the chart compares their growth,
+  not their magnitudes.
 - **Restatements → latest-filed.** When a period is restated across filings the
   most recently filed value is used, so the series reflects restated figures, not
   as-first-reported. It is not a strict point-in-time (as-filed) dataset.
-- **US filers only, tag drift.** EDGAR XBRL covers US-domestic filers (10-K/10-Q)
-  from ~2009; the fetcher tries a short list of GAAP tags per concept, so a
-  company using an unusual capex/OCF tag may be skipped for some years.
-- **Rebasing yields.** The Treasury series are rebased to 100 like everything
-  else, so they show *relative change in the yield level*, not basis points. A
-  line at 120 means that yield is 20% higher than at the anchor (e.g. 4.8% vs
-  4.0%), not 20 points of yield.
+- **US filers only, known tags.** EDGAR XBRL covers US-domestic filers (10-K/10-Q)
+  from ~2009; the fetcher merges a short list of GAAP tags per concept, so a
+  company reporting capex/OCF under a tag outside that list would be missed.
+- **Yields shown raw; inversion is quarter-sampled.** The Treasury series are
+  plotted as raw percentages in their own panel (not rebased), so the curve reads
+  in points of yield. Inversion shading is evaluated at quarter-ends, so a brief
+  inversion that opens and closes between two quarter-ends (e.g. the short August
+  2019 2s10s dip) can fall through the sampling.
 - **Aggregate composition.** Each aggregate (FCF and cash) is summed only over
   quarters where *every* basket member reports, so a line never jumps because a
   company entered or left the sample. Fiscal-quarter report dates are snapped to the
