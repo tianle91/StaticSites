@@ -2,25 +2,33 @@
 """Network step (`make data`): download every source series and write data/series.csv.
 
 Sources:
-  - Free cash flow, per company   -- yfinance quarterly cash-flow statements
+  - Free cash flow, per company   -- SEC EDGAR XBRL company facts (OCF - CapEx)
   - Money supply (M2)             -- FRED M2SL           (monthly)
   - Treasury yields, by term      -- FRED DGS3MO/2/10/30 (daily)
   - S&P 500 index level           -- yfinance (^GSPC)    (daily)
 
 Everything is aligned onto one **calendar-quarter-end** grid, because free cash
 flow is only reported quarterly -- it is the coarsest series and sets the grid.
+
+FCF is reconstructed from each company's SEC XBRL filings as quarterly operating
+cash flow minus capital expenditure, back to the ~2009 start of the XBRL mandate
+-- far deeper than the ~5 quarters yfinance exposes. Cash-flow statements are
+filed year-to-date (Q2 = 6 months, Q3 = 9 months, and Q4 is never filed alone),
+so discrete quarters are recovered by differencing within each fiscal year.
+
 The result is committed to the repo so that `make` (plot_fcf_macro.py) renders
 offline and reproducibly. Re-run with `make data` for fresher numbers.
 
-The window is deliberately short: yfinance only returns roughly the last five
-quarters of cash-flow statements per ticker, so there is no point pulling decades
-of macro history that the FCF series can never line up against. See README.md.
+SEC asks every automated caller to identify itself in the User-Agent (requests
+without one get 403). Set SEC_USER_AGENT to e.g. "my-app you@example.com".
 """
 
 from __future__ import annotations
 
 import argparse
 import io
+import os
+import time
 from datetime import date
 from pathlib import Path
 
@@ -32,6 +40,11 @@ ROOT = Path(__file__).resolve().parents[1]
 DATA_DIR = ROOT / "data"
 SERIES_CSV = DATA_DIR / "series.csv"
 PULLED_STAMP = DATA_DIR / "generated_at.txt"
+# Records where the committed FCF numbers came from, so the chart footer can
+# attribute them accurately (read back by plot_fcf_macro.py). Written here.
+FCF_SOURCE_FILE = DATA_DIR / "fcf_source.txt"
+FCF_SOURCE = ("Company free cash flow (OCF - CapEx) from SEC EDGAR XBRL"
+              "|https://www.sec.gov/edgar/sec-api-documentation")
 # Present when the committed CSV is the labeled sample (see data/README.md); a
 # real fetch here removes it so the render stops being watermarked.
 SAMPLE_SENTINEL = DATA_DIR / "SAMPLE_DATA.txt"
@@ -52,10 +65,36 @@ YIELD_SERIES = {
 # --tickers on the command line.
 DEFAULT_TICKERS = ["AAPL", "MSFT", "GOOGL", "AMZN", "META"]
 
-# Macro history only needs to cover the (short) FCF window plus a little context;
-# quarterly resampling keeps the committed CSV tiny regardless.
-START = pd.Timestamp("2015-01-01")
+# XBRL data begins ~2009 (the SEC mandate phased in 2009-2011); the macro series
+# on FRED/Yahoo go back decades, so this start is set by FCF availability.
+START = pd.Timestamp("2009-01-01")
 END = pd.Timestamp.today().normalize() + pd.Timedelta(days=1)
+
+# --- SEC EDGAR ---------------------------------------------------------------
+SEC_TICKERS_URL = "https://www.sec.gov/files/company_tickers.json"
+SEC_CONCEPT_URL = "https://data.sec.gov/api/xbrl/companyconcept/CIK{cik:010d}/us-gaap/{tag}.json"
+# SEC requires a descriptive User-Agent with contact info; a library default gets
+# a 403. Keep a real contact OUT of the committed repo -- supply it at run time.
+SEC_USER_AGENT = os.environ.get(
+    "SEC_USER_AGENT",
+    "StaticSites fcf-macro-indicators (contact: set SEC_USER_AGENT env var)",
+)
+# Operating-cash-flow XBRL tags, tried in order (filers differ / rename tags).
+OCF_TAGS = [
+    "NetCashProvidedByUsedInOperatingActivities",
+    "NetCashProvidedByUsedInOperatingActivitiesContinuingOperations",
+]
+# Capital-expenditure tags, reported as a positive outflow -> subtract from OCF.
+CAPEX_TAGS = [
+    "PaymentsToAcquirePropertyPlantAndEquipment",
+    "PaymentsToAcquireProductiveAssets",
+]
+# Cumulative year-to-date length (months) of each fiscal period on a cash-flow
+# statement: Q1 = 3, Q2 = 6 (H1), Q3 = 9 (9M), FY = 12. Q4 is never filed alone.
+_FP_MONTHS = {"Q1": 3, "Q2": 6, "Q3": 9, "FY": 12}
+# Ordered (period, previous-period) pairs used to difference YTD into discrete
+# quarters: Q1 as-is, Q2 = H1 - Q1, Q3 = 9M - H1, Q4 = FY - 9M.
+_FP_PREV = [("Q1", None), ("Q2", "Q1"), ("Q3", "Q2"), ("FY", "Q3")]
 
 
 def _to_quarter_end(idx: pd.DatetimeIndex) -> pd.DatetimeIndex:
@@ -91,30 +130,88 @@ def _fetch_sp500_quarterly() -> pd.Series:
     return q.astype(float)
 
 
-def _fetch_company_fcf(ticker: str) -> pd.Series:
-    """Quarterly free cash flow for one ticker, indexed by calendar-quarter-end.
+def _sec_session() -> requests.Session:
+    s = requests.Session()
+    s.headers.update({"User-Agent": SEC_USER_AGENT, "Accept-Encoding": "gzip, deflate"})
+    return s
 
-    yfinance exposes a 'Free Cash Flow' row directly in recent versions; when it
-    is absent we reconstruct it as Operating Cash Flow + Capital Expenditure
-    (CapEx is reported negative, so the sum is OCF minus capital spending)."""
-    cf = yf.Ticker(ticker).quarterly_cashflow
-    if cf is None or cf.empty:
-        raise RuntimeError(f"No quarterly cash-flow statement returned for {ticker}.")
 
-    def _row(name: str) -> pd.Series | None:
-        return cf.loc[name] if name in cf.index else None
+def _load_ticker_cik_map(session: requests.Session) -> dict[str, int]:
+    """Ticker -> CIK from SEC's published ticker directory."""
+    r = session.get(SEC_TICKERS_URL, timeout=120)
+    r.raise_for_status()
+    return {str(row["ticker"]).upper(): int(row["cik_str"]) for row in r.json().values()}
 
-    fcf = _row("Free Cash Flow")
-    if fcf is None:
-        ocf = _row("Operating Cash Flow") or _row("Total Cash From Operating Activities")
-        capex = _row("Capital Expenditure") or _row("Capital Expenditures")
-        if ocf is None or capex is None:
-            raise RuntimeError(f"Cannot derive FCF for {ticker}: rows are {list(cf.index)}")
-        fcf = ocf.add(capex, fill_value=0.0)
 
-    fcf = pd.to_numeric(fcf, errors="coerce").dropna().sort_index()
-    fcf.index = _to_quarter_end(pd.DatetimeIndex(fcf.index))
-    fcf = fcf.groupby(fcf.index).last()
+def _discrete_quarterly(facts: list[dict]) -> pd.Series:
+    """Cumulative YTD cash-flow facts -> discrete per-quarter values indexed by
+    calendar-quarter-end.
+
+    Cash-flow-statement concepts are only ever reported year-to-date, so within
+    each fiscal year we difference the cumulative legs (Q2 = H1 - Q1, and so on).
+    A fiscal year missing a leg simply omits the quarters that depend on it. When
+    the same period is restated across filings, the latest-filed value wins.
+    """
+    rows = []
+    for f in facts or []:
+        if f.get("val") is None or "start" not in f or "end" not in f:
+            continue
+        fp = f.get("fp")
+        if fp not in _FP_MONTHS:
+            continue
+        start, end = pd.Timestamp(f["start"]), pd.Timestamp(f["end"])
+        months = (end - start).days / 30.4
+        if abs(months - _FP_MONTHS[fp]) > 1.2:
+            continue  # duration doesn't match the claimed fiscal period -- skip
+        rows.append({"fy": f.get("fy"), "fp": fp, "end": end,
+                     "filed": f.get("filed", ""), "val": float(f["val"])})
+    if not rows:
+        return pd.Series(dtype=float)
+
+    df = pd.DataFrame(rows).sort_values("filed").drop_duplicates(["fy", "fp"], keep="last")
+    out: dict[pd.Timestamp, float] = {}
+    for _fy, g in df.groupby("fy"):
+        cum = {r.fp: (r.val, r.end) for r in g.itertuples()}
+        for fp, prev in _FP_PREV:
+            if fp not in cum:
+                continue
+            val, end = cum[fp]
+            if prev is not None:
+                if prev not in cum:
+                    continue  # can't difference without the earlier cumulative leg
+                val = val - cum[prev][0]
+            out[end.to_period("Q").to_timestamp(how="end").normalize()] = val
+    return pd.Series(out).sort_index()
+
+
+def _pick_concept(session: requests.Session, cik: int, tags: list[str]) -> pd.Series:
+    """First tag (in preference order) that yields discrete quarterly values."""
+    for tag in tags:
+        url = SEC_CONCEPT_URL.format(cik=cik, tag=tag)
+        r = session.get(url, timeout=120)
+        time.sleep(0.15)  # SEC fair-use: stay well under 10 requests/second
+        if r.status_code == 404:
+            continue  # this filer never reported this tag
+        r.raise_for_status()
+        series = _discrete_quarterly(r.json().get("units", {}).get("USD", []))
+        if not series.empty:
+            return series
+    return pd.Series(dtype=float)
+
+
+def _fetch_company_fcf(session: requests.Session, ticker: str, cik_map: dict[str, int]) -> pd.Series:
+    """Quarterly free cash flow (OCF - CapEx) for one ticker from SEC XBRL."""
+    cik = cik_map.get(ticker.upper())
+    if cik is None:
+        raise RuntimeError(f"{ticker}: no CIK in SEC ticker directory (US filer only?).")
+    ocf = _pick_concept(session, cik, OCF_TAGS)
+    capex = _pick_concept(session, cik, CAPEX_TAGS)
+    if ocf.empty or capex.empty:
+        raise RuntimeError(f"{ticker}: missing operating-cash-flow or CapEx XBRL facts.")
+    fcf = (ocf - capex).dropna()  # aligned on shared calendar-quarter-ends
+    fcf = fcf.loc[(fcf.index >= START) & (fcf.index <= END)]
+    if fcf.empty:
+        raise RuntimeError(f"{ticker}: no overlapping OCF and CapEx quarters.")
     return fcf.astype(float)
 
 
@@ -129,16 +226,21 @@ def main() -> None:
     tickers = [t.strip().upper() for t in args.tickers.split(",") if t.strip()]
 
     print(f"Fetching M2, the {'/'.join(YIELD_SERIES)} yield curve, S&P 500, "
-          f"and quarterly FCF for {', '.join(tickers)}...")
+          f"and SEC EDGAR FCF for {', '.join(tickers)}...")
 
     columns: dict[str, pd.Series] = {"m2": _fetch_fred_quarterly("M2SL")}
     for fred_id, col in YIELD_SERIES.items():
         columns[col] = _fetch_fred_quarterly(fred_id)
     columns["sp500"] = _fetch_sp500_quarterly()
 
+    session = _sec_session()
+    if SEC_USER_AGENT.endswith("env var)"):
+        print("  NOTE: SEC_USER_AGENT is unset -- SEC asks callers to identify themselves. "
+              "Set it to e.g. 'fcf-macro-indicators you@example.com'.")
+    cik_map = _load_ticker_cik_map(session)
     for ticker in tickers:
         try:
-            columns[f"fcf_{ticker}"] = _fetch_company_fcf(ticker)
+            columns[f"fcf_{ticker}"] = _fetch_company_fcf(session, ticker, cik_map)
         except Exception as exc:  # one bad ticker shouldn't sink the whole pull
             print(f"  WARNING: skipping {ticker}: {exc}")
 
@@ -154,6 +256,7 @@ def main() -> None:
     frame.index.name = "date"
     frame.to_csv(SERIES_CSV)
     PULLED_STAMP.write_text(date.today().isoformat() + "\n", encoding="utf-8")
+    FCF_SOURCE_FILE.write_text(FCF_SOURCE + "\n", encoding="utf-8")
     # This is a real upstream pull, so drop the sample-data watermark sentinel.
     SAMPLE_SENTINEL.unlink(missing_ok=True)
 

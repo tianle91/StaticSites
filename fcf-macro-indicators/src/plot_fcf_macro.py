@@ -41,7 +41,7 @@ PAGE_TITLE = "Free Cash Flow vs. M2, the S&amp;P 500 &amp; the Treasury Curve"
 # FCF line is derived from the fcf_* columns (see build_rebased); the rest map
 # straight through. Yields run light->dark from the short end to the long end.
 SERIES_COLORS = {
-    "Aggregate FCF (yfinance, summed)": "#d62728",
+    "Aggregate FCF (basket sum)": "#d62728",
     "M2 money supply (FRED: M2SL)": "#1f77b4",
     "S&P 500 (^GSPC)": "#2ca02c",
     "3M Treasury yield (FRED: DGS3MO)": "#c5b0d5",
@@ -60,10 +60,19 @@ MACRO_COLUMNS = {
     "30Y Treasury yield (FRED: DGS30)": "dgs30",
 }
 
-# Data sources, shown on the rendered chart itself so a reader who only has the
-# image/page can see (and follow) where each series came from. (label, url).
-DATA_SOURCES: list[tuple[str, str]] = [
-    ("Company cash-flow statements via Yahoo Finance", "https://finance.yahoo.com/quote/AAPL/cash-flow"),
+# Where the FCF numbers came from is recorded by fetch_data.py in this marker
+# ("label|url"), so the footer attributes the committed data accurately whatever
+# produced it. Absent (e.g. an older pull) -> the Yahoo default below.
+FCF_SOURCE_FILE = ROOT / "data" / "fcf_source.txt"
+DEFAULT_FCF_SOURCE = (
+    "Company free cash flow via Yahoo Finance",
+    "https://finance.yahoo.com/quote/AAPL/cash-flow",
+)
+
+# The fixed (macro) part of the "Data sources" footer; the FCF entry is prepended
+# at render time from fcf_source(). Shown on the chart itself so a reader who
+# only has the image/page can see and follow where each series came from.
+MACRO_SOURCES: list[tuple[str, str]] = [
     ("FRED M2 (M2SL)", "https://fred.stlouisfed.org/series/M2SL"),
     ("FRED 3M Treasury (DGS3MO)", "https://fred.stlouisfed.org/series/DGS3MO"),
     ("FRED 2Y Treasury (DGS2)", "https://fred.stlouisfed.org/series/DGS2"),
@@ -71,6 +80,20 @@ DATA_SOURCES: list[tuple[str, str]] = [
     ("FRED 30Y Treasury (DGS30)", "https://fred.stlouisfed.org/series/DGS30"),
     ("S&P 500 via Yahoo Finance (^GSPC)", "https://finance.yahoo.com/quote/%5EGSPC"),
 ]
+
+
+def fcf_source() -> tuple[str, str]:
+    """(label, url) for the FCF data, from the marker fetch_data.py writes."""
+    if FCF_SOURCE_FILE.exists():
+        line = FCF_SOURCE_FILE.read_text(encoding="utf-8").strip()
+        if "|" in line:
+            label, url = line.split("|", 1)
+            return label.strip(), url.strip()
+    return DEFAULT_FCF_SOURCE
+
+
+def data_sources() -> list[tuple[str, str]]:
+    return [fcf_source(), *MACRO_SOURCES]
 
 
 def data_pulled_date() -> str:
@@ -145,7 +168,7 @@ def build_rebased(rebase_anchor: pd.Timestamp | None) -> pd.DataFrame:
     if window.empty:
         raise RuntimeError("No overlap between FCF and macro series.")
 
-    data = {"Aggregate FCF (yfinance, summed)": fcf.loc[window]}
+    data = {"Aggregate FCF (basket sum)": fcf.loc[window]}
     for label, col in MACRO_COLUMNS.items():
         data[label] = frame[col].loc[window]
     aligned = pd.DataFrame(data).sort_index().dropna()
@@ -203,7 +226,7 @@ def render_png(rebased: pd.DataFrame, out_path: Path) -> None:
     fig.text(
         0.5, 0.005,
         (f"Data pulled {pulled} · " if pulled else "")
-        + "Data sources: " + " · ".join(f"{label} ({url})" for label, url in DATA_SOURCES),
+        + "Data sources: " + " · ".join(f"{label} ({url})" for label, url in data_sources()),
         ha="center", va="bottom", fontsize=6.0, color="#666666",
     )
 
@@ -276,6 +299,14 @@ def render_html(rebased: pd.DataFrame, out_path: Path) -> None:
         spikemode="across",
         spikethickness=1,
         rangeslider=dict(visible=True, thickness=0.06),
+        rangeselector=dict(
+            buttons=[
+                dict(count=3, label="3y", step="year", stepmode="backward"),
+                dict(count=5, label="5y", step="year", stepmode="backward"),
+                dict(count=10, label="10y", step="year", stepmode="backward"),
+                dict(step="all", label="All"),
+            ]
+        ),
     )
     fig.update_yaxes(
         title_text=f"Index (100 = each series at {anchor:%Y-%m-%d})",
@@ -292,7 +323,7 @@ def render_html(rebased: pd.DataFrame, out_path: Path) -> None:
     html = html.replace("<head>", "<head><title>" + PAGE_TITLE + "</title>", 1)
     links = " · ".join(
         f'<a href="{url}" target="_blank" rel="noopener">{label}</a>'
-        for label, url in DATA_SOURCES
+        for label, url in data_sources()
     )
     pulled = data_pulled_date()
     pulled_html = f"Data pulled {pulled} &middot; " if pulled else ""
