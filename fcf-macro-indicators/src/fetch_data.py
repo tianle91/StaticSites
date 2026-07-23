@@ -31,6 +31,7 @@ import time
 from datetime import date
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 import pandas_datareader.data as web
 import requests
@@ -91,18 +92,36 @@ CASH_TAGS = [
     "CashAndCashEquivalentsAtCarryingValue",
     "CashCashEquivalentsRestrictedCashAndRestrictedCashEquivalents",
 ]
-# Cumulative year-to-date length (months) of each fiscal period on a cash-flow
-# statement: Q1 = 3, Q2 = 6 (H1), Q3 = 9 (9M), FY = 12. Q4 is never filed alone.
-_FP_MONTHS = {"Q1": 3, "Q2": 6, "Q3": 9, "FY": 12}
-# Ordered (period, previous-period) pairs used to difference YTD into discrete
-# quarters: Q1 as-is, Q2 = H1 - Q1, Q3 = 9M - H1, Q4 = FY - 9M.
-_FP_PREV = [("Q1", None), ("Q2", "Q1"), ("Q3", "Q2"), ("FY", "Q3")]
+# A discrete quarter is ~3 months; allow a wide tolerance so a 52/53-week fiscal
+# quarter (~2.9-3.2 months) still counts, while a half-year leg (~6 months) never
+# does. Used both to spot a natively-reported quarter and to confirm two YTD legs
+# are exactly one quarter apart before differencing them.
+_ONE_Q_LOW, _ONE_Q_HIGH = 2.0, 4.0
 
 
 def _to_quarter_end(idx: pd.DatetimeIndex) -> pd.DatetimeIndex:
-    """Snap any timestamps to their calendar-quarter-end, so fiscal-quarter report
-    dates (e.g. 2024-06-29) and month-ends align on one grid (2024-06-30)."""
+    """Snap timestamps to their *containing* calendar quarter-end. Used to bucket
+    dense daily series (FRED/Yahoo) into quarters -- a May observation belongs to
+    Q2, so the containing quarter is what's wanted here."""
     return idx.to_period("Q").to_timestamp(how="end").normalize()
+
+
+def _nearest_quarter_end(idx) -> pd.DatetimeIndex:
+    """Snap reported-period end dates to the *nearest* calendar quarter-end. Nearest
+    (not containing) so a 52/53-week fiscal calendar whose quarter boundary drifts a
+    few days across a calendar-quarter line -- e.g. Apple's fiscal Q2 ending
+    2017-04-01 -- lands on the quarter it economically represents (2017-03-31)
+    instead of jumping a quarter forward and leaving the real quarter empty."""
+    idx = pd.DatetimeIndex(idx)
+    this_qe = idx.to_period("Q").to_timestamp(how="end").normalize()
+    prev_qe = (idx.to_period("Q") - 1).to_timestamp(how="end").normalize()
+    nearer_prev = np.abs((idx - prev_qe).values) < np.abs((this_qe - idx).values)
+    return pd.DatetimeIndex(np.where(nearer_prev, prev_qe.values, this_qe.values))
+
+
+def _snap_quarter_end(ts: pd.Timestamp) -> pd.Timestamp:
+    """`_nearest_quarter_end` for a single timestamp."""
+    return _nearest_quarter_end([ts])[0]
 
 
 def _quarter_last(frame: pd.DataFrame | pd.Series) -> pd.DataFrame | pd.Series:
@@ -165,43 +184,56 @@ def _load_ticker_cik_map(session: requests.Session) -> dict[str, int]:
 
 
 def _discrete_quarterly(facts: list[dict]) -> pd.Series:
-    """Cumulative YTD cash-flow facts -> discrete per-quarter values indexed by
+    """Cash-flow-statement facts -> discrete per-quarter values indexed by
     calendar-quarter-end.
 
-    Cash-flow-statement concepts are only ever reported year-to-date, so within
-    each fiscal year we difference the cumulative legs (Q2 = H1 - Q1, and so on).
-    A fiscal year missing a leg simply omits the quarters that depend on it. When
-    the same period is restated across filings, the latest-filed value wins.
+    Two kinds of facts become discrete quarters:
+      * a fact whose own duration is ~one quarter (some filers, e.g. Amazon, report
+        a native three-month leg) is a discrete quarter as reported; and
+      * cumulative year-to-date legs that share a fiscal-year start are differenced
+        pairwise (H1 - Q1, 9M - H1, FY - 9M), each difference landing on the later
+        leg's quarter-end -- but only when the two legs are exactly one quarter
+        apart, so a missing leg never fabricates a value.
+
+    Periods are grouped by what they actually cover (`start`/`end`), NOT by SEC's
+    `fy`/`fp` labels: those describe the *filing*, so a prior-year comparative
+    carried into a later filing is mislabelled and would collide with the real
+    period. On identical periods the latest-filed value wins (then the preferred
+    tag), which also absorbs restatements and cross-tag overlaps.
     """
     rows = []
     for f in facts or []:
         if f.get("val") is None or "start" not in f or "end" not in f:
             continue
-        fp = f.get("fp")
-        if fp not in _FP_MONTHS:
-            continue
         start, end = pd.Timestamp(f["start"]), pd.Timestamp(f["end"])
         months = (end - start).days / 30.4
-        if abs(months - _FP_MONTHS[fp]) > 1.2:
-            continue  # duration doesn't match the claimed fiscal period -- skip
-        rows.append({"fy": f.get("fy"), "fp": fp, "end": end,
-                     "filed": f.get("filed", ""), "val": float(f["val"])})
+        if months < 1:
+            continue
+        rows.append({"start": start, "end": end, "months": months,
+                     "filed": f.get("filed", ""), "prio": f.get("_prio", 0),
+                     "val": float(f["val"])})
     if not rows:
         return pd.Series(dtype=float)
 
-    df = pd.DataFrame(rows).sort_values("filed").drop_duplicates(["fy", "fp"], keep="last")
+    # keep='last' after this sort keeps the latest-filed fact for each period, and
+    # among equally-filed facts the preferred (lowest-index) tag.
+    df = (pd.DataFrame(rows)
+          .sort_values(["filed", "prio"], ascending=[True, False])
+          .drop_duplicates(["start", "end"], keep="last"))
+
     out: dict[pd.Timestamp, float] = {}
-    for _fy, g in df.groupby("fy"):
-        cum = {r.fp: (r.val, r.end) for r in g.itertuples()}
-        for fp, prev in _FP_PREV:
-            if fp not in cum:
-                continue
-            val, end = cum[fp]
-            if prev is not None:
-                if prev not in cum:
-                    continue  # can't difference without the earlier cumulative leg
-                val = val - cum[prev][0]
-            out[end.to_period("Q").to_timestamp(how="end").normalize()] = val
+    # Natively-reported one-quarter legs are discrete quarters as-is.
+    for r in df.itertuples():
+        if _ONE_Q_LOW <= r.months <= _ONE_Q_HIGH:
+            out[_snap_quarter_end(r.end)] = r.val
+    # Difference consecutive YTD legs sharing a fiscal-year start; fill only the
+    # quarters a native leg didn't already cover.
+    for _start, g in df.sort_values("end").groupby("start"):
+        prev = None
+        for r in g.itertuples():
+            if prev is not None and _ONE_Q_LOW <= (r.end - prev.end).days / 30.4 <= _ONE_Q_HIGH:
+                out.setdefault(_snap_quarter_end(r.end), r.val - prev.val)
+            prev = r
     return pd.Series(out).sort_index()
 
 
@@ -214,31 +246,38 @@ def _instant_quarterly(facts: list[dict]) -> pd.Series:
     for f in facts or []:
         if f.get("val") is None or "end" not in f:
             continue
-        rows.append({"end": pd.Timestamp(f["end"]),
-                     "filed": f.get("filed", ""), "val": float(f["val"])})
+        rows.append({"end": pd.Timestamp(f["end"]), "filed": f.get("filed", ""),
+                     "prio": f.get("_prio", 0), "val": float(f["val"])})
     if not rows:
         return pd.Series(dtype=float)
-    df = pd.DataFrame(rows).sort_values("filed").drop_duplicates("end", keep="last")
-    df["qe"] = _to_quarter_end(pd.DatetimeIndex(df["end"]))
+    df = (pd.DataFrame(rows)
+          .sort_values(["filed", "prio"], ascending=[True, False])
+          .drop_duplicates("end", keep="last"))
+    df["qe"] = _nearest_quarter_end(pd.DatetimeIndex(df["end"]))
     df = df.sort_values("end").drop_duplicates("qe", keep="last")
     return df.set_index("qe")["val"].sort_index().astype(float)
 
 
-def _pick_concept(session: requests.Session, cik: int, tags: list[str], reduce=_discrete_quarterly) -> pd.Series:
-    """First tag (in preference order) whose facts reduce to a non-empty quarterly
-    series. `reduce` turns the raw USD facts into that series (discrete flow by
-    default, or _instant_quarterly for balance-sheet values)."""
-    for tag in tags:
+def _concept_facts(session: requests.Session, cik: int, tags: list[str]) -> list[dict]:
+    """Raw USD facts for a concept, MERGED across all its candidate tags. Filers
+    rename XBRL tags mid-history (Apple's capex ran under PaymentsToAcquire-
+    ProductiveAssets, then ...PropertyPlantAndEquipment; Amazon the reverse), so no
+    single tag spans the full timeline -- picking the first non-empty tag silently
+    truncates the series. Unioning every tag's facts and letting the downstream
+    per-period dedup keep the latest-filed value recovers the whole history. Each
+    fact is stamped with `_prio` (its tag's preference rank, 0 = most preferred),
+    used only to break dedup ties on an identical period."""
+    facts: list[dict] = []
+    for prio, tag in enumerate(tags):
         url = SEC_CONCEPT_URL.format(cik=cik, tag=tag)
         r = session.get(url, timeout=120)
         time.sleep(0.15)  # SEC fair-use: stay well under 10 requests/second
         if r.status_code == 404:
-            continue  # this filer never reported this tag
+            continue  # this filer never reported under this tag
         r.raise_for_status()
-        series = reduce(r.json().get("units", {}).get("USD", []))
-        if not series.empty:
-            return series
-    return pd.Series(dtype=float)
+        for f in r.json().get("units", {}).get("USD", []):
+            facts.append({**f, "_prio": prio})
+    return facts
 
 
 def _fetch_company_fcf(session: requests.Session, ticker: str, cik_map: dict[str, int]) -> pd.Series:
@@ -246,8 +285,8 @@ def _fetch_company_fcf(session: requests.Session, ticker: str, cik_map: dict[str
     cik = cik_map.get(ticker.upper())
     if cik is None:
         raise RuntimeError(f"{ticker}: no CIK in SEC ticker directory (US filer only?).")
-    ocf = _pick_concept(session, cik, OCF_TAGS)
-    capex = _pick_concept(session, cik, CAPEX_TAGS)
+    ocf = _discrete_quarterly(_concept_facts(session, cik, OCF_TAGS))
+    capex = _discrete_quarterly(_concept_facts(session, cik, CAPEX_TAGS))
     if ocf.empty or capex.empty:
         raise RuntimeError(f"{ticker}: missing operating-cash-flow or CapEx XBRL facts.")
     fcf = (ocf - capex).dropna()  # aligned on shared calendar-quarter-ends
@@ -262,7 +301,7 @@ def _fetch_company_cash(session: requests.Session, ticker: str, cik_map: dict[st
     cik = cik_map.get(ticker.upper())
     if cik is None:
         raise RuntimeError(f"{ticker}: no CIK in SEC ticker directory (US filer only?).")
-    cash = _pick_concept(session, cik, CASH_TAGS, reduce=_instant_quarterly)
+    cash = _instant_quarterly(_concept_facts(session, cik, CASH_TAGS))
     cash = cash.loc[(cash.index >= START) & (cash.index <= END)]
     if cash.empty:
         raise RuntimeError(f"{ticker}: no cash & equivalents XBRL facts.")

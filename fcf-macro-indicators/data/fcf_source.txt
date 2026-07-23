@@ -1,0 +1,1 @@
+Company free cash flow (OCF - CapEx) from SEC EDGAR XBRL|https://www.sec.gov/edgar/sec-api-documentation
