@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 """
-Read the quarterly source series from data/series.csv, rebase every series to 100
-using a configurable anchor quarter, and plot free cash flow against the macro
-backdrop: M2 money supply, the S&P 500, and the 3M / 2Y / 10Y / 30Y Treasury
-curve.
+Read the quarterly source series from data/series.csv and plot free cash flow
+against the macro backdrop across two panels that share one x-axis: the top panel
+rebases the level series (aggregate FCF, aggregate cash, M2 money supply, the
+S&P 500) to 100 at a configurable anchor quarter to compare growth; the bottom
+panel shows the 3M / 2Y / 10Y / 30Y Treasury curve as raw yields (%), which have a
+natural common scale and would blow up if rebased to a near-zero-rate anchor.
 
 Free cash flow is the coarsest input (reported quarterly), so it sets both the
 grid and the charted window: the chart spans the quarters in which every basket
@@ -54,6 +56,27 @@ MACRO_COLUMNS = {
     "10Y Treasury yield (FRED: DGS10)": "dgs10",
     "30Y Treasury yield (FRED: DGS30)": "dgs30",
 }
+
+# The chart is split into two panels sharing one x-axis. Yields live in their own
+# panel and are plotted as RAW percentages, not rebased to 100: they already share
+# a natural common scale (percent), and rebasing them to an anchor quarter whose
+# short rate was near zero (e.g. the 3M bill at ~0.03% in 2014) blows the index up
+# into the thousands and crushes every other line. Everything else is a dollar/
+# index level in incomparable units, so those ARE rebased to 100 to compare growth.
+YIELD_LABELS = [
+    "3M Treasury yield (FRED: DGS3MO)",
+    "2Y Treasury yield (FRED: DGS2)",
+    "10Y Treasury yield (FRED: DGS10)",
+    "30Y Treasury yield (FRED: DGS30)",
+]
+
+
+def _split_columns(columns) -> tuple[list[str], list[str]]:
+    """Partition series labels into (rebased level panel, raw yield panel),
+    preserving the SERIES_COLORS display order within each."""
+    levels = [c for c in columns if c not in YIELD_LABELS]
+    yields = [c for c in columns if c in YIELD_LABELS]
+    return levels, yields
 
 # Where the FCF numbers came from is recorded by fetch_data.py in this marker
 # ("label|url"), so the footer attributes the committed data accurately whatever
@@ -161,8 +184,16 @@ def aggregate_cash(frame: pd.DataFrame) -> pd.Series:
     return _aggregate(frame, "cash_")
 
 
+def basket_tickers(frame: pd.DataFrame) -> list[str]:
+    """The companies whose FCF/cash the aggregate lines sum, read off the fcf_*
+    column names so the chart names exactly what was fetched into series.csv."""
+    return [c[len("fcf_"):] for c in frame.columns if c.startswith("fcf_")]
+
+
 def build_rebased(rebase_anchor: pd.Timestamp | None) -> pd.DataFrame:
-    """Align FCF + macro on the common quarterly window and rebase each to 100."""
+    """Align FCF + macro on the common quarterly window. Level series (FCF, cash,
+    M2, S&P 500) are rebased to 100; Treasury yields are kept as raw percentages
+    (see YIELD_LABELS) for their own panel."""
     frame = load_series()
     fcf = aggregate_fcf(frame)
 
@@ -188,40 +219,58 @@ def build_rebased(rebase_anchor: pd.Timestamp | None) -> pd.DataFrame:
         raise ValueError(f"Rebase anchor {anchor:%Y-%m-%d} is outside the charted "
                          f"window [{aligned.index.min():%Y-%m-%d}, {aligned.index.max():%Y-%m-%d}].")
 
-    rebased = pd.DataFrame({col: _rebase_to_anchor(aligned[col], anchor) for col in aligned.columns})
+    # Rebase only the level series; yields stay in raw percent for their own panel.
+    rebased = pd.DataFrame({
+        col: (aligned[col] if col in YIELD_LABELS else _rebase_to_anchor(aligned[col], anchor))
+        for col in aligned.columns
+    })
     rebased.attrs["anchor"] = anchor
+    rebased.attrs["tickers"] = basket_tickers(frame)
     return rebased
 
 
 def render_png(rebased: pd.DataFrame, out_path: Path) -> None:
     anchor = rebased.attrs["anchor"]
+    tickers = rebased.attrs.get("tickers", [])
+    level_cols, yield_cols = _split_columns(rebased.columns)
 
     try:
         plt.style.use("seaborn-v0_8-whitegrid")
     except OSError:
         plt.style.use("ggplot")
-    fig, ax = plt.subplots(figsize=(14, 8), dpi=140)
-
-    for col in rebased.columns:
-        ax.plot(rebased.index, rebased[col], label=col, color=SERIES_COLORS[col],
-                linewidth=2.4 if col.startswith("Aggregate") else 1.7,
-                marker="o", markersize=4)
-
-    ax.axhline(100.0, color="#999999", linewidth=0.8, linestyle="--", alpha=0.7, zorder=1)
-
-    ax.set_title(
-        "Free cash flow vs. M2, the S&P 500, and the Treasury curve "
-        f"(rebased to 100 at {anchor:%Y-%m-%d})",
-        fontsize=12,
-        pad=12,
+    # Two panels on a shared x-axis: rebased levels on top, raw Treasury yields
+    # below. The top panel is taller (it carries the aggregate + M2 + S&P lines).
+    fig, (ax_lvl, ax_yld) = plt.subplots(
+        2, 1, figsize=(14, 10), dpi=140, sharex=True,
+        gridspec_kw={"height_ratios": [3, 2], "hspace": 0.08},
     )
-    ax.set_ylabel(f"Index (100 = each series at {anchor:%Y-%m-%d})", fontsize=10)
-    ax.set_xlabel("Quarter-end")
-    ax.xaxis.set_major_locator(mdates.MonthLocator(interval=3))
-    ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m"))
-    ax.legend(loc="upper left", frameon=True, fontsize=9)
+
+    for col in level_cols:
+        ax_lvl.plot(rebased.index, rebased[col], label=col, color=SERIES_COLORS[col],
+                    linewidth=2.4 if col.startswith("Aggregate") else 1.7,
+                    marker="o", markersize=4)
+    ax_lvl.axhline(100.0, color="#999999", linewidth=0.8, linestyle="--", alpha=0.7, zorder=1)
+    ax_lvl.set_ylabel(f"Index (100 = level at {anchor:%Y-%m-%d})", fontsize=10)
+    ax_lvl.legend(loc="upper left", frameon=True, fontsize=9)
+
+    for col in yield_cols:
+        ax_yld.plot(rebased.index, rebased[col], label=col, color=SERIES_COLORS[col],
+                    linewidth=1.7, marker="o", markersize=4)
+    ax_yld.set_ylabel("Treasury yield (%)", fontsize=10)
+    ax_yld.set_xlabel("Quarter-end")
+    ax_yld.legend(loc="upper left", frameon=True, fontsize=9, ncol=2)
+    ax_yld.xaxis.set_major_locator(mdates.MonthLocator(interval=3))
+    ax_yld.xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m"))
+
+    basket = f"Aggregates sum {len(tickers)} companies: {', '.join(tickers)}" if tickers else ""
+    fig.suptitle(
+        "Free cash flow vs. M2, the S&P 500, and the Treasury curve\n"
+        f"Levels rebased to 100 at {anchor:%Y-%m-%d}; Treasury yields shown as raw %"
+        + (f"  ·  {basket}" if basket else ""),
+        fontsize=12,
+    )
     fig.autofmt_xdate()
-    fig.tight_layout(rect=(0, 0.03, 1, 1))
+    fig.subplots_adjust(left=0.06, right=0.98, top=0.90, bottom=0.13)
 
     pulled = data_pulled_date()
     fig.text(
@@ -237,59 +286,82 @@ def render_png(rebased: pd.DataFrame, out_path: Path) -> None:
 
 
 def render_html(rebased: pd.DataFrame, out_path: Path) -> None:
-    """Zoomable/pannable plotly chart: drag to zoom, double-click to reset."""
+    """Zoomable/pannable plotly chart: drag to zoom, double-click to reset. Two
+    panels share one x-axis -- rebased levels on top, raw Treasury yields below."""
     import plotly.graph_objects as go
+    from plotly.subplots import make_subplots
 
     anchor = rebased.attrs["anchor"]
+    tickers = rebased.attrs.get("tickers", [])
+    level_cols, yield_cols = _split_columns(rebased.columns)
 
-    fig = go.Figure()
-    for col in rebased.columns:
+    fig = make_subplots(
+        rows=2, cols=1, shared_xaxes=True, vertical_spacing=0.04,
+        row_heights=[0.6, 0.4],
+        subplot_titles=(f"Levels rebased to 100 at {anchor:%Y-%m-%d}", "Treasury yields (%)"),
+    )
+    for col in level_cols:
         fig.add_trace(
             go.Scatter(
-                x=rebased.index,
-                y=rebased[col],
-                name=col,
+                x=rebased.index, y=rebased[col], name=col, legendgroup="levels",
                 mode="lines+markers",
                 line=dict(color=SERIES_COLORS[col], width=2.6 if col.startswith("Aggregate") else 1.7),
                 marker=dict(size=5),
                 hovertemplate="%{y:.1f}<extra>" + col + "</extra>",
-            )
+            ),
+            row=1, col=1,
+        )
+    for col in yield_cols:
+        fig.add_trace(
+            go.Scatter(
+                x=rebased.index, y=rebased[col], name=col, legendgroup="yields",
+                mode="lines+markers",
+                line=dict(color=SERIES_COLORS[col], width=1.7),
+                marker=dict(size=5),
+                hovertemplate="%{y:.2f}%<extra>" + col + "</extra>",
+            ),
+            row=2, col=1,
         )
 
-    fig.add_hline(y=100.0, line=dict(color="#999999", width=0.8, dash="dash"))
+    fig.add_hline(y=100.0, line=dict(color="#999999", width=0.8, dash="dash"), row=1, col=1)
 
+    basket = (f"Aggregates sum {len(tickers)} companies: {', '.join(tickers)}"
+              if tickers else "")
     fig.update_layout(
         template="plotly_white",
         title=dict(
-            text=("Free cash flow vs. M2, the S&P 500, and the Treasury curve "
-                  f"(rebased to 100 at {anchor:%Y-%m-%d})"),
+            text=("Free cash flow vs. M2, the S&P 500, and the Treasury curve"
+                  + (f"<br><sup>{basket}</sup>" if basket else "")),
             font=dict(size=14),
         ),
         hovermode="x unified",
         dragmode="zoom",
-        legend=dict(x=0.01, y=0.99, bgcolor="rgba(255,255,255,0.8)", bordercolor="#cccccc", borderwidth=1),
-        margin=dict(l=70, r=30, t=90, b=60),
+        legend=dict(bgcolor="rgba(255,255,255,0.8)", bordercolor="#cccccc", borderwidth=1,
+                    groupclick="toggleitem"),
+        margin=dict(l=70, r=30, t=110, b=60),
         updatemenus=[
             dict(
                 type="buttons",
                 direction="right",
                 x=1.0,
-                y=1.12,
+                y=1.14,
                 xanchor="right",
                 showactive=True,
                 buttons=[
-                    dict(label="Linear", method="relayout", args=[{"yaxis.type": "linear"}]),
-                    dict(label="Log", method="relayout", args=[{"yaxis.type": "log"}]),
+                    dict(label="Levels: Linear", method="relayout", args=[{"yaxis.type": "linear"}]),
+                    dict(label="Levels: Log", method="relayout", args=[{"yaxis.type": "log"}]),
                 ],
             )
         ],
     )
+    # Spikes + rangeslider/selector live on the shared (bottom) x-axis.
+    fig.update_xaxes(showspikes=True, spikemode="across", spikethickness=1, row=1, col=1)
     fig.update_xaxes(
         title_text="Quarter-end",
         showspikes=True,
         spikemode="across",
         spikethickness=1,
-        rangeslider=dict(visible=True, thickness=0.06),
+        rangeslider=dict(visible=True, thickness=0.05),
         rangeselector=dict(
             buttons=[
                 dict(count=3, label="3y", step="year", stepmode="backward"),
@@ -298,12 +370,11 @@ def render_html(rebased: pd.DataFrame, out_path: Path) -> None:
                 dict(step="all", label="All"),
             ]
         ),
+        row=2, col=1,
     )
-    fig.update_yaxes(
-        title_text=f"Index (100 = each series at {anchor:%Y-%m-%d})",
-        fixedrange=False,
-        showspikes=False,
-    )
+    fig.update_yaxes(title_text=f"Index (100 @ {anchor:%Y-%m-%d})", fixedrange=False,
+                     showspikes=False, row=1, col=1)
+    fig.update_yaxes(title_text="Yield (%)", fixedrange=False, showspikes=False, row=2, col=1)
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
     html = fig.to_html(
