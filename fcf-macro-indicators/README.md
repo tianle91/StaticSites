@@ -60,9 +60,10 @@ SEC_USER_AGENT="fcf-macro-indicators you@example.com" \
 
 - **drag** a region to zoom, **scroll** to zoom, **double-click** to reset
 - use the **range slider** under the axis, or the **3y / 5y / 10y / All** buttons
-- pick the **Rebase levels to 100 at:** quarter from the dropdown above the chart
-  to re-anchor the top panel live (client-side; no rebuild). `--rebase-date` sets
-  the initial anchor
+- **click anywhere on the chart** to re-anchor the top panel: the click snaps to
+  the nearest quarter, a dotted marker line moves to it, and the level series
+  re-rebase to 100 there — live, client-side, no rebuild. `--rebase-date` sets the
+  initial anchor
 - toggle **Levels: Linear / Log** on the top panel's y-axis (log helps when a
   decade of M2/S&P growth compresses the recent range)
 - click legend entries to hide or isolate a series; hover for aligned values

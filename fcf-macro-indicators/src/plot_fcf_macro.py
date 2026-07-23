@@ -385,6 +385,15 @@ def render_html(rebased: pd.DataFrame, out_path: Path) -> None:
             row=2, col=1,
         )
 
+    # Movable vertical marker at the rebase anchor, spanning both panels (xref to
+    # the top x-axis, yref to paper). The viewer clicks the chart to move it and
+    # re-rebase the top panel (see _rebase_script); drawn here so the initial
+    # anchor is marked without JS.
+    fig.add_shape(type="line", x0=anchor, x1=anchor, xref="x", yref="paper",
+                  y0=0, y1=1, line=dict(color="#111111", width=1.5, dash="dot"),
+                  layer="above")
+    anchor_shape_idx = len(fig.layout.shapes) - 1
+
     basket = (f"Aggregates sum {len(tickers)} companies: {', '.join(tickers)}"
               if tickers else "")
     fig.update_layout(
@@ -457,33 +466,31 @@ def render_html(rebased: pd.DataFrame, out_path: Path) -> None:
         'font-size:12px;color:#666;text-align:center;padding:8px 16px 16px">'
         + pulled_html + "<strong>Data sources:</strong> " + links + "</footer>"
     )
-    html = html.replace("</body>", footer + _rebase_script(rebased, div_id) + "</body>", 1)
+    html = html.replace(
+        "</body>", footer + _rebase_script(rebased, div_id, anchor_shape_idx) + "</body>", 1)
     out_path.write_text(html, encoding="utf-8")
 
 
 def _rebase_control(rebased: pd.DataFrame) -> str:
-    """A dropdown of every anchor quarter in the window, for re-rebasing live."""
-    raw = rebased.attrs["raw"]
+    """Hint text above the chart. Re-anchoring is done by clicking the chart (see
+    _rebase_script); the current anchor is shown here and updated live."""
     anchor = rebased.attrs["anchor"]
-    options = "".join(
-        f'<option value="{d:%Y-%m-%d}"{" selected" if d == anchor else ""}>'
-        f"{d.to_period('Q')} ({d:%Y-%m-%d})</option>"
-        for d in raw.index
-    )
     return (
         '<div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;'
         'font-size:13px;color:#333;text-align:center;padding:10px 16px 0">'
-        '<label for="rebase-select"><strong>Rebase levels to 100 at:</strong></label> '
-        f'<select id="rebase-select" style="font-size:13px;padding:2px 4px">{options}</select>'
-        "</div>"
+        "\U0001f4cd <strong>Click the chart</strong> to rebase the top panel to that "
+        'quarter &mdash; anchor: <span id="rebase-anchor-label" '
+        f'style="font-variant-numeric:tabular-nums">{anchor:%Y-%m-%d}</span></div>'
     )
 
 
-def _rebase_script(rebased: pd.DataFrame, div_id: str) -> str:
-    """JS that re-rebases the level traces to the picked anchor, entirely client-
-    side (no rebuild): index i = 100 * raw[i] / raw[anchor]. Level traces are the
-    first ones added, so their indices are 0..len(level_cols)-1; the yield and
-    inversion traces are left untouched."""
+def _rebase_script(rebased: pd.DataFrame, div_id: str, anchor_shape_idx: int) -> str:
+    """JS that re-rebases the level traces when the viewer clicks the chart,
+    entirely client-side (no rebuild): index i = 100 * raw[i] / raw[anchor]. The
+    click x is snapped to the nearest quarter. Level traces are added first, so
+    their indices are 0..len(level_cols)-1; the yield/inversion traces are left
+    untouched. The anchor marker line (shape `anchor_shape_idx`), the y-axis and
+    panel titles, and the hint label all follow the new anchor."""
     raw = rebased.attrs["raw"]
     level_cols, _ = _split_columns(rebased.columns)
     payload = {
@@ -491,21 +498,34 @@ def _rebase_script(rebased: pd.DataFrame, div_id: str) -> str:
         "labels": level_cols,
         "raw": {c: [float(v) for v in raw[c]] for c in level_cols},
         "idx": list(range(len(level_cols))),
+        "shape": anchor_shape_idx,
     }
     return (
         '<script type="text/javascript">(function(){'
         f"var D={json.dumps(payload)};"
         f'var gd=document.getElementById("{div_id}");'
-        'var sel=document.getElementById("rebase-select");'
-        "if(!gd||!sel)return;"
-        "function rebase(iso){"
-        "var ai=D.dates.indexOf(iso);if(ai<0)return;"
+        "if(!gd)return;"
+        "var lbl=document.getElementById(\"rebase-anchor-label\");"
+        "var times=D.dates.map(function(s){return new Date(s).getTime();});"
+        "function nearest(x){"  # x may be an ISO string or epoch ms
+        "var t=(typeof x===\"string\")?new Date(x).getTime():+x;"
+        "var bi=0,bd=Infinity;"
+        "for(var i=0;i<times.length;i++){var d=Math.abs(times[i]-t);if(d<bd){bd=d;bi=i;}}"
+        "return bi;}"
+        "function rebase(ai){"
+        "var iso=D.dates[ai];"
         "var ys=D.labels.map(function(l){var r=D.raw[l];var b=r[ai];"
         "return r.map(function(v){return b?100*v/b:null;});});"
         "Plotly.restyle(gd,{y:ys},D.idx);"
-        'Plotly.relayout(gd,{"yaxis.title.text":"Index (100 @ "+iso+")",'
-        '"annotations[0].text":"Levels rebased to 100 at "+iso});}'
-        "sel.addEventListener(\"change\",function(){rebase(this.value);});"
+        "var rl={\"yaxis.title.text\":\"Index (100 @ \"+iso+\")\","
+        "\"annotations[0].text\":\"Levels rebased to 100 at \"+iso};"
+        "rl[\"shapes[\"+D.shape+\"].x0\"]=iso;rl[\"shapes[\"+D.shape+\"].x1\"]=iso;"
+        "Plotly.relayout(gd,rl);"
+        "if(lbl)lbl.textContent=iso;}"
+        "gd.on(\"plotly_click\",function(ev){"
+        "if(!ev||!ev.points||!ev.points.length)return;"
+        "rebase(nearest(ev.points[0].x));});"
+        "gd.style.cursor=\"pointer\";"
         "})();</script>"
     )
 

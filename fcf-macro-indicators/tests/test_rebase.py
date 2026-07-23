@@ -137,19 +137,22 @@ class RebaseControlTest(unittest.TestCase):
         rebased.attrs["anchor"] = pd.Timestamp("2024-06-30")
         return rebased
 
-    def test_control_lists_every_quarter_and_marks_the_anchor(self) -> None:
+    def test_control_shows_the_current_anchor(self) -> None:
         html = _rebase_control(self._rebased())
-        self.assertEqual(html.count("<option"), 3)
-        self.assertIn('value="2024-06-30" selected', html)
-        self.assertEqual(html.count("selected"), 1)
+        self.assertIn("Click the chart", html)
+        self.assertIn('id="rebase-anchor-label"', html)
+        self.assertIn("2024-06-30", html)
 
     def test_script_embeds_raw_level_data_only(self) -> None:
-        script = _rebase_script(self._rebased(), "chart-id")
+        script = _rebase_script(self._rebased(), "chart-id", 3)
         self.assertIn("chart-id", script)
         self.assertIn("Aggregate FCF (basket sum)", script)
         # Yields are not rebased, so their raw data must not be embedded.
         self.assertNotIn("DGS10", script)
         self.assertIn("Plotly.restyle", script)
+        self.assertIn("plotly_click", script)
+        # The anchor marker shape index is wired in for the click handler to move.
+        self.assertIn('"shape": 3', script)
 
 
 if __name__ == "__main__":
