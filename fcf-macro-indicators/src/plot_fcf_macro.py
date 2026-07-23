@@ -36,6 +36,7 @@ PAGE_TITLE = "Free Cash Flow vs. M2, the S&amp;P 500 &amp; the Treasury Curve"
 # straight through. Yields run light->dark from the short end to the long end.
 SERIES_COLORS = {
     "Aggregate FCF (basket sum)": "#d62728",
+    "Aggregate cash & equivalents (basket sum)": "#ff7f0e",
     "M2 money supply (FRED: M2SL)": "#1f77b4",
     "S&P 500 (^GSPC)": "#2ca02c",
     "3M Treasury yield (FRED: DGS3MO)": "#c5b0d5",
@@ -133,17 +134,31 @@ def load_series() -> pd.DataFrame:
     return pd.read_csv(SERIES_CSV, parse_dates=["date"], index_col="date").sort_index()
 
 
+def _aggregate(frame: pd.DataFrame, prefix: str) -> pd.Series:
+    """Sum the per-company columns with this prefix, restricted to quarters where
+    *every* member reports, so the aggregate never jumps because a company drops
+    in or out of the sample. Empty when no such columns exist."""
+    cols = [c for c in frame.columns if c.startswith(prefix)]
+    if not cols:
+        return pd.Series(dtype=float)
+    block = frame[cols].dropna(how="any")
+    return block.sum(axis=1) if not block.empty else pd.Series(dtype=float)
+
+
 def aggregate_fcf(frame: pd.DataFrame) -> pd.Series:
-    """Sum per-company FCF into one series, restricted to quarters where *every*
-    basket member reports, so the aggregate never jumps because of a company
-    dropping in or out of the sample."""
-    fcf_cols = [c for c in frame.columns if c.startswith("fcf_")]
-    if not fcf_cols:
-        raise SystemExit("No fcf_* columns in series.csv - run `make data`.")
-    fcf = frame[fcf_cols].dropna(how="any")
+    """Summed per-company FCF (required series)."""
+    fcf = _aggregate(frame, "fcf_")
     if fcf.empty:
+        if not any(c.startswith("fcf_") for c in frame.columns):
+            raise SystemExit("No fcf_* columns in series.csv - run `make data`.")
         raise RuntimeError("No quarter has FCF for every basket member.")
-    return fcf.sum(axis=1)
+    return fcf
+
+
+def aggregate_cash(frame: pd.DataFrame) -> pd.Series:
+    """Summed per-company cash & equivalents. Optional: empty when the committed
+    CSV predates the cash columns, in which case the chart omits the line."""
+    return _aggregate(frame, "cash_")
 
 
 def build_rebased(rebase_anchor: pd.Timestamp | None) -> pd.DataFrame:
@@ -158,6 +173,10 @@ def build_rebased(rebase_anchor: pd.Timestamp | None) -> pd.DataFrame:
         raise RuntimeError("No overlap between FCF and macro series.")
 
     data = {"Aggregate FCF (basket sum)": fcf.loc[window]}
+    # Cash & equivalents is optional -- include the line only when present.
+    cash = aggregate_cash(frame)
+    if not cash.empty:
+        data["Aggregate cash & equivalents (basket sum)"] = cash.reindex(window)
     for label, col in MACRO_COLUMNS.items():
         data[label] = frame[col].loc[window]
     aligned = pd.DataFrame(data).sort_index().dropna()
@@ -185,7 +204,7 @@ def render_png(rebased: pd.DataFrame, out_path: Path) -> None:
 
     for col in rebased.columns:
         ax.plot(rebased.index, rebased[col], label=col, color=SERIES_COLORS[col],
-                linewidth=2.4 if col.startswith("Aggregate FCF") else 1.7,
+                linewidth=2.4 if col.startswith("Aggregate") else 1.7,
                 marker="o", markersize=4)
 
     ax.axhline(100.0, color="#999999", linewidth=0.8, linestyle="--", alpha=0.7, zorder=1)
@@ -231,7 +250,7 @@ def render_html(rebased: pd.DataFrame, out_path: Path) -> None:
                 y=rebased[col],
                 name=col,
                 mode="lines+markers",
-                line=dict(color=SERIES_COLORS[col], width=2.6 if col.startswith("Aggregate FCF") else 1.7),
+                line=dict(color=SERIES_COLORS[col], width=2.6 if col.startswith("Aggregate") else 1.7),
                 marker=dict(size=5),
                 hovertemplate="%{y:.1f}<extra>" + col + "</extra>",
             )

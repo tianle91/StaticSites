@@ -2,14 +2,15 @@
 
 Free cash flow vs. the macro backdrop.
 
-Takes the quarterly **free cash flow** of a basket of large public companies
-(Apple, Microsoft, Alphabet, Amazon, Meta by default), sums it into one
-"aggregate FCF" series, and plots it against the macro variables it is usually
-discussed alongside — **M2 money supply**, the **S&P 500**, and the Treasury
-yield curve at four terms (**3-month, 2-year, 10-year, 30-year**). Every series
-is rebased to 100 at a common anchor quarter, so the chart shows how corporate
-cash generation has moved *relative to* liquidity, equity prices, and the cost of
-money across the term structure.
+Takes the quarterly **free cash flow** and **cash & cash-equivalents balance** of
+a basket of large public companies (Apple, Microsoft, Alphabet, Amazon, Meta by
+default), sums each into one basket-aggregate series, and plots them against the
+macro variables they are usually discussed alongside — **M2 money supply**, the
+**S&P 500**, and the Treasury yield curve at four terms (**3-month, 2-year,
+10-year, 30-year**). Every series is rebased to 100 at a common anchor quarter,
+so the chart shows how corporate cash generation and cash on hand have moved
+*relative to* liquidity, equity prices, and the cost of money across the term
+structure.
 
 ![free cash flow vs. M2, the S&P 500, and the Treasury curve](output/fcf-macro-indicators.png)
 
@@ -60,7 +61,7 @@ SEC_USER_AGENT="fcf-macro-indicators you@example.com" \
 | --- | --- |
 | `src/fetch_data.py` | Network step (`make data`): pulls FCF + macro series into `data/series.csv` |
 | `src/plot_fcf_macro.py` | Offline build: renders `output/fcf-macro-indicators.{html,png}` from the CSV |
-| `data/series.csv` | Committed quarterly grid: `m2`, `sp500`, `dgs3mo/2/10/30`, and one `fcf_<TICKER>` column per basket member |
+| `data/series.csv` | Committed quarterly grid: `m2`, `sp500`, `dgs3mo/2/10/30`, and `fcf_<TICKER>` + `cash_<TICKER>` columns per basket member |
 | `data/fcf_source.txt` | Provenance marker (`label\|url`) recording where the committed FCF came from; drives the chart's source footer |
 | `output/fcf-macro-indicators.html` | Zoomable chart (committed so it works without a build) |
 | `output/fcf-macro-indicators.png` | Static chart |
@@ -73,6 +74,9 @@ SEC_USER_AGENT="fcf-macro-indicators you@example.com" \
   (`NetCashProvidedByUsedInOperatingActivities` −
   `PaymentsToAcquirePropertyPlantAndEquipment`), back to the ~2009 start of the
   XBRL mandate. Keyless; SEC only asks for a `User-Agent` with contact info.
+- **Cash & cash equivalents** — the quarter-end balance from the same SEC filings
+  (`CashAndCashEquivalentsAtCarryingValue`, falling back to the
+  restricted-cash-inclusive line). A balance-sheet *instant*, taken as-reported.
 - **M2 money supply** — [FRED `M2SL`](https://fred.stlouisfed.org/series/M2SL),
   via `pandas-datareader` (keyless).
 - **Treasury yields** — FRED constant-maturity series
@@ -88,11 +92,15 @@ SEC_USER_AGENT="fcf-macro-indicators you@example.com" \
 
 ## Caveats
 
-- **Quarterly reconstruction.** SEC cash-flow statements are filed year-to-date
-  (Q2 = 6 months, Q3 = 9 months, and Q4 is never filed on its own), so discrete
-  quarters are recovered by differencing within each fiscal year
+- **Quarterly reconstruction (FCF only).** SEC cash-flow statements are filed
+  year-to-date (Q2 = 6 months, Q3 = 9 months, and Q4 is never filed on its own),
+  so discrete quarters are recovered by differencing within each fiscal year
   (Q2 = H1 − Q1, … , Q4 = FY − 9M). A fiscal year missing a leg omits the
   quarters that depend on it.
+- **Cash is a level, FCF is a flow.** Cash & equivalents is a balance-sheet
+  *instant* — the amount on hand at the quarter-end date, taken as-reported with
+  no differencing — whereas FCF is generated *during* the quarter. Both are
+  rebased to 100, so the chart compares their growth, not their magnitudes.
 - **Restatements → latest-filed.** When a period is restated across filings the
   most recently filed value is used, so the series reflects restated figures, not
   as-first-reported. It is not a strict point-in-time (as-filed) dataset.
@@ -103,9 +111,9 @@ SEC_USER_AGENT="fcf-macro-indicators you@example.com" \
   else, so they show *relative change in the yield level*, not basis points. A
   line at 120 means that yield is 20% higher than at the anchor (e.g. 4.8% vs
   4.0%), not 20 points of yield.
-- **Aggregate composition.** Aggregate FCF is summed only over quarters where
-  *every* basket member reports, so the line never jumps because a company
-  entered or left the sample. Fiscal-quarter report dates are snapped to the
+- **Aggregate composition.** Each aggregate (FCF and cash) is summed only over
+  quarters where *every* basket member reports, so a line never jumps because a
+  company entered or left the sample. Fiscal-quarter report dates are snapped to the
   nearest calendar-quarter-end to share one grid; companies with off-calendar
   fiscal quarters (e.g. Microsoft) are aligned to calendar quarters, not their
   own fiscal ones.

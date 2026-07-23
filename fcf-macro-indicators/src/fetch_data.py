@@ -83,6 +83,14 @@ CAPEX_TAGS = [
     "PaymentsToAcquirePropertyPlantAndEquipment",
     "PaymentsToAcquireProductiveAssets",
 ]
+# Cash & cash-equivalents tags -- a balance-sheet *instant* (point-in-time)
+# value, not a flow, so it is taken as-reported at each period end (no YTD
+# differencing). Plain cash & equivalents first, then the variant that folds in
+# restricted cash, as a fallback for filers that only report the combined line.
+CASH_TAGS = [
+    "CashAndCashEquivalentsAtCarryingValue",
+    "CashCashEquivalentsRestrictedCashAndRestrictedCashEquivalents",
+]
 # Cumulative year-to-date length (months) of each fiscal period on a cash-flow
 # statement: Q1 = 3, Q2 = 6 (H1), Q3 = 9 (9M), FY = 12. Q4 is never filed alone.
 _FP_MONTHS = {"Q1": 3, "Q2": 6, "Q3": 9, "FY": 12}
@@ -197,8 +205,29 @@ def _discrete_quarterly(facts: list[dict]) -> pd.Series:
     return pd.Series(out).sort_index()
 
 
-def _pick_concept(session: requests.Session, cik: int, tags: list[str]) -> pd.Series:
-    """First tag (in preference order) that yields discrete quarterly values."""
+def _instant_quarterly(facts: list[dict]) -> pd.Series:
+    """Balance-sheet *instant* facts (e.g. cash) -> the reported balance at each
+    calendar-quarter-end. No differencing: each fact is a point-in-time value at
+    its `end` date. Restatements/comparatives dedupe to the latest-filed value,
+    and if two report dates land in one calendar quarter the later one wins."""
+    rows = []
+    for f in facts or []:
+        if f.get("val") is None or "end" not in f:
+            continue
+        rows.append({"end": pd.Timestamp(f["end"]),
+                     "filed": f.get("filed", ""), "val": float(f["val"])})
+    if not rows:
+        return pd.Series(dtype=float)
+    df = pd.DataFrame(rows).sort_values("filed").drop_duplicates("end", keep="last")
+    df["qe"] = _to_quarter_end(pd.DatetimeIndex(df["end"]))
+    df = df.sort_values("end").drop_duplicates("qe", keep="last")
+    return df.set_index("qe")["val"].sort_index().astype(float)
+
+
+def _pick_concept(session: requests.Session, cik: int, tags: list[str], reduce=_discrete_quarterly) -> pd.Series:
+    """First tag (in preference order) whose facts reduce to a non-empty quarterly
+    series. `reduce` turns the raw USD facts into that series (discrete flow by
+    default, or _instant_quarterly for balance-sheet values)."""
     for tag in tags:
         url = SEC_CONCEPT_URL.format(cik=cik, tag=tag)
         r = session.get(url, timeout=120)
@@ -206,7 +235,7 @@ def _pick_concept(session: requests.Session, cik: int, tags: list[str]) -> pd.Se
         if r.status_code == 404:
             continue  # this filer never reported this tag
         r.raise_for_status()
-        series = _discrete_quarterly(r.json().get("units", {}).get("USD", []))
+        series = reduce(r.json().get("units", {}).get("USD", []))
         if not series.empty:
             return series
     return pd.Series(dtype=float)
@@ -228,6 +257,18 @@ def _fetch_company_fcf(session: requests.Session, ticker: str, cik_map: dict[str
     return fcf.astype(float)
 
 
+def _fetch_company_cash(session: requests.Session, ticker: str, cik_map: dict[str, int]) -> pd.Series:
+    """Quarter-end cash & cash equivalents balance for one ticker from SEC XBRL."""
+    cik = cik_map.get(ticker.upper())
+    if cik is None:
+        raise RuntimeError(f"{ticker}: no CIK in SEC ticker directory (US filer only?).")
+    cash = _pick_concept(session, cik, CASH_TAGS, reduce=_instant_quarterly)
+    cash = cash.loc[(cash.index >= START) & (cash.index <= END)]
+    if cash.empty:
+        raise RuntimeError(f"{ticker}: no cash & equivalents XBRL facts.")
+    return cash.astype(float)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Fetch FCF + macro series into data/series.csv.")
     parser.add_argument(
@@ -242,8 +283,8 @@ def main() -> None:
     # macro fetches -- the FCF pull can't succeed without it.
     _require_sec_user_agent()
 
-    print("Fetching M2 + the Treasury curve (FRED), the S&P 500 (Yahoo), "
-          f"and SEC EDGAR FCF for {', '.join(tickers)}...")
+    print("Fetching M2 + the Treasury curve (FRED), the S&P 500 (Yahoo), and SEC "
+          f"EDGAR free cash flow + cash balances for {', '.join(tickers)}...")
 
     columns: dict[str, pd.Series] = dict(_fetch_fred_quarterly().items())
     columns["sp500"] = _fetch_sp500_quarterly()
@@ -254,7 +295,11 @@ def main() -> None:
         try:
             columns[f"fcf_{ticker}"] = _fetch_company_fcf(session, ticker, cik_map)
         except Exception as exc:  # one bad ticker shouldn't sink the whole pull
-            print(f"  WARNING: skipping {ticker}: {exc}")
+            print(f"  WARNING: skipping {ticker} FCF: {exc}")
+        try:
+            columns[f"cash_{ticker}"] = _fetch_company_cash(session, ticker, cik_map)
+        except Exception as exc:
+            print(f"  WARNING: skipping {ticker} cash: {exc}")
 
     if not any(c.startswith("fcf_") for c in columns):
         raise RuntimeError("No FCF series fetched; refusing to overwrite data/series.csv.")
@@ -271,9 +316,10 @@ def main() -> None:
     FCF_SOURCE_FILE.write_text(FCF_SOURCE + "\n", encoding="utf-8")
 
     fcf_cols = [c for c in frame.columns if c.startswith("fcf_")]
+    cash_cols = [c for c in frame.columns if c.startswith("cash_")]
     print(f"Wrote {SERIES_CSV} with {len(frame)} quarterly rows "
-          f"({frame.index.min():%Y-%m} to {frame.index.max():%Y-%m}) "
-          f"and {len(fcf_cols)} FCF series.")
+          f"({frame.index.min():%Y-%m} to {frame.index.max():%Y-%m}), "
+          f"{len(fcf_cols)} FCF and {len(cash_cols)} cash series.")
     print("Done. Now run `make` to re-render the charts.")
 
 

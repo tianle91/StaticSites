@@ -7,7 +7,7 @@ units and assert on the reconstructed series.
 """
 import pandas as pd
 
-from fetch_data import _discrete_quarterly
+from fetch_data import _discrete_quarterly, _instant_quarterly
 
 
 def _fact(end, val, fp, filed, *, start="2020-01-01", fy=2020):
@@ -57,3 +57,27 @@ def test_duration_mismatch_is_skipped():
 
 def test_empty_input():
     assert _discrete_quarterly([]).empty
+
+
+def test_instant_takes_balance_at_each_quarter_end():
+    # Balance-sheet instants: value taken as-reported at each end date, no diff.
+    facts = [
+        {"end": "2020-03-31", "val": 100.0, "filed": "2020-05-01"},
+        {"end": "2020-06-30", "val": 120.0, "filed": "2020-08-01"},
+    ]
+    s = _instant_quarterly(facts)
+    assert list(s.index) == [pd.Timestamp("2020-03-31"), pd.Timestamp("2020-06-30")]
+    assert list(s.values) == [100.0, 120.0]
+
+
+def test_instant_latest_filed_wins_for_same_end():
+    facts = [
+        {"end": "2020-06-30", "val": 120.0, "filed": "2020-08-01"},
+        {"end": "2020-06-30", "val": 125.0, "filed": "2021-08-01"},  # restated later
+    ]
+    s = _instant_quarterly(facts)
+    assert s.loc[pd.Timestamp("2020-06-30")] == 125.0
+
+
+def test_instant_empty_input():
+    assert _instant_quarterly([]).empty

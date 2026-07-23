@@ -1,7 +1,7 @@
 [project]
 name = "fcf-macro-indicators"
 version = "0.0.0"
-description = "Free cash flow vs. the macro backdrop — quarterly free cash flow of a basket of large public companies against M2 money supply, the S&P 500, and the 3M / 2Y / 10Y / 30Y Treasury curve, rebased to a chosen anchor date."
+description = "Free cash flow vs. the macro backdrop — quarterly free cash flow and cash balances of a basket of large public companies against M2 money supply, the S&P 500, and the 3M / 2Y / 10Y / 30Y Treasury curve, rebased to a chosen anchor date."
 requires-python = ">=3.11"
 
 # Runtime dependencies. Say why each one is here.
