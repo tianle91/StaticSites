@@ -134,10 +134,13 @@ def compute_ratios(aligned: pd.DataFrame) -> dict[str, pd.Series]:
 def _ratio_panel_title(key: str) -> str:
     """Third-panel title for a chosen denominator, with its pro/con as subtext. The
     interactive picker swaps this; the anchor date lives on the y-axis, not here, so
-    re-anchoring never has to rewrite it."""
+    re-anchoring never has to rewrite it. Pro and con get a line each: joined on one
+    line they run past both edges of the plot area and collide with the rangeselector
+    buttons sitting in this panel's top-left corner."""
     m = _measure(key)
     return (f"S&P 500 ÷ {m['name']} (rebased to 100)"
-            f"<br><sup>Pro: {m['pro']}  ·  Con: {m['con']}</sup>")
+            f"<br><sup>Pro: {m['pro']}</sup>"
+            f"<br><sup>Con: {m['con']}</sup>")
 
 
 def _split_columns(columns) -> tuple[list[str], list[str]]:
@@ -459,12 +462,10 @@ def render_html(rebased: pd.DataFrame, out_path: Path) -> None:
 
     fig.add_hline(y=100.0, line=dict(color="#999999", width=0.8, dash="dash"), row=1, col=1)
 
-    # Shade inverted-curve periods as a full-height band spanning both panels, plus
-    # one dummy trace so the shading gets a legend entry.
+    # Inverted-curve periods get a full-height band across every panel (added below,
+    # once all three panels have traces), plus one dummy trace so the shading gets a
+    # legend entry.
     spans = inversion_spans(rebased)
-    for x0, x1 in spans:
-        fig.add_vrect(x0=x0, x1=x1, fillcolor=INVERSION_COLOR, opacity=0.09,
-                      line_width=0, layer="below")
     if spans:
         fig.add_trace(
             go.Scatter(
@@ -502,6 +503,13 @@ def render_html(rebased: pd.DataFrame, out_path: Path) -> None:
     if ratio_traces:
         fig.add_hline(y=100.0, line=dict(color="#999999", width=0.8, dash="dash"), row=3, col=1)
 
+    # Inversion shading, drawn only now: add_vrect skips subplots that hold no traces
+    # yet, so shading before the ratio traces existed would band the top two panels
+    # and silently leave the third one clear (the PNG bands all three).
+    for x0, x1 in spans:
+        fig.add_vrect(x0=x0, x1=x1, fillcolor=INVERSION_COLOR, opacity=0.09,
+                      line_width=0, layer="below")
+
     # Movable vertical marker at the rebase anchor, spanning all panels (xref to the
     # top x-axis, yref to paper). The viewer clicks the chart to move it and re-rebase
     # the level + ratio panels (see _rebase_script); drawn here so the initial anchor
@@ -515,11 +523,14 @@ def render_html(rebased: pd.DataFrame, out_path: Path) -> None:
     # Denominator picker for the ratio panel: each button shows only that measure's
     # ratio trace and swaps the panel title (subplot title = annotations[2]) to its
     # pro/con. method="update" carries [trace visibility, layout change, target trace
-    # indices] so it touches only the ratio traces.
+    # indices] so it touches only the ratio traces. Labels name what the control does
+    # ("Ratio ÷ ...", like the "Levels: ..." buttons) because the closed dropdown is
+    # the only thing on screen: a separate caption annotation would sit above the
+    # chart's top margin, where plotly clips it away.
     ratio_idx = [ti for _, ti in ratio_traces]
     measure_buttons = [
         dict(
-            label=_measure(key)["name"],
+            label=f"Ratio ÷ {_measure(key)['name']}",
             method="update",
             args=[
                 {"visible": [k == key for k, _ in ratio_traces]},
@@ -575,14 +586,6 @@ def render_html(rebased: pd.DataFrame, out_path: Path) -> None:
             )] if len(measure_buttons) > 1 else []),
         ],
     )
-    # Label for the denominator picker. Appended (not passed to update_layout, which
-    # would overwrite the subplot-title annotations the picker/JS reference by index).
-    if len(measure_buttons) > 1:
-        fig.add_annotation(
-            text="Ratio denominator ▾", x=0.0, y=1.155, xref="paper", yref="paper",
-            xanchor="left", yanchor="bottom", showarrow=False,
-            font=dict(size=11, color="#666666"),
-        )
     # Spikes on every panel; rangeslider/selector + x-axis title on the shared bottom
     # (ratio) x-axis.
     fig.update_xaxes(showspikes=True, spikemode="across", spikethickness=1, row=1, col=1)
@@ -643,8 +646,8 @@ def _rebase_control(rebased: pd.DataFrame) -> str:
     return (
         '<div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;'
         'font-size:13px;color:#333;text-align:center;padding:10px 16px 0">'
-        "\U0001f4cd <strong>Click the chart</strong> to rebase the top panel to that "
-        'quarter &mdash; anchor: <span id="rebase-anchor-label" '
+        "\U0001f4cd <strong>Click the chart</strong> to rebase the levels and ratio "
+        'panels to that quarter &mdash; anchor: <span id="rebase-anchor-label" '
         f'style="font-variant-numeric:tabular-nums">{anchor:%Y-%m-%d}</span></div>'
     )
 
