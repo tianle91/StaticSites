@@ -156,3 +156,44 @@ SEC_USER_AGENT="fcf-macro-indicators you@example.com" \
 - **FCF is lumpy and seasonal.** A single quarter's FCF swings with working
   capital, buyback-driven capex timing, and seasonality; it is not deseasonalised.
 - Not investment advice.
+
+## Possible improvements
+
+Ideas not yet built. The first group sharpens the **stock-market-vs-liquidity**
+reading (how equity prices move relative to the cash in the system).
+
+- **Fed net liquidity line.** `WALCL − WTREGEN − RRPONTSYD` (Fed balance sheet −
+  Treasury General Account − overnight reverse repo) — the liquidity actually
+  reaching markets, which the S&P 500 has tracked closely since 2020. All keyless on
+  FRED, so it drops into the existing FRED path. Two things to handle: the components
+  are weekly/daily (snap to quarter-end like the rest), and their **units differ** —
+  `WALCL`/`WTREGEN` are $millions, `RRPONTSYD` is $billions, so convert before
+  subtracting (a computed difference can't be rebased into agreement the way an
+  independent level can).
+- **A derived "S&P per unit of liquidity" ratio.** One explicit line instead of
+  eyeballing two rebased series: rising = equities outpacing liquidity (getting rich
+  vs. the cash backdrop), falling = liquidity growing faster than prices. Which
+  denominator to divide by is the real choice — trade-offs below.
+- **Rolling correlation / beta** of quarterly S&P returns against quarterly
+  liquidity growth — quantifies the co-movement rather than leaving it to the eye,
+  and shows when the relationship strengthens or breaks.
+
+Choosing the liquidity denominator (for the ratio or as the comparison line):
+
+| Measure | FRED | Pros | Cons |
+| --- | --- | --- | --- |
+| **M2 money supply** | `M2SL` | Broadest, decades of monthly history, short (~4-week) lag, already on the chart; smooth trend suits long-run valuation | Too broad/slow for market-relevant swings; includes retail savings that don't drive asset prices short-term; weak short-horizon link to equities; a 2020 definitional change (savings reclassified into M2) breaks the level |
+| **Money-market-fund assets** | `MMMFFAQ027S` | Directly measures "cash on the sidelines" that could rotate into stocks; at record highs, topical; already on the chart | ~10-week Z.1 publication lag; **ambiguous sign** — high MMF can mean dry powder waiting to buy *or* risk-off cash fleeing equities; heavily driven by short rates (high T-bill yields pull cash in regardless of equity views) |
+| **Fed net liquidity** | `WALCL − WTREGEN − RRPONTSYD` | Tightest correlation with the S&P since 2020; captures QE/QT, debt-ceiling TGA swings, and RRP drains — the actual plumbing that moves risk assets; weekly/daily, near-real-time | Correlation is a **post-2020 regime artifact**, weak/absent before then, so may not generalize; a constructed proxy (analysts disagree on exactly what to net out), not an official series; noisier and driven by mechanical Fed/Treasury operations; needs the unit-conversion handling above |
+
+Other directions:
+
+- **Broader equity aggregate** — total US market cap (e.g. Wilshire 5000) instead of
+  the S&P index level, so the "prices vs. liquidity" comparison covers the whole
+  market rather than 500 large caps.
+- **Retail vs. institutional MMF split** — separate the sidelines-cash line into the
+  two cohorts, which behave differently (retail chases T-bill yields; institutional
+  tracks corporate-treasury and repo flows).
+- **Nonfinancial-corporate liquid assets** (Z.1) — the economy-wide aggregate the
+  per-company FCF/cash basket only approximates; would let the chart show the mega-cap
+  subset against all corporations' cash.
