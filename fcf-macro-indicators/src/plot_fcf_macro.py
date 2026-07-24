@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 """
 Read the quarterly source series from data/series.csv and plot free cash flow
-against the macro backdrop across two panels that share one x-axis: the top panel
+against the macro backdrop across three panels that share one x-axis: the top panel
 rebases the level series (aggregate FCF, aggregate cash, money-market-fund assets,
 M2 money supply, the S&P 500) to 100 at a configurable anchor quarter to compare
-growth; the bottom
-panel shows the 3M / 2Y / 10Y / 30Y Treasury curve as raw yields (%), which have a
-natural common scale and would blow up if rebased to a near-zero-rate anchor.
+growth; the middle panel shows the 3M / 2Y / 10Y / 30Y Treasury curve as raw yields
+(%), which have a natural common scale and would blow up if rebased to a near-zero-
+rate anchor; the bottom panel plots the S&P 500 ÷ liquidity ratio (also rebased to
+100), with the liquidity denominator (an official series -- M2 or money-market-fund
+assets) chosen via a picker in the interactive chart.
 
 Free cash flow is the coarsest input (reported quarterly), so it sets both the
 grid and the charted window: the chart spans the quarters in which every basket
@@ -75,6 +77,67 @@ YIELD_LABELS = [
     "10Y Treasury yield (FRED: DGS10)",
     "30Y Treasury yield (FRED: DGS30)",
 ]
+
+# The third panel plots S&P-500-÷-liquidity ratios: how equity prices move relative
+# to the cash in the system. Only OFFICIAL FRED series are offered as the denominator
+# -- constructed proxies (e.g. "Fed net liquidity" = Fed balance sheet − Treasury
+# General Account − reverse repo) are deliberately excluded. The interactive chart
+# lets the viewer pick the denominator; each carries the short pro/con shown in the
+# panel title next to the picker. `column` is the display label of the raw level in
+# the aligned frame (see MACRO_COLUMNS); `color` matches that level's line up top.
+SP500_LABEL = "S&P 500 (^GSPC)"
+LIQUIDITY_MEASURES = [
+    {
+        "key": "m2",
+        "name": "M2 money supply",
+        "column": "M2 money supply (FRED: M2SL)",
+        "color": "#1f77b4",
+        "pro": "broadest money measure, decades of history, short (~4-week) lag",
+        "con": "broad and slow; includes retail savings that don't move prices; "
+               "weak short-horizon link to equities; 2020 definitional break",
+    },
+    {
+        "key": "mmf",
+        "name": "Money-market-fund assets",
+        "column": "Money-market-fund assets (FRED: MMMFFAQ027S)",
+        "color": "#17becf",
+        "pro": "“cash on the sidelines” that can rotate into stocks; at record highs",
+        "con": "~10-week Z.1 lag; ambiguous sign (dry powder vs. risk-off flight); "
+               "driven heavily by the level of short rates",
+    },
+]
+# The denominator the static PNG leads with (it shows every measure) and the initial
+# selection in the interactive picker.
+DEFAULT_MEASURE_KEY = "m2"
+
+
+def _measure(key: str) -> dict:
+    for m in LIQUIDITY_MEASURES:
+        if m["key"] == key:
+            return m
+    raise KeyError(key)
+
+
+def compute_ratios(aligned: pd.DataFrame) -> dict[str, pd.Series]:
+    """Raw S&P-500 ÷ liquidity ratio per available official measure, from the raw
+    (un-rebased) aligned levels. Both inputs are levels on the same quarterly grid,
+    so the quotient is a clean point-by-point ratio; its absolute units are arbitrary
+    (index points per $bn/$mn), so callers rebase it to 100 before plotting. Liquidity
+    levels are strictly positive, so no divide-by-zero guard is needed."""
+    if SP500_LABEL not in aligned:
+        return {}
+    sp = aligned[SP500_LABEL]
+    return {m["key"]: sp / aligned[m["column"]]
+            for m in LIQUIDITY_MEASURES if m["column"] in aligned}
+
+
+def _ratio_panel_title(key: str) -> str:
+    """Third-panel title for a chosen denominator, with its pro/con as subtext. The
+    interactive picker swaps this; the anchor date lives on the y-axis, not here, so
+    re-anchoring never has to rewrite it."""
+    m = _measure(key)
+    return (f"S&P 500 ÷ {m['name']} (rebased to 100)"
+            f"<br><sup>Pro: {m['pro']}  ·  Con: {m['con']}</sup>")
 
 
 def _split_columns(columns) -> tuple[list[str], list[str]]:
@@ -265,6 +328,9 @@ def build_rebased(rebase_anchor: pd.Timestamp | None) -> pd.DataFrame:
     # Raw (un-rebased) aligned values, so the HTML chart can re-rebase the level
     # panel client-side when the viewer picks a different anchor quarter.
     rebased.attrs["raw"] = aligned
+    # Raw S&P-÷-liquidity ratios for the third panel, keyed by measure. Rebased to
+    # the anchor at render time and re-rebased client-side alongside the levels.
+    rebased.attrs["ratio_raw"] = compute_ratios(aligned)
     return rebased
 
 
@@ -277,11 +343,12 @@ def render_png(rebased: pd.DataFrame, out_path: Path) -> None:
         plt.style.use("seaborn-v0_8-whitegrid")
     except OSError:
         plt.style.use("ggplot")
-    # Two panels on a shared x-axis: rebased levels on top, raw Treasury yields
-    # below. The top panel is taller (it carries the aggregate + M2 + S&P lines).
-    fig, (ax_lvl, ax_yld) = plt.subplots(
-        2, 1, figsize=(14, 10), dpi=140, sharex=True,
-        gridspec_kw={"height_ratios": [3, 2], "hspace": 0.08},
+    # Three panels on a shared x-axis: rebased levels on top, raw Treasury yields in
+    # the middle, and S&P-÷-liquidity ratios at the bottom. The top panel is tallest
+    # (it carries the aggregate + M2 + MMF + S&P lines).
+    fig, (ax_lvl, ax_yld, ax_ratio) = plt.subplots(
+        3, 1, figsize=(14, 12), dpi=140, sharex=True,
+        gridspec_kw={"height_ratios": [3, 2, 1.6], "hspace": 0.10},
     )
 
     for col in level_cols:
@@ -296,18 +363,33 @@ def render_png(rebased: pd.DataFrame, out_path: Path) -> None:
         ax_yld.plot(rebased.index, rebased[col], label=col, color=SERIES_COLORS[col],
                     linewidth=1.7, marker="o", markersize=4)
 
-    # Shade inverted-curve periods as a band across both panels.
+    # Bottom panel: S&P 500 ÷ liquidity, rebased to 100. The static PNG shows every
+    # official denominator at once (the interactive chart offers a picker instead).
+    ratio_raw = rebased.attrs.get("ratio_raw", {})
+    for m in LIQUIDITY_MEASURES:
+        series = ratio_raw.get(m["key"])
+        if series is None:
+            continue
+        ax_ratio.plot(series.index, _rebase_to_anchor(series, anchor),
+                      label=f"S&P 500 ÷ {m['name']}", color=m["color"],
+                      linewidth=1.9, marker="o", markersize=4)
+    ax_ratio.axhline(100.0, color="#999999", linewidth=0.8, linestyle="--", alpha=0.7, zorder=1)
+    ax_ratio.set_ylabel(f"Index (100 = {anchor:%Y-%m-%d})", fontsize=10)
+    if ratio_raw:
+        ax_ratio.legend(loc="upper left", frameon=True, fontsize=9)
+
+    # Shade inverted-curve periods as a band across all three panels.
     spans = inversion_spans(rebased)
     for i, (x0, x1) in enumerate(spans):
-        for ax in (ax_lvl, ax_yld):
+        for ax in (ax_lvl, ax_yld, ax_ratio):
             ax.axvspan(x0, x1, color=INVERSION_COLOR, alpha=0.09, zorder=0,
                        label=INVERSION_LABEL if (i == 0 and ax is ax_yld) else None)
 
     ax_yld.set_ylabel("Treasury yield (%)", fontsize=10)
-    ax_yld.set_xlabel("Quarter-end")
     ax_yld.legend(loc="upper left", frameon=True, fontsize=9, ncol=2)
-    ax_yld.xaxis.set_major_locator(mdates.MonthLocator(interval=3))
-    ax_yld.xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m"))
+    ax_ratio.set_xlabel("Quarter-end")
+    ax_ratio.xaxis.set_major_locator(mdates.MonthLocator(interval=3))
+    ax_ratio.xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m"))
 
     basket = f"Aggregates sum {len(tickers)} companies: {', '.join(tickers)}" if tickers else ""
     fig.suptitle(
@@ -333,8 +415,9 @@ def render_png(rebased: pd.DataFrame, out_path: Path) -> None:
 
 
 def render_html(rebased: pd.DataFrame, out_path: Path) -> None:
-    """Zoomable/pannable plotly chart: drag to zoom, double-click to reset. Two
-    panels share one x-axis -- rebased levels on top, raw Treasury yields below."""
+    """Zoomable/pannable plotly chart: drag to zoom, double-click to reset. Three
+    panels share one x-axis -- rebased levels on top, raw Treasury yields in the
+    middle, and S&P-÷-liquidity ratios below (denominator chosen via a picker)."""
     import plotly.graph_objects as go
     from plotly.subplots import make_subplots
 
@@ -343,9 +426,13 @@ def render_html(rebased: pd.DataFrame, out_path: Path) -> None:
     level_cols, yield_cols = _split_columns(rebased.columns)
 
     fig = make_subplots(
-        rows=2, cols=1, shared_xaxes=True, vertical_spacing=0.04,
-        row_heights=[0.6, 0.4],
-        subplot_titles=(f"Levels rebased to 100 at {anchor:%Y-%m-%d}", "Treasury yields (%)"),
+        rows=3, cols=1, shared_xaxes=True, vertical_spacing=0.06,
+        row_heights=[0.46, 0.30, 0.24],
+        subplot_titles=(
+            f"Levels rebased to 100 at {anchor:%Y-%m-%d}",
+            "Treasury yields (%)",
+            _ratio_panel_title(DEFAULT_MEASURE_KEY),
+        ),
     )
     for col in level_cols:
         fig.add_trace(
@@ -390,14 +477,58 @@ def render_html(rebased: pd.DataFrame, out_path: Path) -> None:
             row=2, col=1,
         )
 
-    # Movable vertical marker at the rebase anchor, spanning both panels (xref to
-    # the top x-axis, yref to paper). The viewer clicks the chart to move it and
-    # re-rebase the top panel (see _rebase_script); drawn here so the initial
-    # anchor is marked without JS.
+    # Third panel: S&P 500 ÷ liquidity, one trace per official denominator, rebased
+    # to 100 at the anchor. Only the default measure starts visible; the picker
+    # (updatemenu below) toggles the others and swaps the pro/con panel title. Added
+    # after the level/yield/inversion traces so their indices stay stable for the
+    # re-rebase JS; the ratio traces re-rebase on click too (see _rebase_script).
+    ratio_raw = rebased.attrs.get("ratio_raw", {})
+    ratio_traces: list[tuple[str, int]] = []  # (measure key, trace index)
+    for m in LIQUIDITY_MEASURES:
+        series = ratio_raw.get(m["key"])
+        if series is None:
+            continue
+        ratio_traces.append((m["key"], len(fig.data)))
+        fig.add_trace(
+            go.Scatter(
+                x=series.index, y=_rebase_to_anchor(series, anchor),
+                name=f"S&P 500 ÷ {m['name']}", legendgroup="ratio",
+                mode="lines+markers", visible=(m["key"] == DEFAULT_MEASURE_KEY),
+                line=dict(color=m["color"], width=2.0), marker=dict(size=5),
+                hovertemplate="%{y:.1f}<extra>S&P 500 ÷ " + m["name"] + "</extra>",
+            ),
+            row=3, col=1,
+        )
+    if ratio_traces:
+        fig.add_hline(y=100.0, line=dict(color="#999999", width=0.8, dash="dash"), row=3, col=1)
+
+    # Movable vertical marker at the rebase anchor, spanning all panels (xref to the
+    # top x-axis, yref to paper). The viewer clicks the chart to move it and re-rebase
+    # the level + ratio panels (see _rebase_script); drawn here so the initial anchor
+    # is marked without JS. Added last so it is the final shape -- the JS targets it
+    # by index (anchor_shape_idx) to move it on click.
     fig.add_shape(type="line", x0=anchor, x1=anchor, xref="x", yref="paper",
                   y0=0, y1=1, line=dict(color="#111111", width=1.5, dash="dot"),
                   layer="above")
     anchor_shape_idx = len(fig.layout.shapes) - 1
+
+    # Denominator picker for the ratio panel: each button shows only that measure's
+    # ratio trace and swaps the panel title (subplot title = annotations[2]) to its
+    # pro/con. method="update" carries [trace visibility, layout change, target trace
+    # indices] so it touches only the ratio traces.
+    ratio_idx = [ti for _, ti in ratio_traces]
+    measure_buttons = [
+        dict(
+            label=_measure(key)["name"],
+            method="update",
+            args=[
+                {"visible": [k == key for k, _ in ratio_traces]},
+                {"annotations[2].text": _ratio_panel_title(key)},
+                ratio_idx,
+            ],
+        )
+        for key, _ in ratio_traces
+    ]
 
     basket = (f"Aggregates sum {len(tickers)} companies: {', '.join(tickers)}"
               if tickers else "")
@@ -425,11 +556,37 @@ def render_html(rebased: pd.DataFrame, out_path: Path) -> None:
                     dict(label="Levels: Linear", method="relayout", args=[{"yaxis.type": "linear"}]),
                     dict(label="Levels: Log", method="relayout", args=[{"yaxis.type": "log"}]),
                 ],
-            )
+            ),
+            # Ratio-panel denominator picker, parked at the top-left above the chart.
+            # Only shown when there is more than one official measure to choose from.
+            *([dict(
+                type="dropdown",
+                direction="down",
+                x=0.0,
+                y=1.14,
+                xanchor="left",
+                yanchor="top",
+                showactive=True,
+                active=[k for k, _ in ratio_traces].index(DEFAULT_MEASURE_KEY),
+                buttons=measure_buttons,
+                bgcolor="rgba(255,255,255,0.9)",
+                bordercolor="#cccccc",
+                pad={"t": 2, "b": 2, "l": 4, "r": 4},
+            )] if len(measure_buttons) > 1 else []),
         ],
     )
-    # Spikes + rangeslider/selector live on the shared (bottom) x-axis.
+    # Label for the denominator picker. Appended (not passed to update_layout, which
+    # would overwrite the subplot-title annotations the picker/JS reference by index).
+    if len(measure_buttons) > 1:
+        fig.add_annotation(
+            text="Ratio denominator ▾", x=0.0, y=1.155, xref="paper", yref="paper",
+            xanchor="left", yanchor="bottom", showarrow=False,
+            font=dict(size=11, color="#666666"),
+        )
+    # Spikes on every panel; rangeslider/selector + x-axis title on the shared bottom
+    # (ratio) x-axis.
     fig.update_xaxes(showspikes=True, spikemode="across", spikethickness=1, row=1, col=1)
+    fig.update_xaxes(showspikes=True, spikemode="across", spikethickness=1, row=2, col=1)
     fig.update_xaxes(
         title_text="Quarter-end",
         showspikes=True,
@@ -444,11 +601,13 @@ def render_html(rebased: pd.DataFrame, out_path: Path) -> None:
                 dict(step="all", label="All"),
             ]
         ),
-        row=2, col=1,
+        row=3, col=1,
     )
     fig.update_yaxes(title_text=f"Index (100 @ {anchor:%Y-%m-%d})", fixedrange=False,
                      showspikes=False, row=1, col=1)
     fig.update_yaxes(title_text="Yield (%)", fixedrange=False, showspikes=False, row=2, col=1)
+    fig.update_yaxes(title_text=f"Index (100 @ {anchor:%Y-%m-%d})", fixedrange=False,
+                     showspikes=False, row=3, col=1)
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
     div_id = "fcf-chart"
@@ -472,7 +631,8 @@ def render_html(rebased: pd.DataFrame, out_path: Path) -> None:
         + pulled_html + "<strong>Data sources:</strong> " + links + "</footer>"
     )
     html = html.replace(
-        "</body>", footer + _rebase_script(rebased, div_id, anchor_shape_idx) + "</body>", 1)
+        "</body>",
+        footer + _rebase_script(rebased, div_id, anchor_shape_idx, ratio_traces) + "</body>", 1)
     out_path.write_text(html, encoding="utf-8")
 
 
@@ -489,14 +649,19 @@ def _rebase_control(rebased: pd.DataFrame) -> str:
     )
 
 
-def _rebase_script(rebased: pd.DataFrame, div_id: str, anchor_shape_idx: int) -> str:
-    """JS that re-rebases the level traces when the viewer clicks the chart,
+def _rebase_script(rebased: pd.DataFrame, div_id: str, anchor_shape_idx: int,
+                   ratio_traces: list[tuple[str, int]]) -> str:
+    """JS that re-rebases the level AND ratio traces when the viewer clicks the chart,
     entirely client-side (no rebuild): index i = 100 * raw[i] / raw[anchor]. The
     click x is snapped to the nearest quarter. Level traces are added first, so
     their indices are 0..len(level_cols)-1; the yield/inversion traces are left
-    untouched. The anchor marker line (shape `anchor_shape_idx`), the y-axis and
-    panel titles, and the hint label all follow the new anchor."""
+    untouched; the ratio traces carry their own explicit indices (both denominators
+    re-rebase, visible or not, so switching the picker after a re-anchor still lines
+    up). The anchor marker line (shape `anchor_shape_idx`), the level + ratio y-axis
+    titles, the levels panel title, and the hint label all follow the new anchor. The
+    ratio panel title is left alone -- it holds the denominator's pro/con, not a date."""
     raw = rebased.attrs["raw"]
+    ratio_raw = rebased.attrs.get("ratio_raw", {})
     level_cols, _ = _split_columns(rebased.columns)
     payload = {
         "dates": [f"{d:%Y-%m-%d}" for d in raw.index],
@@ -504,6 +669,8 @@ def _rebase_script(rebased: pd.DataFrame, div_id: str, anchor_shape_idx: int) ->
         "raw": {c: [float(v) for v in raw[c]] for c in level_cols},
         "idx": list(range(len(level_cols))),
         "shape": anchor_shape_idx,
+        "ratio": [{"idx": ti, "raw": [float(v) for v in ratio_raw[key]]}
+                  for key, ti in ratio_traces if key in ratio_raw],
     }
     return (
         '<script type="text/javascript">(function(){'
@@ -517,12 +684,16 @@ def _rebase_script(rebased: pd.DataFrame, div_id: str, anchor_shape_idx: int) ->
         "var bi=0,bd=Infinity;"
         "for(var i=0;i<times.length;i++){var d=Math.abs(times[i]-t);if(d<bd){bd=d;bi=i;}}"
         "return bi;}"
+        "function reb(vals,b){return vals.map(function(v){return b?100*v/b:null;});}"
         "function rebase(ai){"
         "var iso=D.dates[ai];"
-        "var ys=D.labels.map(function(l){var r=D.raw[l];var b=r[ai];"
-        "return r.map(function(v){return b?100*v/b:null;});});"
+        "var ys=D.labels.map(function(l){var r=D.raw[l];return reb(r,r[ai]);});"
         "Plotly.restyle(gd,{y:ys},D.idx);"
+        "if(D.ratio.length){"
+        "var rys=D.ratio.map(function(o){return reb(o.raw,o.raw[ai]);});"
+        "Plotly.restyle(gd,{y:rys},D.ratio.map(function(o){return o.idx;}));}"
         "var rl={\"yaxis.title.text\":\"Index (100 @ \"+iso+\")\","
+        "\"yaxis3.title.text\":\"Index (100 @ \"+iso+\")\","
         "\"annotations[0].text\":\"Levels rebased to 100 at \"+iso};"
         "rl[\"shapes[\"+D.shape+\"].x0\"]=iso;rl[\"shapes[\"+D.shape+\"].x1\"]=iso;"
         "Plotly.relayout(gd,rl);"
