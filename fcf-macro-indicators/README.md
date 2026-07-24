@@ -5,16 +5,20 @@ Free cash flow vs. the macro backdrop.
 Takes the quarterly **free cash flow** and **cash & cash-equivalents balance** of
 a basket of large public companies (Apple, Microsoft, Alphabet, Amazon, Meta by
 default), sums each into one basket-aggregate series, and plots them against the
-macro variables they are usually discussed alongside — **M2 money supply**, the
-**S&P 500**, and the Treasury yield curve at four terms (**3-month, 2-year,
-10-year, 30-year**).
+macro variables they are usually discussed alongside — total **money-market-fund
+assets** (the economy-wide "cash on the sidelines", ~$8T and at record highs),
+**M2 money supply**, the **S&P 500**, and the Treasury yield curve at four terms
+(**3-month, 2-year, 10-year, 30-year**). The company basket is a bottom-up view of
+a few mega-caps' cash; the money-market-fund line is the top-down aggregate of cash
+held across the whole economy, shown side by side.
 
 The chart is **two panels sharing one x-axis**:
 
 - **Top — levels rebased to 100** at a common anchor quarter (aggregate FCF,
-  aggregate cash, M2, S&P 500), so it shows how corporate cash generation and cash
-  on hand have moved *relative to* liquidity and equity prices. The basket members
-  behind the aggregate lines are named in the subtitle.
+  aggregate cash, money-market-fund assets, M2, S&P 500), so it shows how corporate
+  cash generation, cash on hand, and economy-wide sidelines cash have moved
+  *relative to* liquidity and equity prices. The basket members behind the aggregate
+  lines are named in the subtitle.
 - **Bottom — the Treasury curve as raw yields (%)**, not rebased: yields already
   share a natural scale, and rebasing them to a near-zero-rate anchor (the 3-month
   bill was ~0.03% in 2014) would blow that line up into the thousands. Periods when
@@ -74,7 +78,7 @@ SEC_USER_AGENT="fcf-macro-indicators you@example.com" \
 | --- | --- |
 | `src/fetch_data.py` | Network step (`make data`): pulls FCF + macro series into `data/series.csv` |
 | `src/plot_fcf_macro.py` | Offline build: renders `output/fcf-macro-indicators.{html,png}` from the CSV |
-| `data/series.csv` | Committed quarterly grid: `m2`, `sp500`, `dgs3mo/2/10/30`, and `fcf_<TICKER>` + `cash_<TICKER>` columns per basket member |
+| `data/series.csv` | Committed quarterly grid: `m2`, `mmf`, `sp500`, `dgs3mo/2/10/30`, and `fcf_<TICKER>` + `cash_<TICKER>` columns per basket member |
 | `data/fcf_source.txt` | Provenance marker (`label\|url`) recording where the committed FCF came from; drives the chart's source footer |
 | `output/fcf-macro-indicators.html` | Zoomable chart (committed so it works without a build) |
 | `output/fcf-macro-indicators.png` | Static chart |
@@ -94,6 +98,10 @@ SEC_USER_AGENT="fcf-macro-indicators you@example.com" \
 - **Cash & cash equivalents** — the quarter-end balance from the same SEC filings
   (`CashAndCashEquivalentsAtCarryingValue`, falling back to the
   restricted-cash-inclusive line). A balance-sheet *instant*, taken as-reported.
+- **Money-market-fund assets** — total money-market-fund financial assets from the
+  Fed's Financial Accounts (Z.1),
+  [FRED `MMMFFAQ027S`](https://fred.stlouisfed.org/series/MMMFFAQ027S), via
+  `pandas-datareader` (keyless). Quarterly, economy-wide "cash on the sidelines".
 - **M2 money supply** — [FRED `M2SL`](https://fred.stlouisfed.org/series/M2SL),
   via `pandas-datareader` (keyless).
 - **Treasury yields** — FRED constant-maturity series
@@ -139,6 +147,12 @@ SEC_USER_AGENT="fcf-macro-indicators you@example.com" \
   nearest calendar-quarter-end to share one grid; companies with off-calendar
   fiscal quarters (e.g. Microsoft) are aligned to calendar quarters, not their
   own fiscal ones.
+- **Money-market-fund line lags.** The MMF series is quarterly Financial Accounts
+  (Z.1) data, published with a ~10-week lag — longer than M2's. When the chart runs
+  before the latest quarter's Z.1 is out, that quarter's MMF value is the prior
+  quarter's carried forward (the same quarter-end forward-fill applied to every FRED
+  series), so the line's most recent point can be a flat repeat rather than a fresh
+  reading.
 - **FCF is lumpy and seasonal.** A single quarter's FCF swings with working
   capital, buyback-driven capex timing, and seasonality; it is not deseasonalised.
 - Not investment advice.

@@ -2,8 +2,9 @@
 """
 Read the quarterly source series from data/series.csv and plot free cash flow
 against the macro backdrop across two panels that share one x-axis: the top panel
-rebases the level series (aggregate FCF, aggregate cash, M2 money supply, the
-S&P 500) to 100 at a configurable anchor quarter to compare growth; the bottom
+rebases the level series (aggregate FCF, aggregate cash, money-market-fund assets,
+M2 money supply, the S&P 500) to 100 at a configurable anchor quarter to compare
+growth; the bottom
 panel shows the 3M / 2Y / 10Y / 30Y Treasury curve as raw yields (%), which have a
 natural common scale and would blow up if rebased to a near-zero-rate anchor.
 
@@ -40,6 +41,7 @@ PAGE_TITLE = "Free Cash Flow vs. M2, the S&amp;P 500 &amp; the Treasury Curve"
 SERIES_COLORS = {
     "Aggregate FCF (basket sum)": "#d62728",
     "Aggregate cash & equivalents (basket sum)": "#ff7f0e",
+    "Money-market-fund assets (FRED: MMMFFAQ027S)": "#17becf",
     "M2 money supply (FRED: M2SL)": "#1f77b4",
     "S&P 500 (^GSPC)": "#2ca02c",
     "3M Treasury yield (FRED: DGS3MO)": "#c5b0d5",
@@ -49,7 +51,10 @@ SERIES_COLORS = {
 }
 
 # Display label -> CSV column for the straight-through (non-derived) series.
+# Money-market-fund assets sit next to the company-cash line (both are cash levels)
+# and ahead of M2, so the top panel reads cash -> broad money -> equities.
 MACRO_COLUMNS = {
+    "Money-market-fund assets (FRED: MMMFFAQ027S)": "mmf",
     "M2 money supply (FRED: M2SL)": "m2",
     "S&P 500 (^GSPC)": "sp500",
     "3M Treasury yield (FRED: DGS3MO)": "dgs3mo",
@@ -223,8 +228,8 @@ def basket_tickers(frame: pd.DataFrame) -> list[str]:
 
 def build_rebased(rebase_anchor: pd.Timestamp | None) -> pd.DataFrame:
     """Align FCF + macro on the common quarterly window. Level series (FCF, cash,
-    M2, S&P 500) are rebased to 100; Treasury yields are kept as raw percentages
-    (see YIELD_LABELS) for their own panel."""
+    money-market-fund assets, M2, S&P 500) are rebased to 100; Treasury yields are
+    kept as raw percentages (see YIELD_LABELS) for their own panel."""
     frame = load_series()
     fcf = aggregate_fcf(frame)
 
@@ -306,7 +311,7 @@ def render_png(rebased: pd.DataFrame, out_path: Path) -> None:
 
     basket = f"Aggregates sum {len(tickers)} companies: {', '.join(tickers)}" if tickers else ""
     fig.suptitle(
-        "Free cash flow vs. M2, the S&P 500, and the Treasury curve\n"
+        "Free cash flow & money-market-fund cash vs. M2, the S&P 500, and the Treasury curve\n"
         f"Levels rebased to 100 at {anchor:%Y-%m-%d}; Treasury yields shown as raw %"
         + (f"  ·  {basket}" if basket else ""),
         fontsize=12,
@@ -399,7 +404,7 @@ def render_html(rebased: pd.DataFrame, out_path: Path) -> None:
     fig.update_layout(
         template="plotly_white",
         title=dict(
-            text=("Free cash flow vs. M2, the S&P 500, and the Treasury curve"
+            text=("Free cash flow & money-market-fund cash vs. M2, the S&P 500, and the Treasury curve"
                   + (f"<br><sup>{basket}</sup>" if basket else "")),
             font=dict(size=14),
         ),

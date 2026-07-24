@@ -47,10 +47,17 @@ FCF_SOURCE_FILE = DATA_DIR / "fcf_source.txt"
 FCF_SOURCE = ("Company free cash flow (OCF - CapEx) from SEC EDGAR XBRL"
               "|https://www.sec.gov/edgar/sec-api-documentation")
 
-# FRED series id -> our column name. M2 money supply plus the Treasury term
-# structure (constant-maturity nominal yields, short end -> long end).
+# FRED series id -> our column name. M2 money supply, total money-market-fund
+# assets (the economy-wide "cash on the sidelines" aggregate -- ~$8T and at record
+# highs), plus the Treasury term structure (constant-maturity nominal yields, short
+# end -> long end). MMMFFAQ027S is quarterly (Financial Accounts / Z.1), stamped at
+# the quarter start but representing the end-of-quarter level, so bucketing it into
+# its containing calendar quarter (_quarter_last) lands each reading on the right
+# quarter-end. Its units (millions) differ from M2's (billions), but every level
+# series is rebased to 100 independently, so absolute units don't matter.
 FRED_SERIES = {
     "M2SL": "m2",
+    "MMMFFAQ027S": "mmf",
     "DGS3MO": "dgs3mo",
     "DGS2": "dgs2",
     "DGS10": "dgs10",
