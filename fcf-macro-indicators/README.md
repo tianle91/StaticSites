@@ -12,18 +12,27 @@ assets** (the economy-wide "cash on the sidelines", ~$8T and at record highs),
 a few mega-caps' cash; the money-market-fund line is the top-down aggregate of cash
 held across the whole economy, shown side by side.
 
-The chart is **two panels sharing one x-axis**:
+The chart is **three panels sharing one x-axis**:
 
 - **Top — levels rebased to 100** at a common anchor quarter (aggregate FCF,
   aggregate cash, money-market-fund assets, M2, S&P 500), so it shows how corporate
   cash generation, cash on hand, and economy-wide sidelines cash have moved
   *relative to* liquidity and equity prices. The basket members behind the aggregate
   lines are named in the subtitle.
-- **Bottom — the Treasury curve as raw yields (%)**, not rebased: yields already
+- **Middle — the Treasury curve as raw yields (%)**, not rebased: yields already
   share a natural scale, and rebasing them to a near-zero-rate anchor (the 3-month
   bill was ~0.03% in 2014) would blow that line up into the thousands. Periods when
   the curve is **inverted** (10Y &lt; 2Y — the 2s10s recession signal) are shaded
-  as a band across both panels.
+  as a band across all three panels.
+- **Bottom — the S&P 500 ÷ liquidity ratio**, rebased to 100 at the same anchor:
+  how equity prices move *per unit of cash in the system*. Rising = stocks outpacing
+  liquidity (getting rich vs. the cash backdrop); falling = liquidity growing faster
+  than prices. The denominator is an **official** liquidity series — **M2** or
+  **money-market-fund assets** — with each measure's pro/con shown in the panel title.
+  The static PNG draws a line for every denominator; the interactive chart adds a
+  **picker** to switch between them (see below). Constructed proxies (e.g. "Fed net
+  liquidity" = balance sheet − TGA − reverse repo) are deliberately excluded — official
+  series only.
 
 ![free cash flow vs. M2, the S&P 500, and the Treasury curve](output/fcf-macro-indicators.png)
 
@@ -64,10 +73,15 @@ SEC_USER_AGENT="fcf-macro-indicators you@example.com" \
 
 - **drag** a region to zoom, **scroll** to zoom, **double-click** to reset
 - use the **range slider** under the axis, or the **3y / 5y / 10y / All** buttons
-- **click anywhere on the chart** to re-anchor the top panel: the click snaps to
-  the nearest quarter, a dotted marker line moves to it, and the level series
-  re-rebase to 100 there — live, client-side, no rebuild. `--rebase-date` sets the
-  initial anchor
+- **click anywhere on the chart** to re-anchor: the click snaps to the nearest
+  quarter, a dotted marker line moves to it, and **both** the top (levels) and bottom
+  (ratio) panels re-rebase to 100 there — live, client-side, no rebuild.
+  `--rebase-date` sets the initial anchor
+- pick the **ratio denominator** from the dropdown at the top-left (**M2** or
+  **money-market-fund assets**): the bottom panel swaps to `S&P 500 ÷ that measure`
+  and the panel title updates with the chosen measure's pro/con. The hidden
+  denominator stays re-anchored in the background, so switching after a re-anchor
+  lines up immediately
 - toggle **Levels: Linear / Log** on the top panel's y-axis (log helps when a
   decade of M2/S&P growth compresses the recent range)
 - click legend entries to hide or isolate a series; hover for aligned values
@@ -156,3 +170,37 @@ SEC_USER_AGENT="fcf-macro-indicators you@example.com" \
 - **FCF is lumpy and seasonal.** A single quarter's FCF swings with working
   capital, buyback-driven capex timing, and seasonality; it is not deseasonalised.
 - Not investment advice.
+
+## Possible improvements
+
+Ideas not yet built. (The **S&P ÷ liquidity ratio panel** is now built — see the
+chart description above; the picker offers M2 and money-market-fund assets as
+denominators.)
+
+- **Rolling correlation / beta** of quarterly S&P returns against quarterly
+  liquidity growth — quantifies the co-movement rather than leaving it to the eye,
+  and shows when the relationship strengthens or breaks.
+- **More official denominators for the ratio picker** — e.g. M1 (`M1SL`) or currency
+  in circulation (`CURRCIR`). Each just needs a fetch column and an entry in
+  `LIQUIDITY_MEASURES`; the panel, picker, and re-anchor JS pick it up automatically.
+
+The ratio denominators are **official FRED series only**. The table below records why
+each is offered, and why the popular **Fed net liquidity** proxy is *not*:
+
+| Measure | FRED | Pros | Cons |
+| --- | --- | --- | --- |
+| **M2 money supply** *(offered)* | `M2SL` | Broadest, decades of monthly history, short (~4-week) lag, already on the chart; smooth trend suits long-run valuation | Too broad/slow for market-relevant swings; includes retail savings that don't drive asset prices short-term; weak short-horizon link to equities; a 2020 definitional change (savings reclassified into M2) breaks the level |
+| **Money-market-fund assets** *(offered)* | `MMMFFAQ027S` | Directly measures "cash on the sidelines" that could rotate into stocks; at record highs, topical; already on the chart | ~10-week Z.1 publication lag; **ambiguous sign** — high MMF can mean dry powder waiting to buy *or* risk-off cash fleeing equities; heavily driven by short rates (high T-bill yields pull cash in regardless of equity views) |
+| **Fed net liquidity** *(excluded)* | `WALCL − WTREGEN − RRPONTSYD` | Tightest correlation with the S&P since 2020; captures QE/QT, debt-ceiling TGA swings, and RRP drains — the actual plumbing that moves risk assets; weekly/daily, near-real-time | **Not an official series** — a constructed proxy analysts disagree on how to net out, so excluded by design; correlation is a post-2020 regime artifact, weak/absent before then; noisier, driven by mechanical Fed/Treasury operations; components' units differ (`WALCL`/`WTREGEN` in $millions, `RRPONTSYD` in $billions), so it can't just be rebased into agreement |
+
+Other directions:
+
+- **Broader equity aggregate** — total US market cap (e.g. Wilshire 5000) instead of
+  the S&P index level, so the "prices vs. liquidity" comparison covers the whole
+  market rather than 500 large caps.
+- **Retail vs. institutional MMF split** — separate the sidelines-cash line into the
+  two cohorts, which behave differently (retail chases T-bill yields; institutional
+  tracks corporate-treasury and repo flows).
+- **Nonfinancial-corporate liquid assets** (Z.1) — the economy-wide aggregate the
+  per-company FCF/cash basket only approximates; would let the chart show the mega-cap
+  subset against all corporations' cash.

@@ -144,7 +144,7 @@ class RebaseControlTest(unittest.TestCase):
         self.assertIn("2024-06-30", html)
 
     def test_script_embeds_raw_level_data_only(self) -> None:
-        script = _rebase_script(self._rebased(), "chart-id", 3)
+        script = _rebase_script(self._rebased(), "chart-id", 3, [])
         self.assertIn("chart-id", script)
         self.assertIn("Aggregate FCF (basket sum)", script)
         # Yields are not rebased, so their raw data must not be embedded.
@@ -153,6 +153,19 @@ class RebaseControlTest(unittest.TestCase):
         self.assertIn("plotly_click", script)
         # The anchor marker shape index is wired in for the click handler to move.
         self.assertIn('"shape": 3', script)
+        # No ratio traces supplied -> the ratio payload is present but empty.
+        self.assertIn('"ratio": []', script)
+
+    def test_script_embeds_ratio_traces_when_present(self) -> None:
+        rebased = self._rebased()
+        # Ratio raw series keyed by measure, plus the (key, trace-index) pairs the
+        # renderer records; the script must embed the raw values and re-rebase them.
+        rebased.attrs["ratio_raw"] = {"m2": pd.Series([2.0, 3.0, 5.0], index=rebased.index)}
+        script = _rebase_script(rebased, "chart-id", 3, [("m2", 7)])
+        self.assertIn('"idx": 7', script)
+        self.assertIn("5.0", script)          # a raw ratio value is embedded
+        self.assertIn("D.ratio.length", script)  # ratio traces re-rebase on click
+        self.assertIn("yaxis3.title.text", script)  # ratio y-axis follows the anchor
 
 
 if __name__ == "__main__":
