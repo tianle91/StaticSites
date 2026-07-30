@@ -29,3 +29,11 @@ pythonpath = ["src"]
 # [project].description with the leading "<title> — " stripped, so description
 # must start with "<title> — ".
 title = "Margin debt vs. the S&P 500"
+
+[tool.staticsite.refresh]
+# Weekly is sufficient for monthly FINRA/FRED series and keeps the latest market
+# observation reasonably fresh.
+enabled = true
+every_days = 7
+anchor_date = "2026-08-03"
+timeout_minutes = 45

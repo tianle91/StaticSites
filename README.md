@@ -64,13 +64,62 @@ specification — including the rules for agents working in this repo — is in
 
 The load-bearing rule is that **`all` and `test` never touch the network** —
 every fetch, download, and geocode lives behind `make data`, and its results are
-committed. That is what lets CI build and test all four projects hermetically,
+committed. That is what lets CI build and test all six projects hermetically,
 and what lets you rebuild any site offline.
 
-CI runs `make test` and `make all` once per project, in a matrix discovered
-automatically from `*/Makefile`
+CI runs `make test` and `make all` once per project on self-hosted runners, in a
+matrix discovered automatically from `*/Makefile`
 ([.github/workflows/ci.yml](.github/workflows/ci.yml)). A new project that
 follows the standard needs no CI changes.
+
+## Automated data refreshes
+
+[`.github/workflows/refresh-data.yml`](.github/workflows/refresh-data.yml) wakes
+daily at 06:17 UTC on the self-hosted `static-sites-refresh` runner. It reads
+each project's `[tool.staticsite.refresh]` metadata, runs `make data`, `make
+test`, and `make all` for projects due that day, and opens one PR containing all
+updates from that invocation. If the substantive upstream data is unchanged,
+the fetchers preserve the committed timestamps and outputs, and no PR is
+created.
+
+Cadence is deterministic rather than stored as mutable "last run" metadata. A
+project runs on `anchor_date`, then every `every_days` UTC dates:
+
+```toml
+[tool.staticsite.refresh]
+enabled = true
+every_days = 7
+anchor_date = "2026-08-03"
+timeout_minutes = 45
+```
+
+Validate or inspect the schedule locally without touching the network:
+
+```bash
+./refresh_projects.py check
+./refresh_projects.py select --date 2026-08-03
+```
+
+The workflow also supports manual runs for due projects, every enabled project,
+or one explicitly named project. The transit isochrone refresh is disabled
+until its runner has the Java, `osmium`, OSM, and GTFS prerequisites documented
+in that project.
+
+### Self-hosted runner setup
+
+Register separate runners (or isolated runner groups) with these custom labels:
+
+- `static-sites-ci` runs pull-request builds and tests. It receives no repository
+  secrets and should be disposable or tightly sandboxed because it executes PR
+  code.
+- `static-sites-refresh` runs only the scheduled/manual default-branch workflow.
+  It may access the refresh credentials and persistent upstream prerequisites.
+
+Both need the GitHub Actions runner's standard tools plus `make`; the workflows
+install `uv`. Configure a GitHub App with repository Contents and Pull requests
+read/write permissions, install it on this repository, and add its credentials
+as `REFRESH_APP_ID` and `REFRESH_APP_PRIVATE_KEY` repository secrets. Also add
+`SEC_USER_AGENT` for the SEC-backed FCF refresh.
 
 ## Adding a project
 
@@ -87,10 +136,11 @@ writes `data/`, `src/build_site.py` renders `output/my-new-map.html` from it, an
 a smoke test covers the build. Replace those three with the real thing, fill in
 the `TODO`s in the project's `README.md`, set the homepage blurb in
 `pyproject.toml` (`[project].description` + `[tool.staticsite].title`), and add a
-row to the table at the top of this README. CI picks the project up automatically
-— no workflow changes.
+row to the table at the top of this README. Once its real fetch is content-aware,
+enable and configure `[tool.staticsite.refresh]`. CI and the refresh scheduler
+then pick the project up automatically—no workflow changes.
 
-Do not hand-roll a new project directory; scaffolding it is what keeps the four
+Do not hand-roll a new project directory; scaffolding it is what keeps the six
 (and counting) projects identical in shape.
 
 ## Machine-readable index (`sites.json`)

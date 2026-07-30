@@ -28,3 +28,10 @@ pythonpath = ["src"]
 # [project].description with the leading "<title> — " stripped, so description
 # must start with "<title> — ".
 title = "Toronto DineSafe food-safety inspections"
+
+[tool.staticsite.refresh]
+# Inspection outcomes can change daily.
+enabled = true
+every_days = 1
+anchor_date = "2026-07-30"
+timeout_minutes = 45

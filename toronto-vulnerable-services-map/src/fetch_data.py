@@ -132,13 +132,22 @@ def fetch_shelters() -> None:
             "url": f"https://open.toronto.ca/dataset/{DATASET}/",
         })
 
+    substantive = {
+        "date": day,  # occupancy snapshot date
+        "source": DATASET,
+        "locations": locations,
+    }
+    if SHELTERS_PATH.exists():
+        existing = json.loads(SHELTERS_PATH.read_text(encoding="utf-8"))
+        existing.pop("generated_at", None)
+        if existing == substantive:
+            print(f"  {SHELTERS_PATH} is unchanged ({len(locations)} locations).")
+            return
     SHELTERS_PATH.write_text(
         json.dumps(
             {
-                "date": day,                                        # occupancy snapshot date
-                "generated_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),  # when this data was pulled
-                "source": DATASET,
-                "locations": locations,
+                "generated_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
+                **substantive,
             },
             indent=2,
             ensure_ascii=False,

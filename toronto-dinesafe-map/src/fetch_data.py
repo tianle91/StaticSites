@@ -255,13 +255,22 @@ def main() -> None:
 
     establishments.sort(key=lambda x: (x["name"] or "").lower())
     DATA_DIR.mkdir(parents=True, exist_ok=True)
+    substantive = {
+        "source_page": SOURCE_PAGE,
+        "total_records": len(establishments),
+        "establishments": establishments,
+    }
+    if OUT_PATH.exists():
+        existing = json.loads(OUT_PATH.read_text(encoding="utf-8"))
+        existing.pop("generated_at", None)
+        if existing == substantive:
+            print(f"{OUT_PATH} is unchanged ({len(establishments)} establishments).")
+            return
     OUT_PATH.write_text(
         json.dumps(
             {
                 "generated_at": datetime.datetime.now().strftime("%Y-%m-%d"),
-                "source_page": SOURCE_PAGE,
-                "total_records": len(establishments),
-                "establishments": establishments,
+                **substantive,
             },
             ensure_ascii=False,
         ) + "\n",

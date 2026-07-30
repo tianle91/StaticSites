@@ -26,3 +26,11 @@ pythonpath = ["src"]
 # [project].description with the leading "<title> — " stripped, so description
 # must start with "<title> — ".
 title = "Ontario OHIP physiotherapy clinics"
+
+[tool.staticsite.refresh]
+# The provincial clinic list changes slowly; refresh monthly and reuse the
+# committed Nominatim cache.
+enabled = true
+every_days = 30
+anchor_date = "2026-08-04"
+timeout_minutes = 30

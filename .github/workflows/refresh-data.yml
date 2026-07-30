@@ -1,0 +1,158 @@
+name: Refresh project data
+
+on:
+  # One frequent scheduler supports different per-project cadences. Avoid the
+  # start of the hour, when GitHub says scheduled workflows are most likely to
+  # be delayed.
+  schedule:
+    - cron: "17 6 * * *"
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Which projects to refresh
+        type: choice
+        required: true
+        default: due
+        options:
+          - due
+          - all
+          - project
+      project:
+        description: Project slug when mode is "project"
+        type: string
+        required: false
+
+# A refresh uses one shared checkout and produces one PR, so overlapping runs
+# would race on generated files and branches.
+concurrency:
+  group: refresh-project-data
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    # Never route pull_request jobs to this persistent machine. This workflow
+    # runs only trusted code from the default branch via schedule/dispatch.
+    runs-on: [self-hosted, static-sites-refresh]
+    timeout-minutes: 360
+    env:
+      SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}
+    steps:
+      # A GitHub App token makes the resulting PR behave like an ordinary PR:
+      # its pull_request event can run CI without manual workflow approval.
+      - name: Create refresh-bot token
+        id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.REFRESH_APP_ID }}
+          private-key: ${{ secrets.REFRESH_APP_PRIVATE_KEY }}
+
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          token: ${{ steps.app-token.outputs.token }}
+          # The dedicated refresh runner may hold large gitignored inputs (OSM
+          # and GTFS) needed by explicitly requested heavyweight refreshes.
+          clean: false
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Select projects
+        id: select
+        shell: bash
+        env:
+          MODE: ${{ inputs.mode || 'due' }}
+          PROJECT: ${{ inputs.project }}
+        run: |
+          args=(select --date "$(date -u +%F)")
+          if [[ "$MODE" == "all" ]]; then
+            args+=(--all)
+          elif [[ "$MODE" == "project" ]]; then
+            if [[ -z "$PROJECT" ]]; then
+              echo "The project input is required when mode=project." >&2
+              exit 2
+            fi
+            args+=(--project "$PROJECT")
+          fi
+          projects="$(./refresh_projects.py "${args[@]}")"
+          echo "projects=$projects" >> "$GITHUB_OUTPUT"
+          if [[ -z "$projects" ]]; then
+            echo "No projects are due." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Refreshing: $projects" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Refresh, test, and rebuild
+        if: steps.select.outputs.projects != ''
+        shell: bash
+        env:
+          MODE: ${{ inputs.mode || 'due' }}
+          PROJECT: ${{ inputs.project }}
+        run: |
+          args=(run --date "$(date -u +%F)")
+          if [[ "$MODE" == "all" ]]; then
+            args+=(--all)
+          elif [[ "$MODE" == "project" ]]; then
+            args+=(--project "$PROJECT")
+          fi
+          ./refresh_projects.py "${args[@]}"
+          make check
+          git diff --check
+
+      - name: Detect updates
+        if: steps.select.outputs.projects != ''
+        id: changes
+        shell: bash
+        run: |
+          if [[ -n "$(git status --porcelain --untracked-files=all)" ]]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "Upstream data produced no repository changes; no PR created." \
+              >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Commit and push refresh
+        if: steps.changes.outputs.changed == 'true'
+        id: push
+        shell: bash
+        env:
+          PROJECTS: ${{ steps.select.outputs.projects }}
+        run: |
+          branch="automation/data-refresh-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          git config user.name "static-sites-refresh[bot]"
+          git config user.email "static-sites-refresh[bot]@users.noreply.github.com"
+          git switch -c "$branch"
+          git add --all
+          git commit -m "Refresh project data"
+          git push origin "$branch"
+          echo "branch=$branch" >> "$GITHUB_OUTPUT"
+          echo "Committed refreshed data for: $PROJECTS" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Open pull request
+        if: steps.changes.outputs.changed == 'true'
+        uses: actions/github-script@v7
+        env:
+          BRANCH: ${{ steps.push.outputs.branch }}
+          PROJECTS: ${{ steps.select.outputs.projects }}
+        with:
+          github-token: ${{ steps.app-token.outputs.token }}
+          script: |
+            const projects = process.env.PROJECTS.split(/\s+/).filter(Boolean);
+            const list = projects.map(project => `- \`${project}\``).join("\n");
+            const runUrl =
+              `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}` +
+              `/actions/runs/${context.runId}`;
+            const { data: pull } = await github.rest.pulls.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              head: process.env.BRANCH,
+              base: context.payload.repository.default_branch,
+              title: `Refresh project data (${projects.join(", ")})`,
+              body:
+                "Automated refresh of committed upstream data and generated output.\n\n" +
+                `${list}\n\n` +
+                `The refresh, offline builds, and tests passed in [workflow run ${context.runId}](${runUrl}).`,
+            });
+            await core.summary.addLink(`Opened PR #${pull.number}`, pull.html_url).write();

@@ -56,6 +56,14 @@ pythonpath = ["src"]
 # [project].description with the leading "<title> — " stripped, so description
 # must start with "<title> — ".
 title = "__TITLE__"
+
+[tool.staticsite.refresh]
+# Scheduled `make data` is opt-in. Set enabled=true once the real fetch is
+# content-aware, then choose its cadence and first UTC run date.
+enabled = false
+every_days = 7
+anchor_date = "2026-01-01"
+timeout_minutes = 30
 '''
 
 FILES["Makefile"] = '''\
@@ -128,13 +136,23 @@ OUT_PATH = DATA_DIR / "example.json"
 
 
 def main() -> None:
-    payload = {
-        "generated_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
+    substantive = {
         "items": [
             {"name": "Placeholder item", "value": 1},
         ],
     }
     DATA_DIR.mkdir(parents=True, exist_ok=True)
+    existing = {}
+    if OUT_PATH.exists():
+        existing = json.loads(OUT_PATH.read_text(encoding="utf-8"))
+        existing.pop("generated_at", None)
+    if existing == substantive:
+        print("{} is unchanged.".format(OUT_PATH))
+        return
+    payload = {
+        "generated_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
+        **substantive,
+    }
     OUT_PATH.write_text(json.dumps(payload, indent=2) + "\\n", encoding="utf-8")
     print("Wrote {} with {} item(s).".format(OUT_PATH, len(payload["items"])))
     print("Done. Now run `make` to rebuild the site.")
@@ -349,7 +367,9 @@ Then replace the placeholders: src/fetch_data.py (the real upstream fetch),
 src/build_site.py (the real rendering), the TODOs in README.md, and add a row
 for the project to the table in ../README.md. Set the homepage blurb in
 pyproject.toml ([project].description + [tool.staticsite].title), then run
-`make manifest` from the repo root to add the project to sites.json.
+`make manifest` from the repo root to add the project to sites.json. Once the
+real fetch preserves committed files when upstream content is unchanged, set
+[tool.staticsite.refresh].enabled=true and choose its cadence.
 """.format(name=name))
 
 

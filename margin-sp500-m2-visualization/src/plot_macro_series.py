@@ -297,6 +297,10 @@ def render_html(rebased: pd.DataFrame, out_path: Path) -> None:
         include_plotlyjs="cdn",
         full_html=True,
         config={"scrollZoom": True, "displaylogo": False, "responsive": True},
+        # A stable id keeps repeated offline builds byte-for-byte deterministic;
+        # Plotly otherwise generates a random UUID and the refresh bot sees a
+        # false output change even when the source data is identical.
+        div_id="macro-series-chart",
     )
     # Plotly's full_html output has an empty <head> with no <title>; give the
     # page one so the browser tab/bookmark isn't blank.

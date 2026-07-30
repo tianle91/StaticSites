@@ -26,3 +26,11 @@ pythonpath = ["src"]
 # [project].description with the leading "<title> — " stripped, so description
 # must start with "<title> — ".
 title = "Toronto services for vulnerable populations"
+
+[tool.staticsite.refresh]
+# Shelter occupancy is a daily snapshot, but a weekly map refresh balances
+# freshness against geocoding/API load.
+enabled = true
+every_days = 7
+anchor_date = "2026-08-05"
+timeout_minutes = 30

@@ -243,22 +243,31 @@ def main() -> None:
             "precision": precision,  # "address" = street match, "city" = city centre only
         })
 
+    missing = len(records) - len(clinics)
+    coarse = sum(1 for c in clinics if c["precision"] == "city")
+    substantive = {
+        "source_page": SOURCE_PAGE,
+        "resource_id": RESOURCE_ID,
+        "total_records": len(records),
+        "clinics": clinics,
+    }
+    if CLINICS_PATH.exists():
+        existing = json.loads(CLINICS_PATH.read_text(encoding="utf-8"))
+        existing.pop("generated_at", None)
+        if existing == substantive:
+            print(f"  {CLINICS_PATH} is unchanged ({len(clinics)} geocoded clinics).")
+            return
     CLINICS_PATH.write_text(
         json.dumps(
             {
                 "generated_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
-                "source_page": SOURCE_PAGE,
-                "resource_id": RESOURCE_ID,
-                "total_records": len(records),
-                "clinics": clinics,
+                **substantive,
             },
             indent=2,
             ensure_ascii=False,
         ),
         encoding="utf-8",
     )
-    missing = len(records) - len(clinics)
-    coarse = sum(1 for c in clinics if c["precision"] == "city")
     print(f"  Wrote {CLINICS_PATH} with {len(clinics)} geocoded clinics "
           f"({missing} without coordinates, {coarse} placed at the city centre).")
     print("Done. Now run `make` to rebuild the map.")
