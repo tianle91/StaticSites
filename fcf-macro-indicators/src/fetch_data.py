@@ -357,13 +357,21 @@ def main() -> None:
 
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     frame.index.name = "date"
-    frame.to_csv(SERIES_CSV)
-    PULLED_STAMP.write_text(date.today().isoformat() + "\n", encoding="utf-8")
-    FCF_SOURCE_FILE.write_text(FCF_SOURCE + "\n", encoding="utf-8")
+    csv_content = frame.to_csv()
+    current_csv = SERIES_CSV.read_text(encoding="utf-8") if SERIES_CSV.exists() else ""
+    changed = current_csv != csv_content
+    if changed:
+        SERIES_CSV.write_text(csv_content, encoding="utf-8")
+        PULLED_STAMP.write_text(date.today().isoformat() + "\n", encoding="utf-8")
+    source_content = FCF_SOURCE + "\n"
+    if (not FCF_SOURCE_FILE.exists()
+            or FCF_SOURCE_FILE.read_text(encoding="utf-8") != source_content):
+        FCF_SOURCE_FILE.write_text(source_content, encoding="utf-8")
 
     fcf_cols = [c for c in frame.columns if c.startswith("fcf_")]
     cash_cols = [c for c in frame.columns if c.startswith("cash_")]
-    print(f"Wrote {SERIES_CSV} with {len(frame)} quarterly rows "
+    verb = "Wrote" if changed else "Unchanged"
+    print(f"{verb} {SERIES_CSV} with {len(frame)} quarterly rows "
           f"({frame.index.min():%Y-%m} to {frame.index.max():%Y-%m}), "
           f"{len(fcf_cols)} FCF and {len(cash_cols)} cash series.")
     print("Done. Now run `make` to re-render the charts.")

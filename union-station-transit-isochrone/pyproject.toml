@@ -28,3 +28,11 @@ pythonpath = ["src"]
 # [project].description with the leading "<title> — " stripped, so description
 # must start with "<title> — ".
 title = "Union Station commute-shed"
+
+[tool.staticsite.refresh]
+# Enable after the refresh runner has Java 21, osmium, and the ignored OSM/GTFS
+# inputs described in README.md. An explicit --project run may still exercise it.
+enabled = false
+every_days = 30
+anchor_date = "2026-08-01"
+timeout_minutes = 240

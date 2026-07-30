@@ -2,7 +2,7 @@
 #
 # Every project is still fully self-contained (its own Makefile, venv, deps); see
 # AGENTS.md. This root Makefile exists solely for repo-wide bookkeeping that has
-# no home inside a single project: today, generating the sites.json manifest.
+# no home inside a single project: the sites.json manifest and refresh schedule.
 # Do not add build/test/deps targets here -- those live per project.
 #
 # CI discovers projects with `*/Makefile` (one level deep), so this root Makefile
@@ -14,10 +14,12 @@
 manifest:
 	./generate_manifest.py
 
-# Verify sites.json is in sync with the pyproject.toml files (what CI runs).
+# Verify sites.json and scheduled-refresh metadata (what CI runs).
 check:
 	./generate_manifest.py --check
+	./refresh_projects.py check
+	python3 -m unittest discover -s admin_tests
 
 help:
 	@echo "make manifest  - regenerate sites.json from the projects' metadata"
-	@echo "make check     - fail if sites.json is out of date"
+	@echo "make check     - validate sites.json and project refresh metadata"

@@ -10,7 +10,11 @@ jobs:
   # here means adding a project needs no CI edits -- it just has to follow the
   # standard layout documented in AGENTS.md.
   discover:
-    runs-on: ubuntu-latest
+    # SECURITY: pull requests execute repository code on the same persistent
+    # runner used by the secret-bearing refresh workflow. Only run trusted PRs;
+    # use separate labelled/ephemeral runners if untrusted contributions are
+    # accepted in the future.
+    runs-on: self-hosted
     outputs:
       projects: ${{ steps.list.outputs.projects }}
     steps:
@@ -23,7 +27,7 @@ jobs:
 
   build:
     needs: discover
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     strategy:
       fail-fast: false
       matrix:
@@ -42,12 +46,11 @@ jobs:
       - name: make all
         run: make -C ${{ matrix.project }} all
 
-  # sites.json is generated from the projects' pyproject.toml metadata; fail if
-  # the committed copy is stale so downstream consumers can trust it. Stdlib
-  # only, so no uv/venv setup is needed.
+  # Validate repo-admin metadata and its stdlib-only scheduler tests. No
+  # uv/venv setup is needed.
   manifest:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - uses: actions/checkout@v4
-      - name: sites.json is in sync
-        run: ./generate_manifest.py --check
+      - name: Repo metadata is valid
+        run: make check

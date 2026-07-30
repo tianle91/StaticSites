@@ -146,6 +146,34 @@ make check       # fail if sites.json is stale  (CI runs this)
 run on the system `python3`, which is 3.9 and predates `tomllib`), matching the
 scaffolder.
 
+## Scheduled data-refresh metadata
+
+Every project also declares whether and how the self-hosted refresh workflow
+runs its networked `make data` target:
+
+```toml
+[tool.staticsite.refresh]
+enabled = true
+every_days = 7
+anchor_date = "2026-08-03"
+timeout_minutes = 45
+```
+
+The project is due on `anchor_date` and every `every_days` UTC dates after it.
+Runtime "last run" state is intentionally not committed: deterministic dates
+keep scheduling source-controlled without creating state-only commits. GitHub
+Actions history records attempts and results.
+
+[`refresh_projects.py`](refresh_projects.py) validates and selects this metadata.
+It is stdlib-only because it runs before any project environment is installed.
+`make check` validates both refresh metadata and `sites.json`.
+
+New projects start with refresh disabled. Enable one only after its real fetch is
+safe for unattended use and content-aware: when upstream records are unchanged,
+`make data` must preserve committed data timestamps and produce byte-identical
+output. A scheduled invocation runs all due projects sequentially and opens one
+PR only if the checkout has meaningful changes.
+
 ## The standard Make target contract
 
 CI and humans only ever invoke these. Every project implements every target;
@@ -203,6 +231,23 @@ Do **not** run `make data` as a routine check: it is slow and hits live APIs
 (Nominatim allows 1 request/second, so one map takes ~5 minutes).
 `union-station-transit-isochrone`'s `make data` additionally needs a Java 21 JDK
 and `osmium-tool`.
+
+The automated refresh workflow is the exception to the routine-check warning:
+it deliberately runs `make data` only for projects due according to their
+metadata. The transit project remains disabled until its self-hosted runner has
+the ignored OSM/GTFS inputs and system prerequisites.
+
+## Self-hosted CI and refresh runner
+
+Both workflows currently use the same standard `self-hosted` runner. This is an
+explicit trust tradeoff: pull-request CI executes repository code on a
+persistent machine that later receives refresh GitHub App credentials and
+upstream-specific secrets. GitHub runner labels route jobs but do not isolate
+them, so malicious PR code could leave state behind and capture later secrets.
+
+Assume every PR is trusted. Before accepting untrusted contributions, split the
+workflows onto separate custom-labelled runners and make the PR runner ephemeral
+or tightly sandboxed.
 
 ## Conventions
 

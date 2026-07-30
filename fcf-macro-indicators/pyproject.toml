@@ -31,3 +31,10 @@ pythonpath = ["src"]
 # [project].description with the leading "<title> — " stripped, so description
 # must start with "<title> — ".
 title = "Free cash flow vs. the macro backdrop"
+
+[tool.staticsite.refresh]
+# Fetch weekly; the scheduler uses this anchor and every seventh UTC date after it.
+enabled = true
+every_days = 7
+anchor_date = "2026-08-02"
+timeout_minutes = 90

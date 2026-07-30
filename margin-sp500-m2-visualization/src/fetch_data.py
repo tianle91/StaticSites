@@ -90,9 +90,14 @@ def main() -> None:
 
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     frame.index.name = "date"
-    frame.to_csv(SERIES_CSV)
-    PULLED_STAMP.write_text(date.today().isoformat() + "\n", encoding="utf-8")
-    print(f"Wrote {SERIES_CSV} with {len(frame)} monthly rows "
+    csv_content = frame.to_csv()
+    current_csv = SERIES_CSV.read_text(encoding="utf-8") if SERIES_CSV.exists() else ""
+    changed = current_csv != csv_content
+    if changed:
+        SERIES_CSV.write_text(csv_content, encoding="utf-8")
+        PULLED_STAMP.write_text(date.today().isoformat() + "\n", encoding="utf-8")
+    verb = "Wrote" if changed else "Unchanged"
+    print(f"{verb} {SERIES_CSV} with {len(frame)} monthly rows "
           f"({frame.index.min():%Y-%m} to {frame.index.max():%Y-%m}).")
     print("Done. Now run `make` to re-render the charts.")
 
