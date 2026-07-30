@@ -237,18 +237,17 @@ it deliberately runs `make data` only for projects due according to their
 metadata. The transit project remains disabled until its self-hosted runner has
 the ignored OSM/GTFS inputs and system prerequisites.
 
-## Self-hosted CI and refresh runners
+## Self-hosted CI and refresh runner
 
-Both workflows use self-hosted runners, separated by label and trust boundary:
+Both workflows currently use the same standard `self-hosted` runner. This is an
+explicit trust tradeoff: pull-request CI executes repository code on a
+persistent machine that later receives refresh GitHub App credentials and
+upstream-specific secrets. GitHub runner labels route jobs but do not isolate
+them, so malicious PR code could leave state behind and capture later secrets.
 
-- `static-sites-ci`: build/test/manifest jobs, including pull-request code. Give
-  it no repository secrets and use an ephemeral or tightly sandboxed machine.
-- `static-sites-refresh`: scheduled/manual default-branch data refreshes. This
-  runner can receive the refresh GitHub App credentials and upstream-specific
-  secrets.
-
-Do not add `pull_request` as a trigger for the refresh workflow or route PR jobs
-to the secret-bearing refresh runner.
+Assume every PR is trusted. Before accepting untrusted contributions, split the
+workflows onto separate custom-labelled runners and make the PR runner ephemeral
+or tightly sandboxed.
 
 ## Conventions
 

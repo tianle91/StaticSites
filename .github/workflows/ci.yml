@@ -10,9 +10,11 @@ jobs:
   # here means adding a project needs no CI edits -- it just has to follow the
   # standard layout documented in AGENTS.md.
   discover:
-    # Pull requests execute repository code, so keep this on an isolated,
-    # preferably ephemeral runner with no refresh-bot secrets.
-    runs-on: [self-hosted, static-sites-ci]
+    # SECURITY: pull requests execute repository code on the same persistent
+    # runner used by the secret-bearing refresh workflow. Only run trusted PRs;
+    # use separate labelled/ephemeral runners if untrusted contributions are
+    # accepted in the future.
+    runs-on: self-hosted
     outputs:
       projects: ${{ steps.list.outputs.projects }}
     steps:
@@ -25,7 +27,7 @@ jobs:
 
   build:
     needs: discover
-    runs-on: [self-hosted, static-sites-ci]
+    runs-on: self-hosted
     strategy:
       fail-fast: false
       matrix:
@@ -47,7 +49,7 @@ jobs:
   # Validate repo-admin metadata and its stdlib-only scheduler tests. No
   # uv/venv setup is needed.
   manifest:
-    runs-on: [self-hosted, static-sites-ci]
+    runs-on: self-hosted
     steps:
       - uses: actions/checkout@v4
       - name: Repo metadata is valid

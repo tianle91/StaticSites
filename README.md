@@ -75,12 +75,11 @@ follows the standard needs no CI changes.
 ## Automated data refreshes
 
 [`.github/workflows/refresh-data.yml`](.github/workflows/refresh-data.yml) wakes
-daily at 06:17 UTC on the self-hosted `static-sites-refresh` runner. It reads
-each project's `[tool.staticsite.refresh]` metadata, runs `make data`, `make
-test`, and `make all` for projects due that day, and opens one PR containing all
-updates from that invocation. If the substantive upstream data is unchanged,
-the fetchers preserve the committed timestamps and outputs, and no PR is
-created.
+daily at 06:17 UTC on the self-hosted runner. It reads each project's
+`[tool.staticsite.refresh]` metadata, runs `make data`, `make test`, and `make
+all` for projects due that day, and opens one PR containing all updates from
+that invocation. If the substantive upstream data is unchanged, the fetchers
+preserve the committed timestamps and outputs, and no PR is created.
 
 Cadence is deterministic rather than stored as mutable "last run" metadata. A
 project runs on `anchor_date`, then every `every_days` UTC dates:
@@ -107,19 +106,19 @@ in that project.
 
 ### Self-hosted runner setup
 
-Register separate runners (or isolated runner groups) with these custom labels:
-
-- `static-sites-ci` runs pull-request builds and tests. It receives no repository
-  secrets and should be disposable or tightly sandboxed because it executes PR
-  code.
-- `static-sites-refresh` runs only the scheduled/manual default-branch workflow.
-  It may access the refresh credentials and persistent upstream prerequisites.
-
-Both need the GitHub Actions runner's standard tools plus `make`; the workflows
-install `uv`. Configure a GitHub App with repository Contents and Pull requests
-read/write permissions, install it on this repository, and add its credentials
-as `REFRESH_APP_ID` and `REFRESH_APP_PRIVATE_KEY` repository secrets. Also add
+Register a repository runner with the standard `self-hosted` label. It needs the
+GitHub Actions runner's standard tools plus `make`; the workflows install `uv`.
+Configure a GitHub App with repository Contents and Pull requests read/write
+permissions, install it on this repository, and add its credentials as
+`REFRESH_APP_ID` and `REFRESH_APP_PRIVATE_KEY` repository secrets. Also add
 `SEC_USER_AGENT` for the SEC-backed FCF refresh.
+
+> **Security warning:** pull-request CI and the secret-bearing refresh workflow
+> share this persistent machine. GitHub's `self-hosted` label routes jobs but
+> does not isolate them. Malicious PR code could leave processes or files behind
+> and capture secrets from a later refresh job. This setup assumes every PR is
+> trusted. Before accepting untrusted contributions, use separate labelled
+> runners—preferably an ephemeral runner for PR CI.
 
 ## Adding a project
 

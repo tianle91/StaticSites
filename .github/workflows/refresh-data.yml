@@ -30,9 +30,11 @@ concurrency:
 
 jobs:
   refresh:
-    # Never route pull_request jobs to this persistent machine. This workflow
-    # runs only trusted code from the default branch via schedule/dispatch.
-    runs-on: [self-hosted, static-sites-refresh]
+    # SECURITY: this shares a persistent runner with pull-request CI. A
+    # malicious PR could leave state behind and capture these secrets later.
+    # This setup assumes every PR is trusted; isolate the workflows before
+    # accepting untrusted contributions.
+    runs-on: self-hosted
     timeout-minutes: 360
     env:
       SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}
@@ -50,8 +52,8 @@ jobs:
         with:
           ref: ${{ github.event.repository.default_branch }}
           token: ${{ steps.app-token.outputs.token }}
-          # The dedicated refresh runner may hold large gitignored inputs (OSM
-          # and GTFS) needed by explicitly requested heavyweight refreshes.
+          # The runner may hold large gitignored inputs (OSM and GTFS) needed by
+          # explicitly requested heavyweight refreshes.
           clean: false
 
       - uses: astral-sh/setup-uv@v5
