@@ -108,10 +108,12 @@ in that project.
 
 Register a repository runner with the standard `self-hosted` label. It needs the
 GitHub Actions runner's standard tools plus `make`; the workflows install `uv`.
-Configure a GitHub App with repository Contents and Pull requests read/write
-permissions, install it on this repository, and add its credentials as
-`REFRESH_APP_ID` and `REFRESH_APP_PRIVATE_KEY` repository secrets. Also add
-`SEC_USER_AGENT` for the SEC-backed FCF refresh.
+Under **Settings → Actions → General**, enable **Allow GitHub Actions to create
+and approve pull requests**. The refresh workflow grants its short-lived
+`GITHUB_TOKEN` only the `contents: write` and `pull-requests: write` permissions
+needed to push a refresh branch and open its pull request. Add `SEC_USER_AGENT`
+as a repository Actions secret for the SEC-backed FCF refresh. Pull requests
+opened with `GITHUB_TOKEN` require a maintainer to approve their CI run.
 
 > **Security warning:** pull-request CI and the secret-bearing refresh workflow
 > share this persistent machine. GitHub's `self-hosted` label routes jobs but
