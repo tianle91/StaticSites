@@ -28,6 +28,12 @@ concurrency:
   group: refresh-project-data
   cancel-in-progress: false
 
+# The refresh commits generated updates to a branch and opens a pull request.
+# Repository Actions settings must allow GitHub Actions to create pull requests.
+permissions:
+  contents: write
+  pull-requests: write
+
 jobs:
   refresh:
     # SECURITY: this shares a persistent runner with pull-request CI. A
@@ -39,19 +45,9 @@ jobs:
     env:
       SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}
     steps:
-      # A GitHub App token makes the resulting PR behave like an ordinary PR:
-      # its pull_request event can run CI without manual workflow approval.
-      - name: Create refresh-bot token
-        id: app-token
-        uses: actions/create-github-app-token@v2
-        with:
-          app-id: ${{ secrets.REFRESH_APP_ID }}
-          private-key: ${{ secrets.REFRESH_APP_PRIVATE_KEY }}
-
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.repository.default_branch }}
-          token: ${{ steps.app-token.outputs.token }}
           # The runner may hold large gitignored inputs (OSM and GTFS) needed by
           # explicitly requested heavyweight refreshes.
           clean: false
@@ -139,7 +135,7 @@ jobs:
           BRANCH: ${{ steps.push.outputs.branch }}
           PROJECTS: ${{ steps.select.outputs.projects }}
         with:
-          github-token: ${{ steps.app-token.outputs.token }}
+          github-token: ${{ github.token }}
           script: |
             const projects = process.env.PROJECTS.split(/\s+/).filter(Boolean);
             const list = projects.map(project => `- \`${project}\``).join("\n");
