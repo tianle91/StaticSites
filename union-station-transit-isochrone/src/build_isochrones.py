@@ -118,7 +118,7 @@ def main():
         "features": features,
     }
     OUT.parent.mkdir(parents=True, exist_ok=True)
-    OUT.write_text(json.dumps(fc), encoding="utf-8")
+    OUT.write_text(json.dumps(fc, indent=2) + "\n", encoding="utf-8")
     counts = ", ".join(f'{f["properties"]["minutes"]}min:{len(f["geometry"]["coordinates"])} polygons'
                        for f in features)
     print(f"Wrote {OUT} from {SOURCE} ({counts})")

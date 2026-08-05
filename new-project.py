@@ -180,7 +180,7 @@ DATA = json.loads((DATA_DIR / "example.json").read_text(encoding="utf-8"))
 
 # The payload is embedded in the page so the artifact is self-contained: one file
 # you can open or serve anywhere, with no sidecar requests.
-PAYLOAD = json.dumps(DATA, ensure_ascii=False)
+PAYLOAD = json.dumps(DATA, indent=2, ensure_ascii=False)
 
 HTML = """<!DOCTYPE html>
 <html lang="en">

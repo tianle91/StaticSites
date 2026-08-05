@@ -381,7 +381,7 @@ def main():
         "engine": "r5py RAPTOR over OSM + GTFS (TTC + GO/UP)",
         "points": points,
         "stations": stations_out,
-    }), encoding="utf-8")
+    }, indent=2) + "\n", encoding="utf-8")
     print(f"Wrote {OUT} with {len(points)} reachable grid points, "
           f"{len(stations_out)} station itineraries. Now run `make`.")
 

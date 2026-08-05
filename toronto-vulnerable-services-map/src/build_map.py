@@ -65,6 +65,7 @@ PAYLOAD = json.dumps(
         "zoom": ZOOM,
         "shelter_meta": shelter_meta,
     },
+    indent=2,
     ensure_ascii=False,
 )
 

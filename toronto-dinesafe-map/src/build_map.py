@@ -84,6 +84,7 @@ PAYLOAD = json.dumps(
             "sample": bool(DATA.get("sample")),
         },
     },
+    indent=2,
     ensure_ascii=False,
 )
 

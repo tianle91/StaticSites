@@ -11,6 +11,7 @@ the output file extension. Offline: refresh data/series.csv with `make data`.
 from __future__ import annotations
 
 import argparse
+import json
 from datetime import date
 from pathlib import Path
 
@@ -27,6 +28,43 @@ PULLED_STAMP = ROOT / "data" / "generated_at.txt"  # written by fetch_data.py
 # document with an empty <head> and no <title>, so we inject this one -- every
 # sibling site has a <title>, and downstream tooling reads it.
 PAGE_TITLE = "Margin Debt vs. the S&amp;P 500, M2, CPI &amp; PPI"
+
+
+def _pretty_plotly_html(html: str) -> str:
+    """Expand Plotly.newPlot(...) JSON args so the committed HTML stays readable.
+
+    Plotly's to_html() packs the figure onto one enormous line; re-dumping the
+    args with indent=2 makes diffs and source viewing usable. ``<`` is escaped
+    the same way Plotly does, so the payload stays safe inside a <script> tag.
+    """
+    marker = "Plotly.newPlot("
+    start = html.find(marker)
+    if start < 0:
+        return html
+    pos = start + len(marker)
+    decoder = json.JSONDecoder()
+    args: list[object] = []
+    try:
+        for _ in range(4):  # div id, data, layout, config
+            while pos < len(html) and html[pos] in " \t\n\r,":
+                pos += 1
+            if pos >= len(html) or html[pos] == ")":
+                break
+            obj, end = decoder.raw_decode(html, pos)
+            args.append(obj)
+            pos = end
+        while pos < len(html) and html[pos] in " \t\n\r":
+            pos += 1
+        if not args or pos >= len(html) or html[pos] != ")":
+            return html
+    except json.JSONDecodeError:
+        return html
+    pretty = ",\n".join(
+        json.dumps(a, indent=2, ensure_ascii=False).replace("<", "\\u003c")
+        for a in args
+    )
+    return html[:start] + f"Plotly.newPlot(\n{pretty}\n)" + html[pos + 1 :]
+
 
 
 def data_pulled_date() -> str:
@@ -319,7 +357,7 @@ def render_html(rebased: pd.DataFrame, out_path: Path) -> None:
         + pulled_html + "<strong>Data sources:</strong> " + links + "</footer>"
     )
     html = html.replace("</body>", footer + "</body>", 1)
-    out_path.write_text(html, encoding="utf-8")
+    out_path.write_text(_pretty_plotly_html(html), encoding="utf-8")
 
 
 def build_chart(out_path: Path, rebase_anchor: pd.Timestamp) -> None:

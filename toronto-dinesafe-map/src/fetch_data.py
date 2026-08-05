@@ -272,6 +272,7 @@ def main() -> None:
                 "generated_at": datetime.datetime.now().strftime("%Y-%m-%d"),
                 **substantive,
             },
+            indent=2,
             ensure_ascii=False,
         ) + "\n",
         encoding="utf-8",
