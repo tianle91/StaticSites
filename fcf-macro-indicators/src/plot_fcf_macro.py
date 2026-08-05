@@ -28,6 +28,42 @@ import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 import pandas as pd
 
+def _pretty_plotly_html(html: str) -> str:
+    """Expand Plotly.newPlot(...) JSON args so the committed HTML stays readable.
+
+    Plotly's to_html() packs the figure onto one enormous line; re-dumping the
+    args with indent=2 makes diffs and source viewing usable. ``<`` is escaped
+    the same way Plotly does, so the payload stays safe inside a <script> tag.
+    """
+    marker = "Plotly.newPlot("
+    start = html.find(marker)
+    if start < 0:
+        return html
+    pos = start + len(marker)
+    decoder = json.JSONDecoder()
+    args: list[object] = []
+    try:
+        for _ in range(4):  # div id, data, layout, config
+            while pos < len(html) and html[pos] in " \t\n\r,":
+                pos += 1
+            if pos >= len(html) or html[pos] == ")":
+                break
+            obj, end = decoder.raw_decode(html, pos)
+            args.append(obj)
+            pos = end
+        while pos < len(html) and html[pos] in " \t\n\r":
+            pos += 1
+        if not args or pos >= len(html) or html[pos] != ")":
+            return html
+    except json.JSONDecodeError:
+        return html
+    pretty = ",\n".join(
+        json.dumps(a, indent=2, ensure_ascii=False).replace("<", "\\u003c")
+        for a in args
+    )
+    return html[:start] + f"Plotly.newPlot(\n{pretty}\n)" + html[pos + 1 :]
+
+
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT_DIR = ROOT / "output"
 SERIES_CSV = ROOT / "data" / "series.csv"
@@ -636,7 +672,7 @@ def render_html(rebased: pd.DataFrame, out_path: Path) -> None:
     html = html.replace(
         "</body>",
         footer + _rebase_script(rebased, div_id, anchor_shape_idx, ratio_traces) + "</body>", 1)
-    out_path.write_text(html, encoding="utf-8")
+    out_path.write_text(_pretty_plotly_html(html), encoding="utf-8")
 
 
 def _rebase_control(rebased: pd.DataFrame) -> str:
@@ -677,7 +713,7 @@ def _rebase_script(rebased: pd.DataFrame, div_id: str, anchor_shape_idx: int,
     }
     return (
         '<script type="text/javascript">(function(){'
-        f"var D={json.dumps(payload)};"
+        f"var D={json.dumps(payload, indent=2)};"
         f'var gd=document.getElementById("{div_id}");'
         "if(!gd)return;"
         "var lbl=document.getElementById(\"rebase-anchor-label\");"

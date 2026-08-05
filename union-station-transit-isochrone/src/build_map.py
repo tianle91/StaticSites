@@ -56,7 +56,7 @@ PAYLOAD = json.dumps({
     "stations": STATIONS,
     "mode_color": MODE_COLOR,
     "mode_label": MODE_LABEL,
-}, ensure_ascii=False)
+}, indent=2, ensure_ascii=False)
 
 HTML = """<!DOCTYPE html>
 <html lang="en">

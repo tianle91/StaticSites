@@ -36,6 +36,7 @@ PAYLOAD = json.dumps(
             "city_only": sum(1 for c in DATA["clinics"] if c.get("precision") == "city"),
         },
     },
+    indent=2,
     ensure_ascii=False,
 )
 

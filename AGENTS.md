@@ -256,3 +256,6 @@ or tightly sandboxed.
 - Geocoding results and other slow fetches are cached in committed files (e.g.
   `data/geocode_cache.json`). Preserve them — regenerating means hours of
   rate-limited requests.
+- Committed JSON (under `data/` and generated GeoJSON) and JSON payloads
+  embedded in HTML are written with `indent=2` so diffs and source viewing stay
+  readable. Do not minify them.
