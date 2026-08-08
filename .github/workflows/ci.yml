@@ -6,8 +6,9 @@ on:
   pull_request:
 
 jobs:
-  # Every top-level directory holding a Makefile is a project. Discovering them
-  # here means adding a project needs no CI edits -- it just has to follow the
+  # Every top-level directory holding a Makefile is a project. Pull requests
+  # build only changed projects, while pushes to main retain a full-project
+  # safety net. Adding a project needs no CI edits -- it just has to follow the
   # standard layout documented in AGENTS.md.
   discover:
     # SECURITY: pull requests execute repository code on the same persistent
@@ -17,16 +18,43 @@ jobs:
     runs-on: self-hosted
     outputs:
       projects: ${{ steps.list.outputs.projects }}
+      has_projects: ${{ steps.list.outputs.has_projects }}
     steps:
+      # The PR base SHA must be available for the changed-path comparison.
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - id: list
         run: |
-          projects=$(ls -d */Makefile | xargs -n1 dirname | jq -R -s -c 'split("\n")[:-1]')
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            # --no-renames emits both paths so a cross-project move tests both
+            # the source and destination projects when they still exist.
+            candidates=$(git diff --name-only --no-renames "${{ github.event.pull_request.base.sha }}...HEAD" | awk -F/ 'NF > 1 { print $1 }' | sort -u)
+          else
+            candidates=$(find . -mindepth 2 -maxdepth 2 -type f -name Makefile -print | sed -e 's|^./||' -e 's|/Makefile$||' | sort)
+          fi
+
+          # Deleted projects have no Makefile in the pull-request tree, so
+          # exclude them rather than attempting to build a removed directory.
+          projects=$(while IFS= read -r project; do
+            if [[ -n "$project" && -f "$project/Makefile" ]]; then
+              printf '%s\n' "$project"
+            fi
+          done <<< "$candidates" | jq -R -s -c 'split("\n") | map(select(length > 0))')
+
           echo "projects=$projects" >> "$GITHUB_OUTPUT"
+          if [[ "$projects" == "[]" ]]; then
+            echo "has_projects=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_projects=true" >> "$GITHUB_OUTPUT"
+          fi
           echo "Discovered: $projects"
 
   build:
     needs: discover
+    # GitHub evaluates a job-level condition before expanding its matrix. This
+    # makes docs/admin-only pull requests a clean skip, not an empty matrix.
+    if: needs.discover.outputs.has_projects == 'true'
     runs-on: self-hosted
     strategy:
       fail-fast: false

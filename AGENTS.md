@@ -28,8 +28,10 @@ project may depend on:
 - [`Makefile`](Makefile) — **admin targets only** (`make manifest`, `make
   check`). This is the one allowed repo-root Makefile; it is not a build system
   and must never gain build/test/deps targets — those stay per project. CI
-  discovers projects with `*/Makefile` (one level deep), so this root Makefile is
-  invisible to that glob and never becomes a phantom project.
+  recognizes projects by a one-level-deep `*/Makefile`. Pull requests build only
+  projects with changed paths; pushes to `main` build every project. The root
+  Makefile is invisible to that project discovery and never becomes a phantom
+  project.
 
 ## Creating a project
 
@@ -41,7 +43,8 @@ project may depend on:
 
 That writes the full standard layout and a working end-to-end placeholder, so
 `cd my-new-map && make && make test` passes immediately and CI picks it up with
-no workflow changes. Then replace `src/fetch_data.py` (the real upstream fetch),
+no workflow changes when the project is added or modified in a pull request.
+Then replace `src/fetch_data.py` (the real upstream fetch),
 `src/build_site.py` (the real rendering), and the `TODO`s in the project's
 `README.md`, and add a row to the table in [README.md](README.md).
 
@@ -223,8 +226,9 @@ express the custom search/filter panels these maps have.
 cd <project> && make && make test
 ```
 
-That is exactly what CI runs, once per project, via a matrix auto-discovered
-from `*/Makefile` — see [.github/workflows/ci.yml](.github/workflows/ci.yml).
+On pull requests, CI runs those exact targets once for each changed project,
+using a matrix derived from `*/Makefile` directories. Pushes to `main` run them
+for every project — see [.github/workflows/ci.yml](.github/workflows/ci.yml).
 Adding a project that follows this standard needs no CI changes.
 
 Do **not** run `make data` as a routine check: it is slow and hits live APIs

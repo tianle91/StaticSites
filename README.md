@@ -67,8 +67,9 @@ every fetch, download, and geocode lives behind `make data`, and its results are
 committed. That is what lets CI build and test all six projects hermetically,
 and what lets you rebuild any site offline.
 
-CI runs `make test` and `make all` once per project on self-hosted runners, in a
-matrix discovered automatically from `*/Makefile`
+On pull requests, CI runs `make test` and `make all` for each changed project on
+self-hosted runners, using a matrix discovered automatically from `*/Makefile`.
+Pushes to `main` run every project as a full-project safety net
 ([.github/workflows/ci.yml](.github/workflows/ci.yml)). A new project that
 follows the standard needs no CI changes.
 
