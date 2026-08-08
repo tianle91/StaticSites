@@ -249,6 +249,16 @@ Assume every PR is trusted. Before accepting untrusted contributions, split the
 workflows onto separate custom-labelled runners and make the PR runner ephemeral
 or tightly sandboxed.
 
+## GitHub CLI access
+
+The repository owner's `gh` authentication is available through the normal
+terminal session and macOS keychain. A sandboxed `gh auth status` can incorrectly
+report that the active token is invalid because it cannot use that session or
+keychain. Before concluding that GitHub CLI authentication is broken, rerun the
+check with normal terminal/keychain access (requesting approval when required).
+Do not ask the repository owner to authenticate again based only on the
+sandboxed result, and never print or copy the token itself.
+
 ## Conventions
 
 - Match the surrounding style: these builders are heavily commented, explaining
