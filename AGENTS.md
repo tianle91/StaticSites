@@ -25,9 +25,13 @@ project may depend on:
 - [`generate_manifest.py`](generate_manifest.py) — regenerates
   [`sites.json`](sites.json) from the projects' metadata (see "Site-listing
   metadata" below).
+- [`run_projects.py`](run_projects.py) — stdlib-only data/dependency dispatcher.
 - [`Makefile`](Makefile) — **admin targets only** (`make manifest`, `make
-  check`). This is the one allowed repo-root Makefile; it is not a build system
-  and must never gain build/test/deps targets — those stay per project. CI
+  check`, `make data`, `make deps`). This is the one allowed repo-root Makefile;
+  it is not a build system
+  and must never gain build/test targets — those stay per project. Root
+  `data` and `deps` are delegation targets only, implemented by `run_projects.py`;
+  they discover `*/Makefile` and invoke each independent project sequentially. CI
   recognizes projects by a one-level-deep `*/Makefile`. Pull requests build only
   projects with changed paths; pushes to `main` build every project. The root
   Makefile is invisible to that project discovery and never becomes a phantom
@@ -41,7 +45,8 @@ project may depend on:
 ./new-project.py my-new-map
 ```
 
-That writes the full standard layout and a working end-to-end placeholder, so
+That writes the full standard layout (including an initial `uv.lock`) and a
+working end-to-end placeholder, so
 `cd my-new-map && make && make test` passes immediately and CI picks it up with
 no workflow changes when the project is added or modified in a pull request.
 Then replace `src/fetch_data.py` (the real upstream fetch),
@@ -185,14 +190,16 @@ inapplicable ones are omitted only if genuinely meaningless.
 | Target | Contract | Network |
 | --- | --- | --- |
 | `all` (default) | Rebuild everything in `output/` from committed `data/` | **No** |
-| `deps` | `uv sync` into `./.venv` | First run only |
+| `deps` | Always run `uv sync --locked` to repair `./.venv` | Setup / missing packages |
 | `test` | `pytest` | **No** |
-| `data` | Refresh `data/` from upstream, then rebuild `output/` | **Yes** |
+| `data` | Obtain/refresh every required input, then `$(MAKE) all` | **Yes** |
 | `open` | Open `output/<project>.html` in a browser | No |
 | `clean` | Remove generated `output/` files | No |
 | `clean-venv` | Remove `./.venv` | No |
 
-**The rule CI depends on: `all` and `test` never touch the network.** Anything
+**The rule CI depends on: build/test logic never touches the network.**
+Dependency bootstrap may need the network when the environment is missing or
+stale. Once dependencies are installed, `all` and `test` stay offline. Anything
 that fetches from an API, geocodes, or downloads lives behind `data`, whose
 outputs are committed. If you add a build step that needs the network, move the
 fetch into `data` and commit its result instead of relaxing this.
@@ -204,7 +211,7 @@ Each project has its own `pyproject.toml`, its own `uv.lock`, and its own
 
 ```bash
 cd <project>
-uv sync                  # create/refresh .venv  (or just `make deps`)
+make deps                # uv sync --locked: repair .venv without changing uv.lock
 uv add <package>         # runtime dependency
 uv add --dev <package>   # test-only dependency
 ```
@@ -219,6 +226,24 @@ client, its rate limiter, and geodesic distance for both geocoding maps;
 `shapely` unions the walk-circles into isochrone polygons. The reverse also
 holds — the map HTML is hand-written Leaflet on purpose, because `folium` cannot
 express the custom search/filter panels these maps have.
+
+Explicit `make deps` always syncs, even when `.venv/.stamp` is current. Other
+commands bootstrap only when pyproject/lock changes, the stamp is missing, or
+`.venv/bin/python` is missing. Missing or stale locks fail; update them deliberately
+with `uv lock` / `uv add` and commit them. Upgrades use `uv lock --upgrade`.
+
+From the repo root, `make deps` sets up every discovered project and `make data`
+refreshes every project, including refresh-disabled ones. Both run sequentially,
+continue after failures, summarize results, and fail overall if any project fails.
+Data uses each project's refresh timeout; dependencies use 30 minutes per project.
+There is no root environment or shared dependency manifest.
+
+`make data` succeeds only after all required sources were obtained and outputs
+rebuilt. Validate before publishing; replace files atomically, preserve unchanged
+bytes/timestamps, normalize unordered upstream records, and restore missing
+sidecars. Preserve successful geocode caches; service errors must fail rather than
+be cached as no-matches. Genuine no-match fallbacks remain project-specific.
+System tools and credentials are operator prerequisites, not automatic installs.
 
 ## Verifying changes
 
@@ -239,7 +264,7 @@ and `osmium-tool`.
 The automated refresh workflow is the exception to the routine-check warning:
 it deliberately runs `make data` only for projects due according to their
 metadata. The transit project remains disabled until its self-hosted runner has
-the ignored OSM/GTFS inputs and system prerequisites.
+the system prerequisites and capacity for automatic OSM/GTFS downloads.
 
 ## Self-hosted CI and refresh runner
 

@@ -6,7 +6,6 @@ transit_model.json.
 Stdlib only - no pip install, no network needed at build time. The generated
 index.html needs the internet only for OpenStreetMap tiles.
 """
-import datetime
 import json
 import pathlib
 
@@ -37,13 +36,12 @@ MODE_LABEL = {
 }
 
 def _generated_at() -> str:
-    """When the reachability bands were last computed by `make data`. Prefer the
-    stamp in the model; fall back to the data file's date so the page always
-    carries a data-pulled date."""
-    stamp = MODEL.get("generated_at")
-    if stamp:
-        return str(stamp)[:10]
-    return datetime.date.fromtimestamp((DATA_DIR / "transit_model.json").stat().st_mtime).isoformat()
+    """Use recorded provenance rather than filesystem dates, which vary by clone."""
+    if _REACH.exists():
+        stamp = json.loads(_REACH.read_text(encoding="utf-8")).get("generated_at")
+        if stamp:
+            return str(stamp)[:10]
+    return str(MODEL.get("generated_at", ""))[:10]
 
 
 PAYLOAD = json.dumps({

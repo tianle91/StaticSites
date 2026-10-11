@@ -13,9 +13,12 @@ Refresh from upstream on a networked machine:
 
 ```sh
 SEC_USER_AGENT="fcf-macro-indicators you@example.com" make data
-make
 ```
 
 `make data` regenerates `series.csv` from the sources listed in the project
 README's "Data sources" section (SEC EDGAR for FCF, FRED for M2, money-market-fund
 assets, and yields, Yahoo Finance for the S&P 500).
+
+All configured company and macro series are required. Failed pulls retain the
+previous dataset; unchanged pulls preserve data timestamps and restore missing
+pull-date/provenance files. `make data` rebuilds both charts automatically.

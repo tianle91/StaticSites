@@ -15,13 +15,26 @@ all: $(OUT)
 
 # Create/refresh .venv from pyproject.toml. The stamp keeps `uv sync` from
 # re-running on every build once the tree is warm.
-deps: $(STAMP)
+# Explicit setup repairs environment drift even when the stamp is current.
+deps:
+	@command -v uv >/dev/null || { echo "Install uv before running make deps." >&2; exit 1; }
+	@test -f uv.lock || { echo "Missing uv.lock: run uv lock deliberately and commit it." >&2; exit 1; }
+	uv sync --locked
+	@touch $(STAMP)
 
-$(STAMP): pyproject.toml $(wildcard uv.lock)
-	uv sync
-	@touch $@
+# Ordinary commands use the fast path, but a leftover stamp cannot hide a
+# missing interpreter. The lockfile is mandatory and is never rewritten here.
+ifeq ($(wildcard $(PY)),)
+.PHONY: $(STAMP)
+endif
+$(STAMP): pyproject.toml uv.lock
+	$(MAKE) deps
 
-$(OUT): src/build_map.py data/services.json data/shelters.json | $(STAMP)
+uv.lock:
+	@echo "Missing uv.lock: run uv lock deliberately and commit it." >&2
+	@exit 1
+
+$(OUT): src/build_map.py data/services.json $(wildcard data/shelters.json data/geocode_cache.json) | $(STAMP)
 	$(PY) src/build_map.py
 
 test: | $(STAMP)
@@ -31,7 +44,7 @@ test: | $(STAMP)
 # Toronto Open Data API (cached in data/geocode_cache.json), then rebuild.
 data: | $(STAMP)
 	$(PY) src/fetch_data.py
-	$(PY) src/build_map.py
+	$(MAKE) all
 
 open: $(OUT)
 	open $(OUT) 2>/dev/null || xdg-open $(OUT) 2>/dev/null || echo "Open $(OUT) manually."

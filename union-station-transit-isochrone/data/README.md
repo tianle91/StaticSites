@@ -1,85 +1,37 @@
-# `data/` — inputs for `make data` (r5py)
+# Routing inputs
 
-Drop the OpenStreetMap extract and the GTFS feeds here, then run `make data` from
-the parent folder. These files are **gitignored** (they're large and change often)
-— only this README is tracked.
+Run `make data` from the project directory. It obtains all default network
+inputs, clips OSM, validates GTFS service for the next non-holiday Wednesday,
+routes to Union, and rebuilds the map in one invocation. Install Java 21 and
+`osmium-tool` first; Python dependencies are bootstrapped with `uv sync --locked`.
 
-`src/fetch_isochrones.py` looks for:
-* `OSM_PBF` → `data/gtha.osm.pbf` by default (override with the `OSM_PBF` env var)
-* `GTFS_DIR` → `data/` by default; it loads **every `*.zip`** in here
+## Managed downloads
 
-## 1. OpenStreetMap extract (the street + walk network)
+- `gtha.osm.pbf`: [Geofabrik Ontario OSM](https://download.geofabrik.de/north-america/canada/ontario.html).
+- `ttc.zip`: [Toronto Open Data TTC schedules](https://open.toronto.ca/dataset/merged-gtfs-ttc-routes-and-schedules/).
+- `go.zip` and `up.zip`: separate [Metrolinx GO and UP Express feeds](https://www.gotransit.com/en/partner-with-us/software-developers).
 
-Geofabrik's Ontario extract covers the whole GTHA:
+Metrolinx's download page documents its Access and Use Agreement.
+OSM is a large download (about 1 GB). Conditional HTTP requests reuse unchanged
+files; sources without validators are downloaded and compared. Downloads are
+validated before replacement. Failed downloads retain previous valid files.
 
-```bash
-cd data
-curl -L -o gtha.osm.pbf https://download.geofabrik.de/north-america/canada/ontario-latest.osm.pbf
-```
+`gtha-clipped.osm.pbf` uses `BBOX_S/N/W/E` (defaults 43.05/44.40/-80.60/-78.70).
+Clipping is repeated only when raw OSM, bounding box, or osmium version changes.
+`refresh_cache.json` records HTTP validators, hashes, and routing signatures.
+Routing reruns when content, service date, configuration, model, code, or the
+project lock changes, or when reachability results are missing/invalid.
 
-It's ~900 MB and covers all of Ontario. **This must be clipped to the GTHA** —
-R5 rejects geographic extents above ~975,000 km² (all of Ontario is far larger),
-and the clip also makes r5py build faster and use less RAM.
+All binary inputs, cache metadata, and `reachability.json` are gitignored.
+`transit_model.json` remains the committed offline fallback.
 
-`make data` does this for you: it runs `osmium extract` to produce
-`gtha-clipped.osm.pbf` and routes from that — you just need [osmium](https://osmcode.org/osmium-tool/)
-installed (`brew install osmium-tool`). To clip manually:
+## Caller-managed inputs
 
-```bash
-osmium extract -b -80.6,43.05,-78.7,44.40 gtha.osm.pbf -o gtha-clipped.osm.pbf
-```
+Set `OSM_PBF` to a pre-clipped custom extract and/or `GTFS_DIR` to a folder of
+custom feeds. These overrides are validated but never downloaded or overwritten.
+Every `*.zip` in the selected feed folder is used and must have active trips for
+the routing date. Optional regional feeds can also be added to the default
+`data/` folder; they are retained and included in cache invalidation.
 
-(That bbox matches `BBOX_*` in `src/fetch_isochrones.py` and `BBOX` in the Makefile:
-west,south,east,north.)
-
-## 2. GTFS feeds (the transit schedules)
-
-Minimum for "TTC + GO/UP" reach from Union — download both into `data/`:
-
-```bash
-cd data
-# TTC: subway + streetcar + bus (Toronto Open Data, ~6-weekly updates)
-curl -L -o ttc.zip "http://opendata.toronto.ca/toronto.transit.commission/ttc-routes-and-schedules/OpenData_TTC_Schedules.zip"
-# GO Transit + UP Express (Metrolinx Open Data)
-curl -L -o go.zip "https://assets.metrolinx.com/raw/upload/Documents/Metrolinx/Open%20Data/GO-GTFS.zip"
-```
-
-* TTC dataset page (use this if the direct link 404s):
-  <https://open.toronto.ca/dataset/merged-gtfs-ttc-routes-and-schedules/>
-* GO/UP feed (download requires accepting Metrolinx's use agreement):
-  <https://www.metrolinx.com/en/about-us/open-data> ·
-  <https://www.gotransit.com/en/partner-with-us/software-developers>
-
-Use **current** feeds: `src/fetch_isochrones.py` routes for the *next non-holiday Wednesday* (arriving Union ~09:00, morning peak), so
-the GTFS `calendar` must cover that date or you'll get empty isochrones.
-
-### Optional — 905 / regional agencies for fuller suburban reach
-
-Add any of these as extra `*.zip` files in `data/` (each loads automatically):
-MiWay (Mississauga), YRT/Viva (York), Brampton Transit, Durham Region Transit,
-Oakville/Burlington Transit, Hamilton HSR. Most are on their city open-data
-portals or mirrored on [Transitland](https://www.transit.land/) /
-[Mobility Database](https://mobilitydatabase.org/).
-
-## 3. Run it
-
-First install the Java 21 JDK and osmium once (see the repo README for details):
-
-```bash
-brew install --cask temurin@21   # Java 21 JDK that r5py needs
-brew install osmium-tool         # used to clip the OSM extract
-```
-
-Then:
-
-```bash
-cd ..
-make data   # syncs .venv, clips OSM, routes Union -> grid, writes data/reachability.json
-make open   # rebuild + open the map
-```
-
-Tunables (env vars): `ARRIVE_HHMM` (default `09:00`, arrival at Union),
-`PERCENTILE` (`1`, best-timed trip; `50` for the median — see the repo README),
-`GRID_SPACING_M` (`1000`; raise for speed, lower for detail — reverse routing is one
-search per point, so lowering is much slower), `MAX_MINUTES` (`120`, also the
-departure-window length before arrival), and `BBOX_S/N/W/E`.
+Other routing settings: `ARRIVE_HHMM`, `PERCENTILE`, `GRID_SPACING_M`,
+`MAX_MINUTES`, and `BBOX_S/N/W/E`; see the project README for their meanings.

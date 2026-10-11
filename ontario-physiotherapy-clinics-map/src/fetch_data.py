@@ -18,6 +18,7 @@ near-instant.
 import datetime
 import json
 import pathlib
+import tempfile
 import re
 import sys
 
@@ -46,8 +47,28 @@ _lookup = RateLimiter(_nominatim.geocode, min_delay_seconds=1.1, swallow_excepti
 cache = json.loads(CACHE_PATH.read_text(encoding="utf-8")) if CACHE_PATH.exists() else {}
 
 
+def write_if_changed(path, content):
+    """Publish validated content atomically; unchanged files keep their mtime."""
+    if path.exists() and path.read_text(encoding="utf-8") == content:
+        return False
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=path.parent,
+                                     delete=False) as stream:
+        temporary = pathlib.Path(stream.name)
+        try:
+            stream.write(content)
+        except BaseException:
+            temporary.unlink(missing_ok=True)
+            raise
+    try:
+        temporary.replace(path)
+    finally:
+        temporary.unlink(missing_ok=True)
+    return True
+
+
 def save_cache() -> None:
-    CACHE_PATH.write_text(json.dumps(cache, indent=2, ensure_ascii=False), encoding="utf-8")
+    write_if_changed(CACHE_PATH, json.dumps(cache, indent=2, ensure_ascii=False))
 
 
 def lookup(**query):
@@ -56,11 +77,7 @@ def lookup(**query):
     *County* instead of the town. geopy takes a dict for the structured form.
     """
     q = query.pop("q", None)
-    try:
-        loc = _lookup(q if q is not None else query, country_codes="ca", exactly_one=True)
-    except Exception as exc:  # noqa: BLE001 - network/parse errors are non-fatal
-        print(f"  ! geocode failed for {q or query!r}: {exc}", file=sys.stderr)
-        return None
+    loc = _lookup(q if q is not None else query, country_codes="ca", exactly_one=True)
     return [loc.latitude, loc.longitude] if loc else None
 
 
@@ -243,6 +260,9 @@ def main() -> None:
             "precision": precision,  # "address" = street match, "city" = city centre only
         })
 
+    if not clinics:
+        raise RuntimeError("No usable clinics; refusing to replace clinics.json.")
+    clinics.sort(key=lambda item: (item["name"], item["address"]))
     missing = len(records) - len(clinics)
     coarse = sum(1 for c in clinics if c["precision"] == "city")
     substantive = {
@@ -257,7 +277,7 @@ def main() -> None:
         if existing == substantive:
             print(f"  {CLINICS_PATH} is unchanged ({len(clinics)} geocoded clinics).")
             return
-    CLINICS_PATH.write_text(
+    write_if_changed(CLINICS_PATH,
         json.dumps(
             {
                 "generated_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
@@ -266,11 +286,10 @@ def main() -> None:
             indent=2,
             ensure_ascii=False,
         ),
-        encoding="utf-8",
     )
     print(f"  Wrote {CLINICS_PATH} with {len(clinics)} geocoded clinics "
           f"({missing} without coordinates, {coarse} placed at the city centre).")
-    print("Done. Now run `make` to rebuild the map.")
+    print("Data ready; make data rebuilds the map automatically.")
 
 
 if __name__ == "__main__":

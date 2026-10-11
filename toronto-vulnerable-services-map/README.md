@@ -57,3 +57,13 @@ only for map tiles and the live stats panel.
   each distinct shelter location (via Nominatim, cached) before pinning it.
   Until you run it, only the curated locations appear and the stats panel +
   dataset link represent the full system.
+
+## Refresh and dependencies
+
+`make deps` always repairs this project's environment with `uv sync --locked`;
+missing or stale locks fail without being rewritten. Other targets bootstrap only
+when dependency files change or the environment/interpreter is missing.
+Dependency setup may require network access; installed builds/tests are offline.
+`make data` obtains every required input and rebuilds outputs automatically.
+Unchanged upstream content preserves data timestamps; missing generated files are
+restored. Required-source failures retain previous datasets and return an error.

@@ -20,7 +20,7 @@ Inputs (place in ./data/, or set env vars):
   GTFS_DIR  - folder of GTFS .zip feeds (TTC, GO/UP, and any 905 agencies).
               Default: ./data  (every *.zip in it is loaded)
 
-Requirements: Java 21 (JDK), and `pip install r5py` (see dependencies/requirements.txt).
+Requirements: Java 21 (JDK), and this project's locked dependencies (`make deps`).
 This step needs a few GB of RAM and is NOT run in restricted/offline sandboxes -
 the committed isochrones.geojson keeps the map working without it.
 
@@ -40,7 +40,7 @@ DATA_DIR = ROOT / "data"
 OUT_DIR = ROOT / "output"
 MODEL = json.loads((DATA_DIR / "transit_model.json").read_text(encoding="utf-8"))
 ORIGIN = MODEL["origin"]
-OUT = DATA_DIR / "reachability.json"
+OUT = pathlib.Path(os.environ.get("REACHABILITY_OUT", str(DATA_DIR / "reachability.json")))
 
 # Tunables (env-overridable).
 # This computes a *reverse* isochrone: travel time TO Union, arriving by ARRIVE_HHMM
@@ -279,7 +279,7 @@ def main():
                           TransportMode)
     except ImportError as exc:
         print(f"r5py/geopandas not installed: {exc}\n"
-              f"Run `pip install -r dependencies/requirements.txt` (needs Java 21).",
+              f"Run `make deps` (routing also needs Java 21).",
               file=sys.stderr)
         sys.exit(1)
 
@@ -293,7 +293,7 @@ def main():
               file=sys.stderr)
         sys.exit(1)
 
-    date = next_weekday()
+    date = datetime.date.fromisoformat(os.environ["SERVICE_DATE"]) if "SERVICE_DATE" in os.environ else next_weekday()
     hh, mm = (int(x) for x in ARRIVE_HHMM.split(":"))
     arrival = datetime.datetime(date.year, date.month, date.day, hh, mm)
     departure = arrival - datetime.timedelta(minutes=WINDOW_MIN)  # window ends at arrival
@@ -371,6 +371,11 @@ def main():
                 "minutes": int(round(stn_time[s["id"]])), "legs": legs,
             })
 
+    if not points:
+        raise RuntimeError("No reachable points; previous reachability data retained.")
+    points.sort()
+    stations_out.sort(key=lambda item: (item["name"], item["lat"], item["lon"]))
+    OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps({
         "origin": ORIGIN,
         "direction": "to_union",
@@ -383,7 +388,7 @@ def main():
         "stations": stations_out,
     }, indent=2) + "\n", encoding="utf-8")
     print(f"Wrote {OUT} with {len(points)} reachable grid points, "
-          f"{len(stations_out)} station itineraries. Now run `make`.")
+          f"{len(stations_out)} station itineraries.")
 
 
 if __name__ == "__main__":

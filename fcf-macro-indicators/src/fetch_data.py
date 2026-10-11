@@ -29,6 +29,9 @@ import argparse
 import os
 import time
 from datetime import date
+import pathlib
+import tempfile
+import re
 from pathlib import Path
 
 import numpy as np
@@ -104,6 +107,43 @@ CASH_TAGS = [
 # does. Used both to spot a natively-reported quarter and to confirm two YTD legs
 # are exactly one quarter apart before differencing them.
 _ONE_Q_LOW, _ONE_Q_HIGH = 2.0, 4.0
+
+
+def write_if_changed(path, content):
+    """Publish validated content atomically; unchanged files keep their mtime."""
+    if path.exists() and path.read_text(encoding="utf-8") == content:
+        return False
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=path.parent,
+                                     delete=False) as stream:
+        temporary = pathlib.Path(stream.name)
+        try:
+            stream.write(content)
+        except BaseException:
+            temporary.unlink(missing_ok=True)
+            raise
+    try:
+        temporary.replace(path)
+    finally:
+        temporary.unlink(missing_ok=True)
+    return True
+
+
+def record_pull_date(changed):
+    """Recover a lost sidecar from the rendered provenance before using today."""
+    if not changed and PULLED_STAMP.exists():
+        return
+    stamp = date.today().isoformat()
+    if not changed:
+        rendered = ROOT / "output" / (ROOT.name + ".html")
+        if rendered.exists():
+            match = re.search(r"Data pulled (\d{4}-\d{2}-\d{2})", rendered.read_text(encoding="utf-8"))
+            if match:
+                try:
+                    stamp = date.fromisoformat(match[1]).isoformat()
+                except ValueError:
+                    pass  # invalid rendered provenance cannot recover a date
+    write_if_changed(PULLED_STAMP, stamp + "\n")
 
 
 def _to_quarter_end(idx: pd.DatetimeIndex) -> pd.DatetimeIndex:
@@ -325,6 +365,9 @@ def main() -> None:
     args = parser.parse_args()
     tickers = [t.strip().upper() for t in args.tickers.split(",") if t.strip()]
 
+    if not tickers:
+        raise RuntimeError("At least one ticker is required.")
+
     # Fail fast if the SEC identifier is missing, before spending any time on the
     # macro fetches -- the FCF pull can't succeed without it.
     _require_sec_user_agent()
@@ -338,22 +381,17 @@ def main() -> None:
     session = _sec_session()
     cik_map = _load_ticker_cik_map(session)
     for ticker in tickers:
-        try:
-            columns[f"fcf_{ticker}"] = _fetch_company_fcf(session, ticker, cik_map)
-        except Exception as exc:  # one bad ticker shouldn't sink the whole pull
-            print(f"  WARNING: skipping {ticker} FCF: {exc}")
-        try:
-            columns[f"cash_{ticker}"] = _fetch_company_cash(session, ticker, cik_map)
-        except Exception as exc:
-            print(f"  WARNING: skipping {ticker} cash: {exc}")
-
-    if not any(c.startswith("fcf_") for c in columns):
-        raise RuntimeError("No FCF series fetched; refusing to overwrite data/series.csv.")
+        columns[f"fcf_{ticker}"] = _fetch_company_fcf(session, ticker, cik_map)
+        columns[f"cash_{ticker}"] = _fetch_company_cash(session, ticker, cik_map)
 
     frame = pd.DataFrame(columns).sort_index()
     frame = frame.loc[(frame.index >= START) & (frame.index <= END)].dropna(how="all")
-    if frame.empty:
+    if frame.empty or any(frame[column].dropna().empty for column in frame.columns):
         raise RuntimeError("No observations fetched; refusing to overwrite data/series.csv.")
+
+    expected = set(FRED_SERIES.values()) | {"sp500"} | {f"{kind}_{ticker}" for ticker in tickers for kind in ("fcf", "cash")}
+    if not expected.issubset(frame.columns):
+        raise RuntimeError("Missing required financial series; existing data retained.")
 
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     frame.index.name = "date"
@@ -361,12 +399,12 @@ def main() -> None:
     current_csv = SERIES_CSV.read_text(encoding="utf-8") if SERIES_CSV.exists() else ""
     changed = current_csv != csv_content
     if changed:
-        SERIES_CSV.write_text(csv_content, encoding="utf-8")
-        PULLED_STAMP.write_text(date.today().isoformat() + "\n", encoding="utf-8")
+        write_if_changed(SERIES_CSV, csv_content)
+    record_pull_date(changed)
     source_content = FCF_SOURCE + "\n"
     if (not FCF_SOURCE_FILE.exists()
             or FCF_SOURCE_FILE.read_text(encoding="utf-8") != source_content):
-        FCF_SOURCE_FILE.write_text(source_content, encoding="utf-8")
+        write_if_changed(FCF_SOURCE_FILE, source_content)
 
     fcf_cols = [c for c in frame.columns if c.startswith("fcf_")]
     cash_cols = [c for c in frame.columns if c.startswith("cash_")]
@@ -374,7 +412,7 @@ def main() -> None:
     print(f"{verb} {SERIES_CSV} with {len(frame)} quarterly rows "
           f"({frame.index.min():%Y-%m} to {frame.index.max():%Y-%m}), "
           f"{len(fcf_cols)} FCF and {len(cash_cols)} cash series.")
-    print("Done. Now run `make` to re-render the charts.")
+    print("Data ready; make data rebuilds the charts automatically.")
 
 
 if __name__ == "__main__":

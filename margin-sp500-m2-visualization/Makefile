@@ -17,16 +17,29 @@ all: $(OUT) $(OUT_PNG)
 
 # Create/refresh .venv from pyproject.toml. The stamp keeps `uv sync` from
 # re-running on every build once the tree is warm.
-deps: $(STAMP)
+# Explicit setup repairs environment drift even when the stamp is current.
+deps:
+	@command -v uv >/dev/null || { echo "Install uv before running make deps." >&2; exit 1; }
+	@test -f uv.lock || { echo "Missing uv.lock: run uv lock deliberately and commit it." >&2; exit 1; }
+	uv sync --locked
+	@touch $(STAMP)
 
-$(STAMP): pyproject.toml $(wildcard uv.lock)
-	uv sync
-	@touch $@
+# Ordinary commands use the fast path, but a leftover stamp cannot hide a
+# missing interpreter. The lockfile is mandatory and is never rewritten here.
+ifeq ($(wildcard $(PY)),)
+.PHONY: $(STAMP)
+endif
+$(STAMP): pyproject.toml uv.lock
+	$(MAKE) deps
 
-$(OUT): $(SCRIPT) data/series.csv | $(STAMP)
+uv.lock:
+	@echo "Missing uv.lock: run uv lock deliberately and commit it." >&2
+	@exit 1
+
+$(OUT): $(SCRIPT) data/series.csv $(wildcard data/generated_at.txt data/fcf_source.txt) | $(STAMP)
 	$(PY) $(SCRIPT) -o $(OUT)
 
-$(OUT_PNG): $(SCRIPT) data/series.csv | $(STAMP)
+$(OUT_PNG): $(SCRIPT) data/series.csv $(wildcard data/generated_at.txt data/fcf_source.txt) | $(STAMP)
 	$(PY) $(SCRIPT) -o $(OUT_PNG)
 
 test: | $(STAMP)
@@ -36,8 +49,7 @@ test: | $(STAMP)
 # then re-render both charts.
 data: | $(STAMP)
 	$(PY) src/fetch_data.py
-	$(PY) $(SCRIPT) -o $(OUT)
-	$(PY) $(SCRIPT) -o $(OUT_PNG)
+	$(MAKE) all
 
 open: $(OUT)
 	open $(OUT) 2>/dev/null || xdg-open $(OUT) 2>/dev/null || echo "Open $(OUT) manually."
