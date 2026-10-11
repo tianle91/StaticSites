@@ -20,13 +20,26 @@ BBOX    := -80.6,43.05,-78.7,44.40   # west,south,east,north (matches fetch_isoc
 # Default target: one-shot offline build from the committed curated model.
 all: $(OUT)
 
-deps: $(STAMP)
+# Explicit setup repairs environment drift even when the stamp is current.
+deps:
+	@command -v uv >/dev/null || { echo "Install uv before running make deps." >&2; exit 1; }
+	@test -f uv.lock || { echo "Missing uv.lock: run uv lock deliberately and commit it." >&2; exit 1; }
+	uv sync --locked
+	@touch $(STAMP)
 
-$(STAMP): pyproject.toml $(wildcard uv.lock)
-	uv sync
-	@touch $@
+# Ordinary commands use the fast path, but a leftover stamp cannot hide a
+# missing interpreter. The lockfile is mandatory and is never rewritten here.
+ifeq ($(wildcard $(PY)),)
+.PHONY: $(STAMP)
+endif
+$(STAMP): pyproject.toml uv.lock
+	$(MAKE) deps
 
-$(OUT): src/build_map.py $(GEOJSON) | $(STAMP)
+uv.lock:
+	@echo "Missing uv.lock: run uv lock deliberately and commit it." >&2
+	@exit 1
+
+$(OUT): src/build_map.py $(GEOJSON) data/transit_model.json $(wildcard data/reachability.json) | $(STAMP)
 	$(PY) src/build_map.py
 
 # Depends on data/reachability.json when present so a fresh `make data`
@@ -45,13 +58,12 @@ $(OSM_PBF): $(OSM_RAW)
 	osmium extract -b $(BBOX) $(OSM_RAW) -o $(OSM_PBF) --overwrite
 
 # Network step: real multimodal transit routing with r5py (RAPTOR over OSM +
-# GTFS). Needs Java 21 (see README) and GTFS feeds in data/. Auto-clips the OSM
+# GTFS). Needs Java 21 + osmium (see README). Downloads feeds and OSM, then clips
 # extract, then writes data/reachability.json, which build_isochrones.py
 # contours and build_map.py renders.
-data: $(OSM_PBF) | $(STAMP)
-	OSM_PBF=$(OSM_PBF) $(PY) src/fetch_isochrones.py
-	$(PY) src/build_isochrones.py
-	$(PY) src/build_map.py
+data: | $(STAMP)
+	$(PY) src/fetch_data.py
+	$(MAKE) all
 
 open: $(OUT)
 	open $(OUT) 2>/dev/null || xdg-open $(OUT) 2>/dev/null || echo "Open $(OUT) manually."

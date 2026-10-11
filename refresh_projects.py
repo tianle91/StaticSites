@@ -60,11 +60,11 @@ def read_refresh_metadata(path):
     return values
 
 
-def collect_projects():
+def collect_projects(root=ROOT):
     """Return validated project refresh records, sorted by project slug."""
     projects = []
     errors = []
-    for makefile in sorted(ROOT.glob("*/Makefile")):
+    for makefile in sorted(root.glob("*/Makefile")):
         project_dir = makefile.parent
         slug = project_dir.name
         pyproject = project_dir / "pyproject.toml"

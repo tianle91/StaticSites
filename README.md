@@ -19,7 +19,7 @@ repo root.
 
 ## Usage
 
-Everything happens inside a project directory. You need
+Each project works independently. You need
 [uv](https://docs.astral.sh/uv/) installed; it creates the virtualenv for you on
 first build.
 
@@ -28,7 +28,23 @@ cd <project>
 make          # build output/<project>.html from the committed data/
 make open     # build, then open it in a browser
 make test     # run this project's tests
+make deps     # repair this project's environment from its committed lockfile
+make data     # refresh every required input and rebuild
 ```
+
+From the repo root, the same two setup/refresh commands delegate to every
+project discovered through `*/Makefile`:
+
+```bash
+make deps     # synchronize every project's isolated .venv
+make data     # refresh and rebuild every project, including schedule-disabled ones
+```
+
+Both run sequentially, continue after failures, print a summary, and return a
+failure status if any project fails. `make data` uses each project's refresh
+timeout; `make deps` allows 30 minutes per project. Projects need no registry
+updates to participate. Supply credentials such as `SEC_USER_AGENT` through the
+environment; install `uv` and transit's Java 21 / `osmium` prerequisites first.
 
 Or just open the committed `output/<project>.html` directly — the sites work
 straight from a clone.
@@ -55,17 +71,26 @@ specification — including the rules for agents working in this repo — is in
 | Target | What it does | Network |
 | --- | --- | --- |
 | `make` / `make all` | Rebuild `output/` from committed `data/` | **No** |
-| `make deps` | `uv sync` into the project's `./.venv` | First run only |
+| `make deps` | Always synchronize `./.venv` with `uv sync --locked` | Setup / missing packages |
 | `make test` | Run the project's pytest suite | **No** |
 | `make data` | Refresh `data/` from upstream APIs, then rebuild | **Yes** |
 | `make open` | Open `output/<project>.html` | No |
 | `make clean` | Remove generated output | No |
 | `make clean-venv` | Remove the project's `./.venv` | No |
 
-The load-bearing rule is that **`all` and `test` never touch the network** —
-every fetch, download, and geocode lives behind `make data`, and its results are
+The load-bearing rule is that **build and test logic stays offline** —
+every source fetch, download, and geocode lives behind `make data`, and its results are
 committed. That is what lets CI build and test all six projects hermetically,
-and what lets you rebuild any site offline.
+and what lets you rebuild any site offline after dependency setup. Dependency
+bootstrap can need the network for a missing or stale environment. Explicit
+`make deps` repairs environment drift; other targets use a stamp shortcut, with
+a missing-interpreter check. Missing or stale locks fail instead of being rewritten.
+Use `uv add` / `uv lock` deliberately; use `uv lock --upgrade` for upgrades.
+
+A successful `make data` refreshes all required sources and rebuilds outputs.
+Unchanged content preserves data timestamps and bytes; missing generated files
+are restored. Required-source failures retain previous datasets and return an
+error instead of publishing a partial refresh.
 
 On pull requests, CI runs `make test` and `make all` for each changed project on
 self-hosted runners, using a matrix discovered automatically from `*/Makefile`.
@@ -102,7 +127,7 @@ Validate or inspect the schedule locally without touching the network:
 
 The workflow also supports manual runs for due projects, every enabled project,
 or one explicitly named project. The transit isochrone refresh is disabled
-until its runner has the Java, `osmium`, OSM, and GTFS prerequisites documented
+until its runner has the Java, `osmium`, and download/routing capacity documented
 in that project.
 
 ### Self-hosted runner setup

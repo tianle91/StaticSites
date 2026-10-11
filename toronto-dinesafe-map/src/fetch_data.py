@@ -28,6 +28,7 @@ The result is committed so that `make` and `make test` build offline.
 import datetime
 import json
 import pathlib
+import tempfile
 import sys
 
 import requests
@@ -52,8 +53,28 @@ _lookup = RateLimiter(_nominatim.geocode, min_delay_seconds=1.1, swallow_excepti
 cache = json.loads(CACHE_PATH.read_text(encoding="utf-8")) if CACHE_PATH.exists() else {}
 
 
+def write_if_changed(path, content):
+    """Publish validated content atomically; unchanged files keep their mtime."""
+    if path.exists() and path.read_text(encoding="utf-8") == content:
+        return False
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=path.parent,
+                                     delete=False) as stream:
+        temporary = pathlib.Path(stream.name)
+        try:
+            stream.write(content)
+        except BaseException:
+            temporary.unlink(missing_ok=True)
+            raise
+    try:
+        temporary.replace(path)
+    finally:
+        temporary.unlink(missing_ok=True)
+    return True
+
+
 def save_cache() -> None:
-    CACHE_PATH.write_text(json.dumps(cache, indent=2, ensure_ascii=False), encoding="utf-8")
+    write_if_changed(CACHE_PATH, json.dumps(cache, indent=2, ensure_ascii=False))
 
 
 def geocode(address):
@@ -62,11 +83,7 @@ def geocode(address):
         return None
     if address in cache:
         return cache[address]
-    try:
-        loc = _lookup(address, country_codes="ca", exactly_one=True)
-    except Exception as exc:  # noqa: BLE001 - network/parse errors are non-fatal
-        print(f"  ! geocode failed for {address!r}: {exc}", file=sys.stderr)
-        return None
+    loc = _lookup(address, country_codes="ca", exactly_one=True)
     result = [loc.latitude, loc.longitude] if loc else None
     cache[address] = result  # cache misses too, so we don't re-hammer unknown addresses
     save_cache()
@@ -101,6 +118,8 @@ def iter_records(rid, batch=10000):
         res = ckan("datastore_search", resource_id=rid, limit=batch, offset=offset)
         records = res.get("records", [])
         if not records:
+            if res.get("total", offset) > offset:
+                raise RuntimeError("Incomplete DineSafe response; existing dataset retained.")
             break
         for rec in records:
             yield rec
@@ -215,7 +234,9 @@ def reduce_to_establishments(records):
 def main() -> None:
     print("Fetching DineSafe from Toronto Open Data...")
     rid = active_resource_id()
-    est = reduce_to_establishments(iter_records(rid))
+    # Canonical ordering resolves equal-date ties independently of API row order.
+    records = sorted(iter_records(rid), key=lambda row: json.dumps(row, sort_keys=True))
+    est = reduce_to_establishments(records)
     print(f"  {len(est)} distinct establishments; resolving coordinates...")
 
     establishments = []
@@ -235,7 +256,10 @@ def main() -> None:
             {
                 "date": d[:10] if d else "",
                 "status": e["_inspections"][d]["status"],
-                "infractions": e["_inspections"][d]["infractions"],
+                "infractions": sorted(
+                    e["_inspections"][d]["infractions"],
+                    key=lambda item: json.dumps(item, sort_keys=True),
+                ),
             }
             for d in sorted(e["_inspections"], reverse=True)
         ]
@@ -253,7 +277,9 @@ def main() -> None:
             "inspections": inspections,
         })
 
-    establishments.sort(key=lambda x: (x["name"] or "").lower())
+    if not establishments:
+        raise RuntimeError("No usable establishments; refusing to replace dinesafe.json.")
+    establishments.sort(key=lambda x: ((x["name"] or "").lower(), x["address"], json.dumps(x, sort_keys=True)))
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     substantive = {
         "source_page": SOURCE_PAGE,
@@ -266,7 +292,7 @@ def main() -> None:
         if existing == substantive:
             print(f"{OUT_PATH} is unchanged ({len(establishments)} establishments).")
             return
-    OUT_PATH.write_text(
+    write_if_changed(OUT_PATH,
         json.dumps(
             {
                 "generated_at": datetime.datetime.now().strftime("%Y-%m-%d"),
@@ -275,14 +301,13 @@ def main() -> None:
             indent=2,
             ensure_ascii=False,
         ) + "\n",
-        encoding="utf-8",
     )
     if geocoded:
         print(f"  geocoded {geocoded} establishment(s) whose rows lacked coordinates")
     if dropped:
         print(f"  dropped {dropped} establishment(s) with no usable location")
     print(f"Wrote {OUT_PATH} with {len(establishments)} establishments.")
-    print("Done. Now run `make` to rebuild the map.")
+    print("Data ready; make data rebuilds the map automatically.")
 
 
 if __name__ == "__main__":

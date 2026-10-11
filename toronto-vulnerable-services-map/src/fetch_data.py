@@ -13,6 +13,7 @@ reruns are cheap. Re-run with `make data` whenever you want fresh shelter data.
 import datetime
 import json
 import pathlib
+import tempfile
 import sys
 
 import requests
@@ -38,8 +39,28 @@ _lookup = RateLimiter(_nominatim.geocode, min_delay_seconds=1.1, swallow_excepti
 cache = json.loads(CACHE_PATH.read_text(encoding="utf-8")) if CACHE_PATH.exists() else {}
 
 
+def write_if_changed(path, content):
+    """Publish validated content atomically; unchanged files keep their mtime."""
+    if path.exists() and path.read_text(encoding="utf-8") == content:
+        return False
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=path.parent,
+                                     delete=False) as stream:
+        temporary = pathlib.Path(stream.name)
+        try:
+            stream.write(content)
+        except BaseException:
+            temporary.unlink(missing_ok=True)
+            raise
+    try:
+        temporary.replace(path)
+    finally:
+        temporary.unlink(missing_ok=True)
+    return True
+
+
 def save_cache() -> None:
-    CACHE_PATH.write_text(json.dumps(cache, indent=2, ensure_ascii=False), encoding="utf-8")
+    write_if_changed(CACHE_PATH, json.dumps(cache, indent=2, ensure_ascii=False))
 
 
 def geocode(address):
@@ -48,11 +69,7 @@ def geocode(address):
         return None
     if address in cache:
         return cache[address]
-    try:
-        loc = _lookup(address, country_codes="ca", exactly_one=True)
-    except Exception as exc:  # noqa: BLE001 - network/parse errors are non-fatal
-        print(f"  ! geocode failed for {address!r}: {exc}", file=sys.stderr)
-        return None
+    loc = _lookup(address, country_codes="ca", exactly_one=True)
     result = [loc.latitude, loc.longitude] if loc else None
     cache[address] = result  # cache misses too, so we don't re-hammer for unknown addresses
     save_cache()
@@ -132,6 +149,9 @@ def fetch_shelters() -> None:
             "url": f"https://open.toronto.ca/dataset/{DATASET}/",
         })
 
+    if not locations:
+        raise RuntimeError("No usable shelters; refusing to replace shelters.json.")
+    locations.sort(key=lambda item: (item["name"], item["address"]))
     substantive = {
         "date": day,  # occupancy snapshot date
         "source": DATASET,
@@ -143,7 +163,7 @@ def fetch_shelters() -> None:
         if existing == substantive:
             print(f"  {SHELTERS_PATH} is unchanged ({len(locations)} locations).")
             return
-    SHELTERS_PATH.write_text(
+    write_if_changed(SHELTERS_PATH,
         json.dumps(
             {
                 "generated_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
@@ -152,18 +172,14 @@ def fetch_shelters() -> None:
             indent=2,
             ensure_ascii=False,
         ),
-        encoding="utf-8",
     )
     print(f"  Wrote {SHELTERS_PATH} with {len(locations)} geocoded locations (date {day}).")
 
 
 def main() -> None:
     refine_curated()
-    try:
-        fetch_shelters()
-    except Exception as exc:  # noqa: BLE001 - keep curated geocoding even if the API is down
-        print(f"! Shelter fetch failed ({exc}); shelters.json left unchanged.", file=sys.stderr)
-    print("Done. Now run `make` to rebuild the map.")
+    fetch_shelters()
+    print("Data ready; make data rebuilds the map automatically.")
 
 
 if __name__ == "__main__":

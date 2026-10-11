@@ -69,3 +69,13 @@ highways and concession roads survive.
   patients recently discharged from hospital or receiving ODSP/OW. Call the
   clinic before going.
 - The province updates the list regularly; re-run `make data` for a fresh pull.
+
+## Refresh and dependencies
+
+`make deps` always repairs this project's environment with `uv sync --locked`;
+missing or stale locks fail without being rewritten. Other targets bootstrap only
+when dependency files change or the environment/interpreter is missing.
+Dependency setup may require network access; installed builds/tests are offline.
+`make data` obtains every required input and rebuilds outputs automatically.
+Unchanged upstream content preserves data timestamps; missing generated files are
+restored. Required-source failures retain previous datasets and return an error.
