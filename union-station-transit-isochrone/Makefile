@@ -15,10 +15,18 @@ OSM_RAW := data/gtha.osm.pbf
 OSM_PBF := data/gtha-clipped.osm.pbf
 BBOX    := -80.6,43.05,-78.7,44.40   # west,south,east,north (matches fetch_isochrones.py)
 
-.PHONY: all deps test osm data open clean clean-deps clean-venv
+.PHONY: all system-deps deps test osm data open clean clean-deps clean-venv
 
 # Default target: one-shot offline build from the committed curated model.
 all: $(OUT)
+
+# System installation is explicit and separate from Python setup and data refresh.
+# Homebrew itself is an operator prerequisite; see README for other platforms.
+system-deps:
+	@test "$$(uname -s)" = Darwin || { echo "system-deps supports macOS with Homebrew; see README for manual prerequisites." >&2; exit 1; }
+	@command -v brew >/dev/null || { echo "Install Homebrew from https://brew.sh before running make system-deps." >&2; exit 1; }
+	brew install uv osmium-tool
+	brew install --cask temurin@21
 
 # Install from the lockfile only when the environment is new or manifests change.
 # Reset a damaged environment explicitly with `make clean-deps && make deps`.
@@ -26,7 +34,7 @@ deps: $(STAMP)
 	@test -x $(PY) || { echo "Environment incomplete: run make clean-deps then make deps." >&2; exit 1; }
 
 $(STAMP): pyproject.toml uv.lock
-	@command -v uv >/dev/null || { echo "Install uv before running make deps." >&2; exit 1; }
+	@command -v uv >/dev/null || { echo "Install uv (make system-deps on macOS) before running make deps." >&2; exit 1; }
 	uv sync --locked
 	@touch $(STAMP)
 

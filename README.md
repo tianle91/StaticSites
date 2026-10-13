@@ -25,6 +25,7 @@ first build.
 
 ```bash
 cd <project>
+make system-deps # install system tools on macOS (requires Homebrew)
 make          # build output/<project>.html from the committed data/
 make open     # build, then open it in a browser
 make test     # run this project's tests
@@ -43,8 +44,9 @@ make -C <project> data     # refresh this project's inputs and rebuild its outpu
 Target names are consistent across projects; each project's Makefile defines
 its own sources, dependencies, and build steps. The root Makefile only provides
 repository metadata commands (`manifest`, `check`, and `help`). Supply credentials
-such as `SEC_USER_AGENT` through the environment; install `uv` and transit's
-Java 21 / `osmium` prerequisites first.
+such as `SEC_USER_AGENT` through the environment. `make system-deps` installs
+`uv` and transit's Java 21 / `osmium` prerequisites on macOS with Homebrew;
+other platforms require manual installation.
 
 Or just open the committed `output/<project>.html` directly — the sites work
 straight from a clone.
@@ -71,6 +73,7 @@ specification — including the rules for agents working in this repo — is in
 | Target | What it does | Network |
 | --- | --- | --- |
 | `make` / `make all` | Rebuild `output/` from committed `data/` | **No** |
+| `make system-deps` | Explicitly install project system tools (macOS/Homebrew) | **Yes** |
 | `make deps` | Install the complete locked environment when new or manifests change | Setup |
 | `make test` | Run the project's pytest suite | **No** |
 | `make data` | Install dependencies as needed, refresh all required inputs, then rebuild | **Yes** |
@@ -91,8 +94,9 @@ The command rules apply to every project and to newly scaffolded projects:
 - Existing environments are reused without automatic repair. Use
   `make clean-deps && make deps` to reinstall explicitly. Cleanup removes only
   `.venv`, preserving data, caches, lockfiles, and outputs.
-- System tools and credentials are documented prerequisites supplied by the
-  operator.
+- System tools have their own explicit `make system-deps` command; other targets
+  never invoke it. Homebrew is required on macOS; other platforms require manual
+  installation. Credentials remain operator-supplied prerequisites.
 
 The load-bearing rule is that **build and test logic stays offline** —
 every source fetch, download, and geocode lives behind `make data`, and its results are

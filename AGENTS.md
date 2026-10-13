@@ -193,6 +193,7 @@ inside the project, or use `make -C <project> <target>` from the repo root.
 | Target | Contract | Network |
 | --- | --- | --- |
 | `all` (default) | Rebuild everything in `output/` from committed `data/` | **No** |
+| `system-deps` | Explicitly install this project's system tools (macOS/Homebrew) | **Yes** |
 | `deps` | Install the complete locked environment when new or manifests change | Setup |
 | `test` | `pytest` | **No** |
 | `data` | Install dependencies as needed, obtain/refresh every required input, then `$(MAKE) all` | **Yes** |
@@ -204,7 +205,7 @@ These are requirements for every existing project and the scaffolder:
 
 1. **Keep commands project-specific.** Use the same target names across projects,
    but implement each target in that project's Makefile. Do not add repo-root
-   `all`, `test`, `data`, `deps`, or dependency-cleaning dispatchers. The root
+   `all`, `test`, `data`, `deps`, `system-deps`, or dependency-cleaning dispatchers. The root
    Makefile is limited to `manifest`, `check`, and `help`.
 2. **Install the whole project's Python dependencies.** `make deps` must cover
    fetching, building, and testing from the committed `pyproject.toml` and
@@ -226,9 +227,14 @@ These are requirements for every existing project and the scaffolder:
    `make clean-deps && make deps` performs a fresh install. Keep `clean-venv` as
    an alias. Dependency cleanup must preserve data, geocode caches, lockfiles,
    source files, and generated outputs; `make clean` handles generated outputs.
-6. **Leave system prerequisites to the operator.** Document tools such as `uv`,
-   Java, and `osmium`, plus required credentials, in the project's README. Make
-   targets must not install system tools or obtain credentials automatically.
+6. **Install system tools only through an explicit command.** Every project must
+   implement `make system-deps` with its own required tools, independently of its
+   Python environment. The supported installer is Homebrew on macOS: all projects
+   need `uv`; transit also needs Java 21 and `osmium-tool`. Homebrew itself must
+   already be installed. Fail clearly on unsupported platforms or missing
+   Homebrew, and document manual prerequisites in the project's README.
+   `deps`, `data`, `all`, and `test` must never invoke `system-deps` automatically.
+   Credentials remain operator-supplied and must never be obtained automatically.
 
 **The rule CI depends on: build/test logic never touches the network.**
 Dependency bootstrap may need the network when the environment is missing or
@@ -244,6 +250,7 @@ Each project has its own `pyproject.toml`, its own `uv.lock`, and its own
 
 ```bash
 cd <project>
+make system-deps         # explicit macOS/Homebrew system-tool installation
 make deps                # install the complete locked environment if needed
 make clean-deps          # remove .venv; then make deps for a fresh install
 uv add <package>         # runtime dependency
@@ -261,7 +268,8 @@ client, its rate limiter, and geodesic distance for both geocoding maps;
 holds — the map HTML is hand-written Leaflet on purpose, because `folium` cannot
 express the custom search/filter panels these maps have.
 
-All targets use the same environment stamp: install dependencies when pyproject/lock
+Python setup, build, test, and data targets use the same environment stamp:
+install dependencies when pyproject/lock
 changes or the stamp is missing. Repeated commands reuse the environment and do not
 attempt repairs. Clear installed dependencies explicitly with `make clean-deps`,
 then reinstall with `make deps`. Missing or stale locks fail; update them deliberately
@@ -274,7 +282,8 @@ rebuilt. Validate before publishing; replace files atomically, preserve unchange
 bytes/timestamps, normalize unordered upstream records, and restore missing
 sidecars. Preserve successful geocode caches; service errors must fail rather than
 be cached as no-matches. Genuine no-match fallbacks remain project-specific.
-System tools and credentials are operator prerequisites, not automatic installs.
+System tools are installed separately via explicit `make system-deps` or manually
+on other platforms. Credentials remain operator prerequisites.
 
 ## Verifying changes
 

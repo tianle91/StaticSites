@@ -14,6 +14,48 @@ spec.loader.exec_module(scaffolder)
 
 
 class DependencyContractTests(unittest.TestCase):
+    def test_explicit_system_installation_and_prerequisite_failures(self):
+        makefiles = {path.parent.name: path.read_text()
+                     for path in ROOT.glob("*/Makefile")}
+        makefiles["scaffold"] = scaffolder.FILES["Makefile"]
+        for name, makefile in makefiles.items():
+            with self.subTest(project=name), tempfile.TemporaryDirectory() as directory:
+                root = pathlib.Path(directory)
+                (root / "Makefile").write_text(makefile)
+                tools = root / "tools"
+                tools.mkdir()
+                uname = tools / "uname"
+                uname.write_text('#!/bin/sh\necho "${TEST_OS:-Darwin}"\n')
+                uname.chmod(0o755)
+                brew = tools / "brew"
+                brew.write_text('#!/bin/sh\necho "$*" >> calls\nexit "${BREW_EXIT:-0}"\n')
+                brew.chmod(0o755)
+
+                def install(**extra):
+                    return subprocess.run(
+                        [shutil.which("make"), "system-deps"], cwd=root, capture_output=True,
+                        env=dict(os.environ, PATH=str(tools), **extra),
+                    )
+
+                self.assertEqual(install().returncode, 0)
+                expected = (["install uv osmium-tool", "install --cask temurin@21"]
+                            if name == "union-station-transit-isochrone" else ["install uv"])
+                self.assertEqual((root / "calls").read_text().splitlines(), expected)
+                self.assertFalse((root / ".venv").exists())
+                (root / "calls").unlink()
+                result = install(TEST_OS="Linux")
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn(b"supports macOS", result.stderr)
+                self.assertFalse((root / "calls").exists())
+                self.assertNotEqual(install(BREW_EXIT="1").returncode, 0)
+                self.assertEqual(len((root / "calls").read_text().splitlines()), 1)
+                (root / "calls").unlink()
+                brew.unlink()
+                result = install()
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn(b"Install Homebrew", result.stderr)
+                self.assertFalse((root / "calls").exists())
+
     def test_data_sync_failure_stops_before_fetch_for_every_project(self):
         makefiles = {path.parent.name: path.read_text()
                      for path in ROOT.glob("*/Makefile")}

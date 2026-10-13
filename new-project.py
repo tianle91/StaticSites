@@ -161,10 +161,17 @@ PY    := $(VENV)/bin/python
 STAMP := $(VENV)/.stamp
 OUT   := output/$(PROJECT).html
 
-.PHONY: all deps test data open clean clean-deps clean-venv
+.PHONY: all system-deps deps test data open clean clean-deps clean-venv
 
 # Default target: one-shot offline build from the committed data/.
 all: $(OUT)
+
+# System installation is explicit and separate from Python setup and data refresh.
+# Homebrew itself is an operator prerequisite; see README for other platforms.
+system-deps:
+	@test "$$(uname -s)" = Darwin || { echo "system-deps supports macOS with Homebrew; see README for manual prerequisites." >&2; exit 1; }
+	@command -v brew >/dev/null || { echo "Install Homebrew from https://brew.sh before running make system-deps." >&2; exit 1; }
+	brew install uv
 
 # Create/refresh .venv from pyproject.toml. The stamp keeps `uv sync` from
 # re-running on every build once the tree is warm.
@@ -174,7 +181,7 @@ deps: $(STAMP)
 	@test -x $(PY) || { echo "Environment incomplete: run make clean-deps then make deps." >&2; exit 1; }
 
 $(STAMP): pyproject.toml uv.lock
-	@command -v uv >/dev/null || { echo "Install uv before running make deps." >&2; exit 1; }
+	@command -v uv >/dev/null || { echo "Install uv (make system-deps on macOS) before running make deps." >&2; exit 1; }
 	uv sync --locked
 	@touch $(STAMP)
 
@@ -435,12 +442,18 @@ TODO: anything a reader should know before trusting the output.
 
 ## Refresh and dependencies
 
+`make system-deps` installs [uv](https://formulae.brew.sh/formula/uv)
+on macOS using [Homebrew](https://brew.sh), which must already be installed.
+On other platforms, install those tools manually before `make deps` / `make data`.
+System installation runs only when explicitly requested; other targets never
+invoke it. Credentials must be supplied separately.
+
 `make deps` installs this project's complete locked Python environment, including
 test dependencies, when it is new or the dependency manifests change. `make data`
 uses the same setup before fetching all required upstream inputs. Repeated commands
 reuse the environment; they do not attempt repairs. To reinstall from scratch, run
 `make clean-deps && make deps` (`clean-venv` remains an alias). Missing or stale
-locks fail without being rewritten. System tools and credentials are prerequisites.
+locks fail without being rewritten.
 Dependency setup may require network access; installed builds/tests are offline.
 `make data` obtains every required input and rebuilds outputs automatically.
 Unchanged upstream content preserves data timestamps; missing generated files are

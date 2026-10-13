@@ -21,10 +21,8 @@ OpenStreetMap, including the street-network walk at each end. One-time setup,
 then `make data`:
 
 ```bash
-# 1. Install Java 21 (r5py needs it) and osmium (clips the OSM extract).
-#    macOS + Homebrew — see "Installing Java 21" below for other platforms:
-brew install --cask temurin@21
-brew install osmium-tool
+# 1. Install uv, Java 21, and osmium on macOS with Homebrew already installed.
+make system-deps
 
 # 2. Obtain/refresh all inputs, route, and rebuild the map.
 make data    # downloads OSM + TTC/GO/UP feeds, clips, routes, and rebuilds
@@ -184,12 +182,20 @@ routing itself isn't unit-tested (it needs Java + feeds); its helpers are.
 
 ## Refresh and dependencies
 
+`make system-deps` installs [uv](https://formulae.brew.sh/formula/uv),
+[osmium-tool](https://formulae.brew.sh/formula/osmium-tool), and
+[Temurin Java 21](https://formulae.brew.sh/cask/temurin@21)
+on macOS using [Homebrew](https://brew.sh), which must already be installed.
+On other platforms, install those tools manually before `make deps` / `make data`.
+System installation runs only when explicitly requested; other targets never
+invoke it. Credentials must be supplied separately.
+
 `make deps` installs this project's complete locked Python environment, including
 test dependencies, when it is new or the dependency manifests change. `make data`
 uses the same setup before fetching all required upstream inputs. Repeated commands
 reuse the environment; they do not attempt repairs. To reinstall from scratch, run
 `make clean-deps && make deps` (`clean-venv` remains an alias). Missing or stale
-locks fail without being rewritten. System tools and credentials are prerequisites.
+locks fail without being rewritten.
 Dependency setup may require network access; installed builds/tests are offline.
 `make data` obtains every required input and rebuilds outputs automatically.
 Unchanged upstream content preserves data timestamps; missing generated files are

@@ -10,10 +10,17 @@ OUT     := output/$(PROJECT).html
 OUT_PNG := output/$(PROJECT).png
 SCRIPT  := src/plot_macro_series.py
 
-.PHONY: all deps test data open clean clean-deps clean-venv
+.PHONY: all system-deps deps test data open clean clean-deps clean-venv
 
 # Default target: one-shot offline render from the committed data/series.csv.
 all: $(OUT) $(OUT_PNG)
+
+# System installation is explicit and separate from Python setup and data refresh.
+# Homebrew itself is an operator prerequisite; see README for other platforms.
+system-deps:
+	@test "$$(uname -s)" = Darwin || { echo "system-deps supports macOS with Homebrew; see README for manual prerequisites." >&2; exit 1; }
+	@command -v brew >/dev/null || { echo "Install Homebrew from https://brew.sh before running make system-deps." >&2; exit 1; }
+	brew install uv
 
 # Create/refresh .venv from pyproject.toml. The stamp keeps `uv sync` from
 # re-running on every build once the tree is warm.
@@ -23,7 +30,7 @@ deps: $(STAMP)
 	@test -x $(PY) || { echo "Environment incomplete: run make clean-deps then make deps." >&2; exit 1; }
 
 $(STAMP): pyproject.toml uv.lock
-	@command -v uv >/dev/null || { echo "Install uv before running make deps." >&2; exit 1; }
+	@command -v uv >/dev/null || { echo "Install uv (make system-deps on macOS) before running make deps." >&2; exit 1; }
 	uv sync --locked
 	@touch $(STAMP)
 
