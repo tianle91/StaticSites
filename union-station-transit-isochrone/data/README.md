@@ -2,8 +2,9 @@
 
 Run `make data` from the project directory. It obtains all default network
 inputs, clips OSM, validates GTFS service for the next non-holiday Wednesday,
-routes to Union, and rebuilds the map in one invocation. Install Java 21 and
-`osmium-tool` first; Python dependencies are bootstrapped with `uv sync --locked`.
+routes to Union, and rebuilds the map in one invocation. Run `make system-deps`
+first on macOS with Homebrew to install uv, Java 21, and `osmium-tool`; install
+them manually on other platforms. Python dependencies use `uv sync --locked`.
 
 ## Managed downloads
 

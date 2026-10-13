@@ -152,61 +152,15 @@ dev = [{ name = "pytest", specifier = ">=8.0" }]
 
 FILES["Makefile"] = '''\
 # __TITLE__.
-# Run from this directory: cd __PROJECT__ && make
-# Layout and target contract are the repo standard - see ../AGENTS.md.
+# Run from this project: cd __PROJECT__ && make
+# Shared Python/uv targets live in ../python-project.mk; build rules stay here.
 
 PROJECT := __PROJECT__
-VENV  := .venv
-PY    := $(VENV)/bin/python
-STAMP := $(VENV)/.stamp
-OUT   := output/$(PROJECT).html
 
-.PHONY: all deps test data open clean clean-venv
+include ../python-project.mk
 
-# Default target: one-shot offline build from the committed data/.
-all: $(OUT)
-
-# Create/refresh .venv from pyproject.toml. The stamp keeps `uv sync` from
-# re-running on every build once the tree is warm.
-# Explicit setup repairs environment drift even when the stamp is current.
-deps:
-	@command -v uv >/dev/null || { echo "Install uv before running make deps." >&2; exit 1; }
-	@test -f uv.lock || { echo "Missing uv.lock: run uv lock deliberately and commit it." >&2; exit 1; }
-	uv sync --locked
-	@touch $(STAMP)
-
-# Ordinary commands use the fast path, but a leftover stamp cannot hide a
-# missing interpreter. The lockfile is mandatory and is never rewritten here.
-ifeq ($(wildcard $(PY)),)
-.PHONY: $(STAMP)
-endif
-$(STAMP): pyproject.toml uv.lock
-	$(MAKE) deps
-
-uv.lock:
-	@echo "Missing uv.lock: run uv lock deliberately and commit it." >&2
-	@exit 1
-
-$(OUT): src/build_site.py data/example.json | $(STAMP)
+$(OUT): src/build_site.py data/example.json
 	$(PY) src/build_site.py
-
-test: | $(STAMP)
-	$(PY) -m pytest -q
-
-# Network step: refresh data/ from upstream, then rebuild. Everything that hits
-# the network belongs here - `all` and `test` must stay offline.
-data: | $(STAMP)
-	$(PY) src/fetch_data.py
-	$(MAKE) all
-
-open: $(OUT)
-	open $(OUT) 2>/dev/null || xdg-open $(OUT) 2>/dev/null || echo "Open $(OUT) manually."
-
-clean:
-	rm -f $(OUT)
-
-clean-venv:
-	rm -rf $(VENV)
 '''
 
 FILES[".gitignore"] = '''\
@@ -435,9 +389,22 @@ TODO: anything a reader should know before trusting the output.
 
 ## Refresh and dependencies
 
-`make deps` always repairs this project's environment with `uv sync --locked`;
-missing or stale locks fail without being rewritten. Other targets bootstrap only
-when dependency files change or the environment/interpreter is missing.
+This project includes the repository's [shared Python/uv Make template](../python-project.mk).
+Its own Makefile defines artifact inputs, rendering rules, and any configuration
+overrides. Build inside the repository checkout so the shared template is available.
+
+`make system-deps` installs [uv](https://formulae.brew.sh/formula/uv)
+on macOS using [Homebrew](https://brew.sh), which must already be installed.
+On other platforms, install those tools manually before `make deps` / `make data`.
+System installation runs only when explicitly requested; other targets never
+invoke it. Credentials must be supplied separately.
+
+`make deps` installs this project's complete locked Python environment, including
+test dependencies, when it is new or the dependency manifests change. `make data`
+uses the same setup before fetching all required upstream inputs. Repeated commands
+reuse the environment; they do not attempt repairs. To reinstall from scratch, run
+`make clean-deps && make deps` (`clean-venv` remains an alias). Missing or stale
+locks fail without being rewritten.
 Dependency setup may require network access; installed builds/tests are offline.
 `make data` obtains every required input and rebuilds outputs automatically.
 Unchanged upstream content preserves data timestamps; missing generated files are

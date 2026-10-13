@@ -7,7 +7,8 @@ on:
 
 jobs:
   # Every top-level directory holding a Makefile is a project. Pull requests
-  # build only changed projects, while pushes to main retain a full-project
+  # build changed projects (or all projects when the shared Makefile changes),
+  # while pushes to main retain a full-project
   # safety net. Adding a project needs no CI edits -- it just has to follow the
   # standard layout documented in AGENTS.md.
   discover:
@@ -29,7 +30,13 @@ jobs:
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
             # --no-renames emits both paths so a cross-project move tests both
             # the source and destination projects when they still exist.
-            candidates=$(git diff --name-only --no-renames "${{ github.event.pull_request.base.sha }}...HEAD" | awk -F/ 'NF > 1 { print $1 }' | sort -u)
+            changed_paths=$(git diff --name-only --no-renames "${{ github.event.pull_request.base.sha }}...HEAD")
+            if grep -Fxq 'python-project.mk' <<< "$changed_paths"; then
+              # Every project consumes this file, even without local changes.
+              candidates=$(find . -mindepth 2 -maxdepth 2 -type f -name Makefile -print | sed -e 's|^./||' -e 's|/Makefile$||' | sort)
+            else
+              candidates=$(printf '%s\n' "$changed_paths" | awk -F/ 'NF > 1 { print $1 }' | sort -u)
+            fi
           else
             candidates=$(find . -mindepth 2 -maxdepth 2 -type f -name Makefile -print | sed -e 's|^./||' -e 's|/Makefile$||' | sort)
           fi
