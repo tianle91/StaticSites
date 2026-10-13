@@ -111,7 +111,7 @@ also requires the shared `.mk` file at the expected parent path.
 | `make data` | Install dependencies as needed, refresh all required inputs, then rebuild | **Yes** |
 | `make open` | Open `output/<project>.html` | No |
 | `make clean` | Remove generated output | No |
-| `make clean-deps` | Remove the project's `./.venv` for a fresh install (`clean-venv` is an alias) | No |
+| `make clean-deps` | Remove the configured environment and stamp for a fresh install (`clean-venv` is an alias) | No |
 
 The command rules apply to every project and to newly scaffolded projects:
 
@@ -126,7 +126,8 @@ The command rules apply to every project and to newly scaffolded projects:
   required-source failure fails the command.
 - Existing environments are reused without automatic repair. Use
   `make clean-deps && make deps` to reinstall explicitly. Cleanup removes only
-  `.venv`, preserving data, caches, lockfiles, and outputs.
+  the configured environment and stamp (normally `.venv` and `.venv/.stamp`),
+  preserving data, caches, lockfiles, and outputs.
 - System tools have their own explicit `make system-deps` command; other targets
   never invoke it. Homebrew is required on macOS; other platforms require manual
   installation. Credentials remain operator-supplied prerequisites.

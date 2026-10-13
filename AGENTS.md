@@ -204,7 +204,7 @@ inside the project, or use `make -C <project> <target>` from the repo root.
 | `data` | Install dependencies as needed, obtain/refresh every required input, then `$(MAKE) all` | **Yes** |
 | `open` | Open `output/<project>.html` in a browser | No |
 | `clean` | Remove generated `output/` files | No |
-| `clean-deps` | Remove `./.venv` for a fresh install (`clean-venv` is an alias) | No |
+| `clean-deps` | Remove the configured environment and stamp for a fresh install (`clean-venv` is an alias) | No |
 
 These are requirements for every existing project and the scaffolder:
 
@@ -229,7 +229,9 @@ These are requirements for every existing project and the scaffolder:
    delete/recreate an existing environment to repair it. An incomplete environment
    must fail and direct the operator to explicit cleanup.
 5. **Provide explicit dependency cleanup.** Every project must implement
-   `make clean-deps` to remove only its own `.venv`, including its stamp.
+   `make clean-deps` to remove only its configured environment and stamp (defaults
+   `.venv` and `.venv/.stamp`). A custom stamp may live outside the environment;
+   cleanup must remove that file too, preserving other files in its directory.
    `make clean-deps && make deps` performs a fresh install. Keep `clean-venv` as
    an alias. Dependency cleanup must preserve data, geocode caches, lockfiles,
    source files, and generated outputs; `make clean` handles generated outputs.

@@ -27,6 +27,7 @@ class DependencyContractTests(unittest.TestCase):
     def test_project_overrides_data_rebuild_and_cleanup(self):
         makefile = '''PROJECT := custom
 VENV := .custom-env
+STAMP := .state/deps.stamp
 OUT := output/main.html
 OUTPUTS := $(OUT) output/extra.txt
 OPEN_FILE := output/extra.txt
@@ -68,6 +69,8 @@ $(OUTPUTS):
             self.assertEqual(make("data").returncode, 0)
             self.assertEqual((root / "installs").read_text(), ".custom-env:sync --locked\n")
             self.assertFalse((root / ".venv").exists())
+            self.assertTrue((root / ".state/deps.stamp").exists())
+            (root / ".state/keep.txt").write_text("keep")
             self.assertTrue((root / "output/main.html").exists())
             self.assertTrue((root / "output/extra.txt").exists())
             self.assertEqual(make("test").returncode, 0)
@@ -82,12 +85,14 @@ $(OUTPUTS):
             self.assertTrue(interpreter.exists())
             self.assertEqual(make("clean-deps").returncode, 0)
             self.assertFalse((root / ".custom-env").exists())
+            self.assertFalse((root / ".state/deps.stamp").exists())
+            self.assertTrue((root / ".state/keep.txt").exists())
             self.assertTrue((root / "uv.lock").exists())
             # The default goal must remain all despite included setup targets.
-            (root / ".custom-env/bin").mkdir(parents=True)
-            interpreter.write_text('#!/bin/sh\nexit 0\n')
-            interpreter.chmod(0o755)
-            (root / ".custom-env/.stamp").touch()
+            self.assertEqual(make("deps").returncode, 0)
+            self.assertEqual((root / "installs").read_text().splitlines(),
+                             [".custom-env:sync --locked"] * 2)
+            self.assertTrue((root / ".state/deps.stamp").exists())
             self.assertEqual(make().returncode, 0)
             self.assertTrue((root / "output/main.html").exists())
             self.assertTrue((root / "output/extra.txt").exists())

@@ -44,7 +44,8 @@ deps: $(STAMP)
 $(STAMP): pyproject.toml uv.lock
 	@command -v uv >/dev/null || { echo "Install uv (make system-deps on macOS) before running make deps." >&2; exit 1; }
 	UV_PROJECT_ENVIRONMENT="$(VENV)" uv sync --locked
-	@touch $(STAMP)
+	@mkdir -p "$(dir $(STAMP))"
+	@touch "$(STAMP)"
 
 uv.lock:
 	@echo "Missing uv.lock: run uv lock deliberately and commit it." >&2
@@ -67,6 +68,7 @@ clean:
 
 # Dependency cleanup preserves inputs, caches, lockfiles, and output artifacts.
 clean-deps:
+	rm -f "$(STAMP)"
 	rm -rf $(VENV)
 
 clean-venv: clean-deps
