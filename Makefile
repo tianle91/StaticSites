@@ -1,9 +1,10 @@
 # Repo-admin targets only -- NOT a project build system.
 #
-# Every project is still fully self-contained (its own Makefile, venv, deps); see
+# Every project has its own Makefile, venv, and dependencies; see
 # AGENTS.md. This root Makefile exists solely for repo-wide bookkeeping that has
 # no home inside a single project: the sites.json manifest and refresh schedule.
 # Build/test/data/deps targets belong in each project's Makefile.
+# Common Python/uv recipes live in python-project.mk, included by projects.
 #
 # CI discovers projects with `*/Makefile` (one level deep), so this root Makefile
 # is invisible to that glob and never becomes a phantom project.

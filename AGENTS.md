@@ -14,14 +14,19 @@ independent sites as **projects**. Each project lives in its own top-level direc
 - `toronto-vulnerable-services-map/`
 - `union-station-transit-isochrone/`
 
-Projects are independent. No project imports from another, there is no shared
-source package, and there is no repo-level virtualenv or dependency file, and no
-shared build system. **Do not add one.** If two projects need the same helper,
-duplicating it is the right call here. Scope a change to a single project and read
-that project's own `README.md` first.
+Projects have separate source, data, dependencies, environments, and outputs.
+No project imports another project's code, and there is no repo-level virtualenv
+or Python dependency manifest. Python/uv projects share only the Make target
+contract in [`python-project.mk`](python-project.mk). Build within the repository
+checkout: a project copied out by itself needs that shared file too. Duplicate
+source helpers rather than introducing a shared Python package. Read a project's
+own `README.md` before changing it.
 
-The only repo-level code is a small amount of repo-admin tooling, none of which a
-project may depend on:
+The shared Make template is the only runtime dependency on repo-level code.
+Repo-admin tools remain separate from project builds:
+
+- [`python-project.mk`](python-project.mk) — shared Python/uv recipes included by
+  project Makefiles; configuration and artifact build rules stay project-local.
 
 - [`new-project.py`](new-project.py) — the scaffolder (see below).
 - [`generate_manifest.py`](generate_manifest.py) — regenerates
@@ -31,10 +36,9 @@ project may depend on:
   check`, `make help`). This is the one allowed repo-root Makefile;
   it is not a build system and must never gain build/test/data/deps targets —
   those stay per project. CI recognizes projects by a one-level-deep `*/Makefile`.
-  Pull requests build only projects with changed paths; pushes to `main` build
-  every project. The root
-  Makefile is invisible to that project discovery and never becomes a phantom
-  project.
+  Pull requests build projects with changed paths, or every project when
+  `python-project.mk` changes. Pushes to `main` build every project. The root
+  Makefile and shared `.mk` file are invisible to project discovery.
 
 ## Creating a project
 
@@ -186,8 +190,9 @@ PR only if the checkout has meaningful changes.
 CI and humans only ever invoke these. Every project implements every target;
 inapplicable ones are omitted only if genuinely meaningless.
 
-Target names and contracts are consistent across projects; each project's
-Makefile implements them for its own inputs, dependencies, and output. Run them
+Target names and contracts are consistent across projects. Each Python project's
+Makefile configures and includes `../python-project.mk`, then supplies its own
+artifact prerequisites and build recipes. Run targets
 inside the project, or use `make -C <project> <target>` from the repo root.
 
 | Target | Contract | Network |
@@ -203,8 +208,9 @@ inside the project, or use `make -C <project> <target>` from the repo root.
 
 These are requirements for every existing project and the scaffolder:
 
-1. **Keep commands project-specific.** Use the same target names across projects,
-   but implement each target in that project's Makefile. Do not add repo-root
+1. **Keep commands project-specific.** Reuse standard Python/uv recipes from
+   `python-project.mk`; project Makefiles configure them and implement artifact
+   build rules and extra targets. Do not add repo-root
    `all`, `test`, `data`, `deps`, `system-deps`, or dependency-cleaning dispatchers. The root
    Makefile is limited to `manifest`, `check`, and `help`.
 2. **Install the whole project's Python dependencies.** `make deps` must cover
@@ -228,7 +234,7 @@ These are requirements for every existing project and the scaffolder:
    an alias. Dependency cleanup must preserve data, geocode caches, lockfiles,
    source files, and generated outputs; `make clean` handles generated outputs.
 6. **Install system tools only through an explicit command.** Every project must
-   implement `make system-deps` with its own required tools, independently of its
+   configure `make system-deps` with its own required tools, independently of its
    Python environment. The supported installer is Homebrew on macOS: all projects
    need `uv`; transit also needs Java 21 and `osmium-tool`. Homebrew itself must
    already be installed. Fail clearly on unsupported platforms or missing
@@ -244,6 +250,17 @@ outputs are committed. If you add a build step that needs the network, move the
 fetch into `data` and commit its result instead of relaxing this.
 
 ## Dependencies
+
+Configure the shared template before `include ../python-project.mk`. Defaults
+cover `.venv`, `output/<project>.html`, `src/fetch_data.py`, `pytest -q`, and
+Homebrew `uv`. Supported variables are `PROJECT`, `VENV`, `PY`, `STAMP`, `OUT`,
+`OUTPUTS`, `OPEN_FILE`, `CLEAN_FILES`, `FETCH_SCRIPT`, `PYTEST_ARGS`,
+`BREW_FORMULAE`, and `BREW_CASKS`. Use variables rather than overriding standard
+target recipes. Keep file prerequisites and rendering recipes in each project.
+The shared template sets `all` as the default goal and attaches order-only
+dependency validation to every declared output. List every generated artifact
+in `OUTPUTS`; transit also includes its routed grid in `CLEAN_FILES` to preserve
+its curated-model fallback behavior. Do not add network fetching to build rules.
 
 Each project has its own `pyproject.toml`, its own `uv.lock`, and its own
 `./.venv`, all managed with [uv](https://docs.astral.sh/uv/):
@@ -291,7 +308,8 @@ on other platforms. Credentials remain operator prerequisites.
 cd <project> && make && make test
 ```
 
-On pull requests, CI runs those exact targets once for each changed project,
+On pull requests, CI runs those exact targets once for each changed project
+(every project when `python-project.mk` changes),
 using a matrix derived from `*/Makefile` directories. Pushes to `main` run them
 for every project — see [.github/workflows/ci.yml](.github/workflows/ci.yml).
 Adding a project that follows this standard needs no CI changes.

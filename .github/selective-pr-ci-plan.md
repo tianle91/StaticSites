@@ -12,6 +12,7 @@ repo-wide metadata check running for every pull request and push.
 | --- | --- | --- |
 | Pull request changing one or more projects | Changed projects only | Runs |
 | Pull request changing only repo-admin files | Skipped | Runs |
+| Pull request changing `python-project.mk` | Every project | Runs |
 | Pull request adding a project | New project | Runs |
 | Pull request deleting a project | Skipped for the deleted project | Runs |
 | Push to `main` | Every project | Runs |
@@ -19,6 +20,9 @@ repo-wide metadata check running for every pull request and push.
 A project remains defined as an immediate child directory containing a
 `Makefile`. Changes under a top-level directory that is not a project do not
 create a project build.
+
+`python-project.mk` is shared by the project Makefiles, so changing it tests all
+existing projects even when no project-local paths changed.
 
 ## Implementation
 

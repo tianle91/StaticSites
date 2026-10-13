@@ -182,6 +182,10 @@ routing itself isn't unit-tested (it needs Java + feeds); its helpers are.
 
 ## Refresh and dependencies
 
+This project includes the repository's [shared Python/uv Make template](../python-project.mk).
+Its own Makefile defines artifact inputs, rendering rules, and any configuration
+overrides. Build inside the repository checkout so the shared template is available.
+
 `make system-deps` installs [uv](https://formulae.brew.sh/formula/uv),
 [osmium-tool](https://formulae.brew.sh/formula/osmium-tool), and
 [Temurin Java 21](https://formulae.brew.sh/cask/temurin@21)

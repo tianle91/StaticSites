@@ -6,7 +6,8 @@ that build to a single file you can open in a browser with no server.
 **Each project lives in its own top-level directory**, with its own
 dependencies, its own virtualenv, its own tests, and its own committed output.
 Projects never import from one another and there is nothing to install at the
-repo root.
+repo root. Their Makefiles include the shared [Python/uv template](python-project.mk),
+so build them within the repository checkout.
 
 | Project | What it is |
 | --- | --- |
@@ -70,6 +71,37 @@ specification — including the rules for agents working in this repo — is in
   output/          # generated artifacts, committed
 ```
 
+Python projects include [`python-project.mk`](python-project.mk) after setting
+their configuration variables, then define their own artifact build rules:
+
+```make
+PROJECT := example-map
+OUTPUTS := output/$(PROJECT).html
+
+include ../python-project.mk
+
+$(OUT): src/build_map.py data/locations.json
+	$(PY) src/build_map.py
+```
+
+The template supplies dependency setup/validation, pytest, data refresh followed
+by a rebuild, opening output, cleanup, and explicit Homebrew installation.
+Projects configure these through variables before the include:
+
+| Variables | Default / purpose |
+| --- | --- |
+| `PROJECT`, `OUT`, `OUTPUTS` | Project directory name; primary HTML; all generated artifacts |
+| `VENV`, `PY`, `STAMP` | `.venv`, its Python executable, and dependency stamp |
+| `FETCH_SCRIPT`, `PYTEST_ARGS` | `src/fetch_data.py`, `-q` |
+| `OPEN_FILE`, `CLEAN_FILES` | Primary HTML to open; declared outputs to clean |
+| `BREW_FORMULAE`, `BREW_CASKS` | `uv`; no casks by default |
+
+Rendering recipes and their source/data prerequisites stay in project Makefiles.
+Charts declare their additional PNG output; transit declares its GeoJSON,
+Java/osmium packages, extra cleanup, and OSM clipping target. Each project keeps
+its own Python dependencies and environment. Copying a project out of this repo
+also requires the shared `.mk` file at the expected parent path.
+
 | Target | What it does | Network |
 | --- | --- | --- |
 | `make` / `make all` | Rebuild `output/` from committed `data/` | **No** |
@@ -83,8 +115,9 @@ specification — including the rules for agents working in this repo — is in
 
 The command rules apply to every project and to newly scaffolded projects:
 
-- Target names are consistent; each project owns its implementation. The root
-  Makefile only provides `manifest`, `check`, and `help`.
+- Target names and common Python/uv recipes come from `python-project.mk`;
+  project Makefiles declare their own configuration, inputs, and build recipes.
+  The root Makefile only provides `manifest`, `check`, and `help`.
 - `make deps` installs all Python dependencies for fetching, building, and testing
   from the project's committed lockfile. Separate manual package installs are
   unnecessary.
@@ -115,6 +148,7 @@ error instead of publishing a partial refresh.
 
 On pull requests, CI runs `make test` and `make all` for each changed project on
 self-hosted runners, using a matrix discovered automatically from `*/Makefile`.
+Changes to `python-project.mk` test every project because all consume it.
 Pushes to `main` run every project as a full-project safety net
 ([.github/workflows/ci.yml](.github/workflows/ci.yml)). A new project that
 follows the standard needs no CI changes.

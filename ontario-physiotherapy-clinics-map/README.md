@@ -72,6 +72,10 @@ highways and concession roads survive.
 
 ## Refresh and dependencies
 
+This project includes the repository's [shared Python/uv Make template](../python-project.mk).
+Its own Makefile defines artifact inputs, rendering rules, and any configuration
+overrides. Build inside the repository checkout so the shared template is available.
+
 `make system-deps` installs [uv](https://formulae.brew.sh/formula/uv)
 on macOS using [Homebrew](https://brew.sh), which must already be installed.
 On other platforms, install those tools manually before `make deps` / `make data`.
