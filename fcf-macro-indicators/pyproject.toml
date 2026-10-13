@@ -7,6 +7,7 @@ requires-python = ">=3.11"
 # Runtime dependencies. Say why each one is here.
 dependencies = [
     "matplotlib>=3.8",         # static PNG render
+    "numpy>=1.26",             # snap XBRL fiscal dates to calendar quarter ends
     "pandas>=2.1",             # align every series on one quarterly grid
     "pandas-datareader>=0.11", # keyless FRED pulls (M2, Treasury yields)
     "plotly>=5.20",            # zoomable/pannable HTML chart

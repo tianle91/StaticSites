@@ -184,9 +184,12 @@ routing itself isn't unit-tested (it needs Java + feeds); its helpers are.
 
 ## Refresh and dependencies
 
-`make deps` always repairs this project's environment with `uv sync --locked`;
-missing or stale locks fail without being rewritten. Other targets bootstrap only
-when dependency files change or the environment/interpreter is missing.
+`make deps` installs this project's complete locked Python environment, including
+test dependencies, when it is new or the dependency manifests change. `make data`
+uses the same setup before fetching all required upstream inputs. Repeated commands
+reuse the environment; they do not attempt repairs. To reinstall from scratch, run
+`make clean-deps && make deps` (`clean-venv` remains an alias). Missing or stale
+locks fail without being rewritten. System tools and credentials are prerequisites.
 Dependency setup may require network access; installed builds/tests are offline.
 `make data` obtains every required input and rebuilds outputs automatically.
 Unchanged upstream content preserves data timestamps; missing generated files are

@@ -1,9 +1,9 @@
 # StaticSites
 
-A collection of self-contained static sites — interactive maps and plots that
-build to a single file you can open in a browser with no server.
+A collection of self-contained static-site projects — interactive maps and plots
+that build to a single file you can open in a browser with no server.
 
-**Every top-level subdirectory is its own independent project**, with its own
+**Each project lives in its own top-level directory**, with its own
 dependencies, its own virtualenv, its own tests, and its own committed output.
 Projects never import from one another and there is nothing to install at the
 repo root.
@@ -28,23 +28,23 @@ cd <project>
 make          # build output/<project>.html from the committed data/
 make open     # build, then open it in a browser
 make test     # run this project's tests
-make deps     # repair this project's environment from its committed lockfile
+make deps     # install this project's dependencies from its committed lockfile
+make clean-deps # remove this project's environment for a fresh install
 make data     # refresh every required input and rebuild
 ```
 
-From the repo root, the same two setup/refresh commands delegate to every
-project discovered through `*/Makefile`:
+You can also select a project from the repo root with `make -C`:
 
 ```bash
-make deps     # synchronize every project's isolated .venv
-make data     # refresh and rebuild every project, including schedule-disabled ones
+make -C <project> deps     # install this project's isolated .venv
+make -C <project> data     # refresh this project's inputs and rebuild its output
 ```
 
-Both run sequentially, continue after failures, print a summary, and return a
-failure status if any project fails. `make data` uses each project's refresh
-timeout; `make deps` allows 30 minutes per project. Projects need no registry
-updates to participate. Supply credentials such as `SEC_USER_AGENT` through the
-environment; install `uv` and transit's Java 21 / `osmium` prerequisites first.
+Target names are consistent across projects; each project's Makefile defines
+its own sources, dependencies, and build steps. The root Makefile only provides
+repository metadata commands (`manifest`, `check`, and `help`). Supply credentials
+such as `SEC_USER_AGENT` through the environment; install `uv` and transit's
+Java 21 / `osmium` prerequisites first.
 
 Or just open the committed `output/<project>.html` directly — the sites work
 straight from a clone.
@@ -71,20 +71,37 @@ specification — including the rules for agents working in this repo — is in
 | Target | What it does | Network |
 | --- | --- | --- |
 | `make` / `make all` | Rebuild `output/` from committed `data/` | **No** |
-| `make deps` | Always synchronize `./.venv` with `uv sync --locked` | Setup / missing packages |
+| `make deps` | Install the complete locked environment when new or manifests change | Setup |
 | `make test` | Run the project's pytest suite | **No** |
-| `make data` | Refresh `data/` from upstream APIs, then rebuild | **Yes** |
+| `make data` | Install dependencies as needed, refresh all required inputs, then rebuild | **Yes** |
 | `make open` | Open `output/<project>.html` | No |
 | `make clean` | Remove generated output | No |
-| `make clean-venv` | Remove the project's `./.venv` | No |
+| `make clean-deps` | Remove the project's `./.venv` for a fresh install (`clean-venv` is an alias) | No |
+
+The command rules apply to every project and to newly scaffolded projects:
+
+- Target names are consistent; each project owns its implementation. The root
+  Makefile only provides `manifest`, `check`, and `help`.
+- `make deps` installs all Python dependencies for fetching, building, and testing
+  from the project's committed lockfile. Separate manual package installs are
+  unnecessary.
+- `make data` ensures dependency setup, obtains every required upstream input,
+  prepares it, and rebuilds all outputs. Curated inputs remain committed; a
+  required-source failure fails the command.
+- Existing environments are reused without automatic repair. Use
+  `make clean-deps && make deps` to reinstall explicitly. Cleanup removes only
+  `.venv`, preserving data, caches, lockfiles, and outputs.
+- System tools and credentials are documented prerequisites supplied by the
+  operator.
 
 The load-bearing rule is that **build and test logic stays offline** —
 every source fetch, download, and geocode lives behind `make data`, and its results are
 committed. That is what lets CI build and test all six projects hermetically,
 and what lets you rebuild any site offline after dependency setup. Dependency
-bootstrap can need the network for a missing or stale environment. Explicit
-`make deps` repairs environment drift; other targets use a stamp shortcut, with
-a missing-interpreter check. Missing or stale locks fail instead of being rewritten.
+bootstrap can need the network for a new environment or changed manifests.
+All targets reuse an installed environment until the dependency manifests change.
+To reinstall it, run `make clean-deps && make deps` inside the project.
+Missing or stale locks fail instead of being rewritten.
 Use `uv add` / `uv lock` deliberately; use `uv lock --upgrade` for upgrades.
 
 A successful `make data` refreshes all required sources and rebuilds outputs.

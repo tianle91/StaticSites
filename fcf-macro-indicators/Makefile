@@ -10,27 +10,22 @@ OUT     := output/$(PROJECT).html
 OUT_PNG := output/$(PROJECT).png
 SCRIPT  := src/plot_fcf_macro.py
 
-.PHONY: all deps test data open clean clean-venv
+.PHONY: all deps test data open clean clean-deps clean-venv
 
 # Default target: one-shot offline render from the committed data/series.csv.
 all: $(OUT) $(OUT_PNG)
 
 # Create/refresh .venv from pyproject.toml. The stamp keeps `uv sync` from
 # re-running on every build once the tree is warm.
-# Explicit setup repairs environment drift even when the stamp is current.
-deps:
+# Install from the lockfile only when the environment is new or manifests change.
+# Reset a damaged environment explicitly with `make clean-deps && make deps`.
+deps: $(STAMP)
+	@test -x $(PY) || { echo "Environment incomplete: run make clean-deps then make deps." >&2; exit 1; }
+
+$(STAMP): pyproject.toml uv.lock
 	@command -v uv >/dev/null || { echo "Install uv before running make deps." >&2; exit 1; }
-	@test -f uv.lock || { echo "Missing uv.lock: run uv lock deliberately and commit it." >&2; exit 1; }
 	uv sync --locked
 	@touch $(STAMP)
-
-# Ordinary commands use the fast path, but a leftover stamp cannot hide a
-# missing interpreter. The lockfile is mandatory and is never rewritten here.
-ifeq ($(wildcard $(PY)),)
-.PHONY: $(STAMP)
-endif
-$(STAMP): pyproject.toml uv.lock
-	$(MAKE) deps
 
 uv.lock:
 	@echo "Missing uv.lock: run uv lock deliberately and commit it." >&2
@@ -48,7 +43,8 @@ test: | $(STAMP)
 # Network step: refetch the yfinance / FRED series into data/series.csv, then
 # re-render both charts. Everything that hits the network belongs here - `all`
 # and `test` must stay offline.
-data: | $(STAMP)
+# Fetching first installs this project's dependencies if needed.
+data: deps
 	$(PY) src/fetch_data.py
 	$(MAKE) all
 
@@ -58,5 +54,9 @@ open: $(OUT)
 clean:
 	rm -f $(OUT) $(OUT_PNG)
 
-clean-venv:
+# Explicitly discard installed dependencies; the next make installs them anew.
+clean-deps:
 	rm -rf $(VENV)
+
+# Compatibility with the previous target name.
+clean-venv: clean-deps

@@ -2,13 +2,15 @@
 
 Guidance for coding agents working in this repo. Humans: see [README.md](README.md).
 
-## Repo shape: one project per top-level subdirectory
+## Repo shape: independent projects
 
-This is a **multi-project repo, not a monorepo of one system**. Every top-level
-subdirectory is a separate, self-contained static-site project:
+This is a **multi-project repo, not a monorepo of one system**. Refer to the
+independent sites as **projects**. Each project lives in its own top-level directory:
 
+- `fcf-macro-indicators/`
 - `margin-sp500-m2-visualization/`
 - `ontario-physiotherapy-clinics-map/`
+- `toronto-dinesafe-map/`
 - `toronto-vulnerable-services-map/`
 - `union-station-transit-isochrone/`
 
@@ -25,15 +27,12 @@ project may depend on:
 - [`generate_manifest.py`](generate_manifest.py) — regenerates
   [`sites.json`](sites.json) from the projects' metadata (see "Site-listing
   metadata" below).
-- [`run_projects.py`](run_projects.py) — stdlib-only data/dependency dispatcher.
 - [`Makefile`](Makefile) — **admin targets only** (`make manifest`, `make
-  check`, `make data`, `make deps`). This is the one allowed repo-root Makefile;
-  it is not a build system
-  and must never gain build/test targets — those stay per project. Root
-  `data` and `deps` are delegation targets only, implemented by `run_projects.py`;
-  they discover `*/Makefile` and invoke each independent project sequentially. CI
-  recognizes projects by a one-level-deep `*/Makefile`. Pull requests build only
-  projects with changed paths; pushes to `main` build every project. The root
+  check`, `make help`). This is the one allowed repo-root Makefile;
+  it is not a build system and must never gain build/test/data/deps targets —
+  those stay per project. CI recognizes projects by a one-level-deep `*/Makefile`.
+  Pull requests build only projects with changed paths; pushes to `main` build
+  every project. The root
   Makefile is invisible to that project discovery and never becomes a phantom
   project.
 
@@ -187,15 +186,49 @@ PR only if the checkout has meaningful changes.
 CI and humans only ever invoke these. Every project implements every target;
 inapplicable ones are omitted only if genuinely meaningless.
 
+Target names and contracts are consistent across projects; each project's
+Makefile implements them for its own inputs, dependencies, and output. Run them
+inside the project, or use `make -C <project> <target>` from the repo root.
+
 | Target | Contract | Network |
 | --- | --- | --- |
 | `all` (default) | Rebuild everything in `output/` from committed `data/` | **No** |
-| `deps` | Always run `uv sync --locked` to repair `./.venv` | Setup / missing packages |
+| `deps` | Install the complete locked environment when new or manifests change | Setup |
 | `test` | `pytest` | **No** |
-| `data` | Obtain/refresh every required input, then `$(MAKE) all` | **Yes** |
+| `data` | Install dependencies as needed, obtain/refresh every required input, then `$(MAKE) all` | **Yes** |
 | `open` | Open `output/<project>.html` in a browser | No |
 | `clean` | Remove generated `output/` files | No |
-| `clean-venv` | Remove `./.venv` | No |
+| `clean-deps` | Remove `./.venv` for a fresh install (`clean-venv` is an alias) | No |
+
+These are requirements for every existing project and the scaffolder:
+
+1. **Keep commands project-specific.** Use the same target names across projects,
+   but implement each target in that project's Makefile. Do not add repo-root
+   `all`, `test`, `data`, `deps`, or dependency-cleaning dispatchers. The root
+   Makefile is limited to `manifest`, `check`, and `help`.
+2. **Install the whole project's Python dependencies.** `make deps` must cover
+   fetching, building, and testing from the committed `pyproject.toml` and
+   `uv.lock`, using `uv sync --locked`. Declare directly used third-party packages
+   in that project's manifest. Do not require separate manual package installs
+   for particular scripts.
+3. **Prepare the whole project's data.** `make data` must ensure dependency setup,
+   obtain or refresh every required upstream input, perform required preparation
+   such as geocoding or clipping, and rebuild all project outputs. Curated inputs
+   belong in committed `data/`; documented caller-managed overrides are validated
+   rather than downloaded. A required-source failure must fail the target.
+4. **Reuse dependencies without automatic repair.** Install when the environment
+   stamp is missing or dependency manifests change. A current stamp means reuse:
+   do not force synchronization, probe individual packages to reinstall them, or
+   delete/recreate an existing environment to repair it. An incomplete environment
+   must fail and direct the operator to explicit cleanup.
+5. **Provide explicit dependency cleanup.** Every project must implement
+   `make clean-deps` to remove only its own `.venv`, including its stamp.
+   `make clean-deps && make deps` performs a fresh install. Keep `clean-venv` as
+   an alias. Dependency cleanup must preserve data, geocode caches, lockfiles,
+   source files, and generated outputs; `make clean` handles generated outputs.
+6. **Leave system prerequisites to the operator.** Document tools such as `uv`,
+   Java, and `osmium`, plus required credentials, in the project's README. Make
+   targets must not install system tools or obtain credentials automatically.
 
 **The rule CI depends on: build/test logic never touches the network.**
 Dependency bootstrap may need the network when the environment is missing or
@@ -211,7 +244,8 @@ Each project has its own `pyproject.toml`, its own `uv.lock`, and its own
 
 ```bash
 cd <project>
-make deps                # uv sync --locked: repair .venv without changing uv.lock
+make deps                # install the complete locked environment if needed
+make clean-deps          # remove .venv; then make deps for a fresh install
 uv add <package>         # runtime dependency
 uv add --dev <package>   # test-only dependency
 ```
@@ -227,15 +261,12 @@ client, its rate limiter, and geodesic distance for both geocoding maps;
 holds — the map HTML is hand-written Leaflet on purpose, because `folium` cannot
 express the custom search/filter panels these maps have.
 
-Explicit `make deps` always syncs, even when `.venv/.stamp` is current. Other
-commands bootstrap only when pyproject/lock changes, the stamp is missing, or
-`.venv/bin/python` is missing. Missing or stale locks fail; update them deliberately
+All targets use the same environment stamp: install dependencies when pyproject/lock
+changes or the stamp is missing. Repeated commands reuse the environment and do not
+attempt repairs. Clear installed dependencies explicitly with `make clean-deps`,
+then reinstall with `make deps`. Missing or stale locks fail; update them deliberately
 with `uv lock` / `uv add` and commit them. Upgrades use `uv lock --upgrade`.
 
-From the repo root, `make deps` sets up every discovered project and `make data`
-refreshes every project, including refresh-disabled ones. Both run sequentially,
-continue after failures, summarize results, and fail overall if any project fails.
-Data uses each project's refresh timeout; dependencies use 30 minutes per project.
 There is no root environment or shared dependency manifest.
 
 `make data` succeeds only after all required sources were obtained and outputs
