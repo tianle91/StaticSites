@@ -119,8 +119,13 @@ $(OUTPUTS):
                     outputs = [path.name for path in (ROOT / name / "output").iterdir()
                                if path.is_file()]
                 (root / "output").mkdir()
-                for filename in outputs:
+                # Deliberately write HTML before its generated dependencies;
+                # equal mtimes below must make the fixture current in any order.
+                for filename in sorted(outputs, key=lambda name: (not name.endswith(".html"), name)):
                     (root / "output" / filename).write_text("already built")
+                built_at = max(path.stat().st_mtime_ns for path in (root / "output").iterdir())
+                for path in (root / "output").iterdir():
+                    os.utime(path, ns=(built_at, built_at))
                 tools = root / "tools"
                 tools.mkdir()
                 uv = tools / "uv"
