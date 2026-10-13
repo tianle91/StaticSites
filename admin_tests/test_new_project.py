@@ -14,6 +14,63 @@ spec.loader.exec_module(scaffolder)
 
 
 class DependencyContractTests(unittest.TestCase):
+    def test_current_outputs_still_validate_environment_without_repair(self):
+        makefiles = {path.parent.name: path.read_text()
+                     for path in ROOT.glob("*/Makefile")}
+        makefiles["scaffold"] = scaffolder.FILES["Makefile"].replace("__PROJECT__", "scaffold")
+        for name, makefile in makefiles.items():
+            with self.subTest(project=name), tempfile.TemporaryDirectory() as directory:
+                root = pathlib.Path(directory)
+                (root / "Makefile").write_text(makefile)
+                (root / "pyproject.toml").touch()
+                (root / "uv.lock").touch()
+                if name == "scaffold":
+                    for filename in ("src/build_site.py", "data/example.json"):
+                        path = root / filename
+                        path.parent.mkdir(exist_ok=True)
+                        path.touch()
+                    outputs = ["scaffold.html"]
+                else:
+                    # Read real prerequisites without copying large transit inputs.
+                    for folder in ("src", "data"):
+                        (root / folder).symlink_to(ROOT / name / folder, target_is_directory=True)
+                    outputs = [path.name for path in (ROOT / name / "output").iterdir()
+                               if path.is_file()]
+                (root / "output").mkdir()
+                for filename in outputs:
+                    (root / "output" / filename).write_text("already built")
+                tools = root / "tools"
+                tools.mkdir()
+                uv = tools / "uv"
+                uv.write_text('#!/bin/sh\necho sync >> calls\nexit 1\n')
+                uv.chmod(0o755)
+                (root / ".venv/bin").mkdir(parents=True)
+                interpreter = root / ".venv/bin/python"
+                interpreter.write_text('#!/bin/sh\necho python >> calls\n')
+                interpreter.chmod(0o755)
+                stamp = root / ".venv/.stamp"
+                stamp.touch()
+                stamp_before = stamp.stat().st_mtime_ns
+                environment = dict(os.environ, PATH=str(tools) + os.pathsep + os.environ["PATH"])
+
+                def make(target):
+                    return subprocess.run(["make", target], cwd=root,
+                                          env=environment, capture_output=True)
+
+                before = {path.name: path.stat().st_mtime_ns
+                          for path in (root / "output").iterdir()}
+                self.assertEqual(make("all").returncode, 0)
+                self.assertFalse((root / "calls").exists())
+                interpreter.unlink()
+                for target in ("all", "test", "data", "deps", "output/" + name + ".html"):
+                    result = make(target)
+                    self.assertNotEqual(result.returncode, 0, target)
+                    self.assertIn(b"make clean-deps then make deps", result.stderr, target)
+                self.assertFalse((root / "calls").exists())
+                self.assertEqual(stamp.stat().st_mtime_ns, stamp_before)
+                self.assertEqual(before, {path.name: path.stat().st_mtime_ns
+                                         for path in (root / "output").iterdir()})
+
     def test_explicit_system_installation_and_prerequisite_failures(self):
         makefiles = {path.parent.name: path.read_text()
                      for path in ROOT.glob("*/Makefile")}

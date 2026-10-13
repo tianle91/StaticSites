@@ -13,7 +13,7 @@ SCRIPT  := src/plot_macro_series.py
 .PHONY: all system-deps deps test data open clean clean-deps clean-venv
 
 # Default target: one-shot offline render from the committed data/series.csv.
-all: $(OUT) $(OUT_PNG)
+all: $(OUT) $(OUT_PNG) | deps
 
 # System installation is explicit and separate from Python setup and data refresh.
 # Homebrew itself is an operator prerequisite; see README for other platforms.
@@ -26,6 +26,7 @@ system-deps:
 # re-running on every build once the tree is warm.
 # Install from the lockfile only when the environment is new or manifests change.
 # Reset a damaged environment explicitly with `make clean-deps && make deps`.
+# Order-only deps prerequisites validate even current outputs without rebuilding them.
 deps: $(STAMP)
 	@test -x $(PY) || { echo "Environment incomplete: run make clean-deps then make deps." >&2; exit 1; }
 
@@ -38,13 +39,13 @@ uv.lock:
 	@echo "Missing uv.lock: run uv lock deliberately and commit it." >&2
 	@exit 1
 
-$(OUT): $(SCRIPT) data/series.csv $(wildcard data/generated_at.txt data/fcf_source.txt) | $(STAMP)
+$(OUT): $(SCRIPT) data/series.csv $(wildcard data/generated_at.txt data/fcf_source.txt) | deps
 	$(PY) $(SCRIPT) -o $(OUT)
 
-$(OUT_PNG): $(SCRIPT) data/series.csv $(wildcard data/generated_at.txt data/fcf_source.txt) | $(STAMP)
+$(OUT_PNG): $(SCRIPT) data/series.csv $(wildcard data/generated_at.txt data/fcf_source.txt) | deps
 	$(PY) $(SCRIPT) -o $(OUT_PNG)
 
-test: | $(STAMP)
+test: | deps
 	$(PY) -m pytest -q
 
 # Network step: refetch the FINRA / FRED / Yahoo series into data/series.csv,

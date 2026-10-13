@@ -18,7 +18,7 @@ BBOX    := -80.6,43.05,-78.7,44.40   # west,south,east,north (matches fetch_isoc
 .PHONY: all system-deps deps test osm data open clean clean-deps clean-venv
 
 # Default target: one-shot offline build from the committed curated model.
-all: $(OUT)
+all: $(OUT) | deps
 
 # System installation is explicit and separate from Python setup and data refresh.
 # Homebrew itself is an operator prerequisite; see README for other platforms.
@@ -30,6 +30,7 @@ system-deps:
 
 # Install from the lockfile only when the environment is new or manifests change.
 # Reset a damaged environment explicitly with `make clean-deps && make deps`.
+# Order-only deps prerequisites validate even current outputs without rebuilding them.
 deps: $(STAMP)
 	@test -x $(PY) || { echo "Environment incomplete: run make clean-deps then make deps." >&2; exit 1; }
 
@@ -42,15 +43,15 @@ uv.lock:
 	@echo "Missing uv.lock: run uv lock deliberately and commit it." >&2
 	@exit 1
 
-$(OUT): src/build_map.py $(GEOJSON) data/transit_model.json $(wildcard data/reachability.json) | $(STAMP)
+$(OUT): src/build_map.py $(GEOJSON) data/transit_model.json $(wildcard data/reachability.json) | deps
 	$(PY) src/build_map.py
 
 # Depends on data/reachability.json when present so a fresh `make data`
 # re-contours; `make clean` removes it to fall back to data/transit_model.json.
-$(GEOJSON): src/build_isochrones.py data/transit_model.json $(wildcard data/reachability.json) | $(STAMP)
+$(GEOJSON): src/build_isochrones.py data/transit_model.json $(wildcard data/reachability.json) | deps
 	$(PY) src/build_isochrones.py
 
-test: | $(STAMP)
+test: | deps
 	$(PY) -m pytest -q
 
 # Clip the raw OSM download to the GTHA bbox (needs osmium: `brew install
