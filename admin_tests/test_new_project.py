@@ -48,18 +48,26 @@ $(OUTPUTS):
             (root / "data").mkdir()
             for name in ("routing.json", "curated.json", "geocode_cache.json"):
                 (root / "data" / name).write_text("keep")
-            (root / ".custom-env/bin").mkdir(parents=True)
+            tools = root / "tools"
+            tools.mkdir()
+            uv = tools / "uv"
+            uv.write_text('#!/bin/sh\n'
+                          'echo "$UV_PROJECT_ENVIRONMENT:$*" >> installs\n'
+                          'mkdir -p "$UV_PROJECT_ENVIRONMENT/bin"\n'
+                          'printf \'#!/bin/sh\\necho "$*" >> calls\\n\' > "$UV_PROJECT_ENVIRONMENT/bin/python"\n'
+                          'chmod +x "$UV_PROJECT_ENVIRONMENT/bin/python"\n')
+            uv.chmod(0o755)
             interpreter = root / ".custom-env/bin/python"
-            interpreter.write_text('#!/bin/sh\necho "$*" >> calls\n')
-            interpreter.chmod(0o755)
-            (root / ".custom-env/.stamp").touch()
 
             def make(*arguments):
                 # Exercise the normal repo-root invocation and recursive rebuild.
                 return subprocess.run(["make", "-C", str(root), *arguments],
-                                      cwd=directory, capture_output=True)
+                                      cwd=directory, capture_output=True,
+                                      env=dict(os.environ, PATH=str(tools) + os.pathsep + os.environ["PATH"]))
 
             self.assertEqual(make("data").returncode, 0)
+            self.assertEqual((root / "installs").read_text(), ".custom-env:sync --locked\n")
+            self.assertFalse((root / ".venv").exists())
             self.assertTrue((root / "output/main.html").exists())
             self.assertTrue((root / "output/extra.txt").exists())
             self.assertEqual(make("test").returncode, 0)

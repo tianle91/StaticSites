@@ -43,7 +43,7 @@ deps: $(STAMP)
 
 $(STAMP): pyproject.toml uv.lock
 	@command -v uv >/dev/null || { echo "Install uv (make system-deps on macOS) before running make deps." >&2; exit 1; }
-	uv sync --locked
+	UV_PROJECT_ENVIRONMENT="$(VENV)" uv sync --locked
 	@touch $(STAMP)
 
 uv.lock:
