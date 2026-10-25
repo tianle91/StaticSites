@@ -155,11 +155,11 @@ make test    # runs pytest in this project's .venv
 ```
 
 The suite is **stdlib + pytest only** — no r5py, Java, or GTFS needed — so it runs
-fast and in CI. It covers the pure logic (Easter/holiday service-date selection,
+fast in local checks. It covers the pure logic (Easter/holiday service-date selection,
 station snapping, itinerary leg parsing) and a smoke test that runs the stdlib
 builders end-to-end in a temp dir (falling back to the curated model). The r5py
 routing itself isn't unit-tested (it needs Java + feeds); its helpers are.
-[GitHub Actions](../.github/workflows/ci.yml) runs `pytest` on every push and PR.
+Root `make test` runs this suite and the offline build alongside every other project.
 
 ## Caveats
 

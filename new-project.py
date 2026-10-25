@@ -9,7 +9,7 @@ after scaffolding:
 
     cd my-new-map && make && make test
 
-both pass, and CI picks the project up with no changes. Replace the placeholder
+both pass, and root make test / make data discover the project automatically. Replace the placeholder
 fetch/build/test with the real thing from there.
 
 Stdlib only, so it runs on whatever python3 is on PATH (no venv needed yet).

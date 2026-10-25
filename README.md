@@ -14,8 +14,10 @@ so build them within the repository checkout.
 | [fcf-macro-indicators/](fcf-macro-indicators/) | Quarterly free cash flow and cash balances of a basket of large public companies vs. M2, the S&P 500, and the 3M / 2Y / 10Y / 30Y Treasury curve, rebased to a chosen anchor quarter. Renders a static PNG and a zoomable HTML chart. |
 | [margin-sp500-m2-visualization/](margin-sp500-m2-visualization/) | FINRA margin debt vs. S&P 500, M2, CPI, and PPI, rebased to a configurable anchor date. Renders a static PNG and a zoomable HTML chart. |
 | [ontario-physiotherapy-clinics-map/](ontario-physiotherapy-clinics-map/) | The 255 publicly-funded (OHIP-covered) physiotherapy clinics and hospitals listed by the province, searchable by name / city / postal code. |
+| [toronto-building-permits-map/](toronto-building-permits-map/) | Toronto’s complete active building permit register, searchable by address / number / description with status, type and application-year filters. |
 | [toronto-dinesafe-map/](toronto-dinesafe-map/) | Toronto's DineSafe food-safety inspection results, one pin per establishment coloured by its latest outcome (Pass / Conditional Pass / Closed), searchable by name / type / address. |
 | [toronto-vulnerable-services-map/](toronto-vulnerable-services-map/) | Toronto/Ontario services for vulnerable populations: shelters, warming & respite centres, drop-ins, harm reduction, housing supports. |
+| [trca-flood-plain-map/](trca-flood-plain-map/) | TRCA riverine flood plain polygons and attributed floodline boundaries, filterable by watershed and source. |
 | [union-station-transit-isochrone/](union-station-transit-isochrone/) | The morning commute-shed of Toronto's Union Station — where you can reach Union by transit in 30 / 60 / 90 / 120 min. |
 
 ## Usage
@@ -43,8 +45,8 @@ make -C <project> data     # refresh this project's inputs and rebuild its outpu
 ```
 
 Target names are consistent across projects; each project's Makefile defines
-its own sources, dependencies, and build steps. The root Makefile only provides
-repository metadata commands (`manifest`, `check`, and `help`). Supply credentials
+its own sources, dependencies, and build steps. The root Makefile delegates `test` and `data` to all projects and
+provides repository metadata commands (`manifest`, `check`, and `help`). Supply credentials
 such as `SEC_USER_AGENT` through the environment. `make system-deps` installs
 `uv` and transit's Java 21 / `osmium` prerequisites on macOS with Homebrew;
 other platforms require manual installation.
@@ -117,7 +119,7 @@ The command rules apply to every project and to newly scaffolded projects:
 
 - Target names and common Python/uv recipes come from `python-project.mk`;
   project Makefiles declare their own configuration, inputs, and build recipes.
-  The root Makefile only provides `manifest`, `check`, and `help`.
+  The root Makefile delegates `test` and `data` without owning project build rules.
 - `make deps` installs all Python dependencies for fetching, building, and testing
   from the project's committed lockfile. Separate manual package installs are
   unnecessary.
@@ -134,7 +136,7 @@ The command rules apply to every project and to newly scaffolded projects:
 
 The load-bearing rule is that **build and test logic stays offline** —
 every source fetch, download, and geocode lives behind `make data`, and its results are
-committed. That is what lets CI build and test all six projects hermetically,
+committed. That is what lets CI build and test all projects hermetically,
 and what lets you rebuild any site offline after dependency setup. Dependency
 bootstrap can need the network for a new environment or changed manifests.
 All targets reuse an installed environment until the dependency manifests change.
@@ -147,24 +149,64 @@ Unchanged content preserves data timestamps and bytes; missing generated files
 are restored. Required-source failures retain previous datasets and return an
 error instead of publishing a partial refresh.
 
-On pull requests, CI runs `make test` and `make all` for each changed project on
-self-hosted runners, using a matrix discovered automatically from `*/Makefile`.
-Changes to `python-project.mk` test every project because all consume it.
-Pushes to `main` run every project as a full-project safety net
-([.github/workflows/ci.yml](.github/workflows/ci.yml)). A new project that
-follows the standard needs no CI changes.
+## Local checks and GitHub statuses
 
-## Automated data refreshes
+GitHub Actions workflows have been removed. Run the complete checks locally:
 
-[`.github/workflows/refresh-data.yml`](.github/workflows/refresh-data.yml) wakes
-daily at 06:17 UTC on the self-hosted runner. It reads each project's
-`[tool.staticsite.refresh]` metadata, runs `make data`, `make test`, and `make
-all` for projects due that day, and opens one PR containing all updates from
-that invocation. If the substantive upstream data is unchanged, the fetchers
-preserve the committed timestamps and outputs, and no PR is created.
+```bash
+make test                      # metadata checks + every project's test and all
+make test STATUSES=off         # no GitHub access (dependency setup may need network)
+make test STATUSES=required    # require a clean, committed, pushed HEAD and status publication
+```
 
-Cadence is deterministic rather than stored as mutable "last run" metadata. A
-project runs on `anchor_date`, then every `every_days` UTC dates:
+Projects are discovered from one-level-deep `*/Makefile` files. The root target
+runs `make check`, then `make -C <project> test all` for every project in sorted
+order, continuing to the next project after a failure and exiting nonzero if any
+check fails. Build and test commands remain project-local and offline once their
+locked environments are installed. Existing incomplete environments fail with
+instructions for explicit `make clean-deps && make deps`; they are not repaired.
+For verification in a separate environment while preserving an existing one,
+use `make test CI_VENV=.venv/ci-verification`. This configures a distinct locked
+environment inside each project; it does not change the normal `.venv` setup.
+
+`STATUSES=auto` is the default: uncommitted work is checked locally without
+attaching results to an older commit. For a clean checkout, the runner uses your
+existing [GitHub CLI](https://cli.github.com/) login to publish `pending` then
+`success`, `failure`, or `error` commit statuses under `local-ci/<project>`, plus
+`local-ci/metadata`. Commit and push first. It pins the SHA for the whole run and
+rechecks HEAD and the complete working tree before reporting success. Generated
+output changes require committing the output and rerunning. Status/API errors
+return a nonzero exit code while local checks still run. No commits, pushes,
+pull requests, or credentials are created by `make test`.
+
+Full transcripts stay in ignored `.local-ci/<commit>/<project>.log` files; GitHub
+receives only a short result. To require these statuses for merging, select the
+`local-ci/...` contexts in your repository's branch protection after their first
+successful publication. Old GitHub Actions required checks must be removed from
+that configuration separately.
+
+## Refreshing data and outputs locally
+
+```bash
+make data                      # refresh every project, including disabled cadences
+make refresh                   # alias for make data
+make -C toronto-dinesafe-map data  # refresh just one project
+make refresh-due               # refresh/test/build only projects due today (UTC)
+```
+
+Root `make data` invokes each project's existing `make data` sequentially. Each
+project fetches all its required inputs and rebuilds its output; failures are
+reported and the other independent projects still get an attempt. This is an
+explicit network operation, including the transit project's large OSM/GTFS
+inputs, Java 21 / `osmium` prerequisites, and any required operator credentials
+such as `SEC_USER_AGENT`. It does not install system tools, publish statuses,
+commit changes, push, or open PRs. Review generated changes, commit them, then
+run `make test` to publish checks for that commit.
+
+There is no hosted scheduler. The existing `[tool.staticsite.refresh]` metadata
+remains available for optional local cadence selection through
+`refresh_projects.py`. A project is due on `anchor_date` and every `every_days`
+UTC dates thereafter; runtime last-run state is not committed.
 
 ```toml
 [tool.staticsite.refresh]
@@ -174,35 +216,16 @@ anchor_date = "2026-08-03"
 timeout_minutes = 45
 ```
 
-Validate or inspect the schedule locally without touching the network:
-
 ```bash
 ./refresh_projects.py check
 ./refresh_projects.py select --date 2026-08-03
+./refresh_projects.py run --all  # every cadence-enabled project
+./refresh_projects.py run --project union-station-transit-isochrone
 ```
 
-The workflow also supports manual runs for due projects, every enabled project,
-or one explicitly named project. The transit isochrone refresh is disabled
-until its runner has the Java, `osmium`, and download/routing capacity documented
-in that project.
-
-### Self-hosted runner setup
-
-Register a repository runner with the standard `self-hosted` label. It needs the
-GitHub Actions runner's standard tools plus `make`; the workflows install `uv`.
-Under **Settings → Actions → General**, enable **Allow GitHub Actions to create
-and approve pull requests**. The refresh workflow grants its short-lived
-`GITHUB_TOKEN` only the `contents: write` and `pull-requests: write` permissions
-needed to push a refresh branch and open its pull request. Add `SEC_USER_AGENT`
-as a repository Actions secret for the SEC-backed FCF refresh. Pull requests
-opened with `GITHUB_TOKEN` require a maintainer to approve their CI run.
-
-> **Security warning:** pull-request CI and the secret-bearing refresh workflow
-> share this persistent machine. GitHub's `self-hosted` label routes jobs but
-> does not isolate them. Malicious PR code could leave processes or files behind
-> and capture secrets from a later refresh job. This setup assumes every PR is
-> trusted. Before accepting untrusted contributions, use separate labelled
-> runners—preferably an ephemeral runner for PR CI.
+The selector's `--all` respects `enabled`; root `make data` deliberately includes
+every project. The selector applies each project's timeout separately to its
+`data`, `test`, and `all` commands. It does not schedule itself.
 
 ## Adding a project
 
@@ -220,11 +243,11 @@ a smoke test covers the build. Replace those three with the real thing, fill in
 the `TODO`s in the project's `README.md`, set the homepage blurb in
 `pyproject.toml` (`[project].description` + `[tool.staticsite].title`), and add a
 row to the table at the top of this README. Once its real fetch is content-aware,
-enable and configure `[tool.staticsite.refresh]`. CI and the refresh scheduler
-then pick the project up automatically—no workflow changes.
+enable and configure `[tool.staticsite.refresh]` for optional local cadence
+selection. Root `make test` and `make data` discover the project automatically.
 
-Do not hand-roll a new project directory; scaffolding it is what keeps the six
-(and counting) projects identical in shape.
+Do not hand-roll a new project directory; scaffolding keeps the projects
+identical in shape.
 
 ## Machine-readable index (`sites.json`)
 
@@ -237,7 +260,7 @@ changes:
 
 ```bash
 make manifest    # rewrite sites.json from the projects' pyproject.toml
-make check       # fail if sites.json is stale (CI enforces this)
+make check       # fail if sites.json is stale (also included in root make test)
 ```
 
 See [AGENTS.md](AGENTS.md#site-listing-metadata-sitesjson) for the metadata

@@ -1,14 +1,25 @@
-"""Tests for the stdlib-only scheduled-refresh selector."""
+"""Tests for the stdlib-only local refresh selector."""
 import argparse
 import datetime
 import pathlib
 import tempfile
 import unittest
+from unittest import mock
 
 import refresh_projects
 
 
 class RefreshMetadataTests(unittest.TestCase):
+    def test_default_selection_uses_the_utc_date(self):
+        project = {"slug": "demo", "enabled": True, "every_days": 7,
+                   "anchor_date": datetime.date(2026, 8, 3)}
+        args = argparse.Namespace(project=None, all=False, date=None)
+        now = datetime.datetime(2026, 8, 3, tzinfo=datetime.timezone.utc)
+        with mock.patch.object(refresh_projects.datetime, "datetime") as clock:
+            clock.now.return_value = now
+            self.assertEqual(refresh_projects.select_projects([project], args), [project])
+            clock.now.assert_called_once_with(datetime.timezone.utc)
+
     def test_reads_refresh_table(self):
         text = """\
 [project]

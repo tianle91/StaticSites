@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Select and run scheduled project data refreshes.
+"""Select and run local project data refreshes.
 
     ./refresh_projects.py check
     ./refresh_projects.py select --date 2026-08-03
@@ -130,7 +130,7 @@ def select_projects(projects, args):
                     args.project, ", ".join(sorted(by_slug))))
     if args.all:
         return [project for project in projects if project["enabled"]]
-    on_date = datetime.date.fromisoformat(args.date) if args.date else datetime.date.today()
+    on_date = datetime.date.fromisoformat(args.date) if args.date else datetime.datetime.now(datetime.timezone.utc).date()
     return [project for project in projects if is_due(project, on_date)]
 
 
@@ -144,7 +144,7 @@ def _selection_args(parser):
         help="select exactly one project (including a disabled project)")
     parser.add_argument(
         "--date",
-        help="selection date in YYYY-MM-DD (default: the local current date)")
+        help="selection date in YYYY-MM-DD (default: the current UTC date)")
 
 
 def command_check(_args):
