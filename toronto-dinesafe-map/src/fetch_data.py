@@ -26,10 +26,12 @@ Requires internet. Re-run with `make data` whenever you want fresher inspections
 The result is committed so that `make` and `make test` build offline.
 """
 import datetime
+import csv
 import json
 import pathlib
 import tempfile
 import sys
+import time
 
 import requests
 from geopy.extra.rate_limiter import RateLimiter
@@ -91,9 +93,16 @@ def geocode(address):
 
 
 def ckan(action, **params):
-    r = requests.get(f"{CKAN}/api/3/action/{action}", params=params,
-                     headers={"User-Agent": USER_AGENT}, timeout=120)
-    r.raise_for_status()
+    for attempt in range(3):
+        try:
+            r = requests.get(f"{CKAN}/api/3/action/{action}", params=params,
+                             headers={"User-Agent": USER_AGENT}, timeout=120)
+            r.raise_for_status()
+            break
+        except requests.RequestException:
+            if attempt == 2:
+                raise
+            time.sleep(2 ** attempt)
     payload = r.json()
     if not payload.get("success"):
         raise RuntimeError(f"CKAN {action} failed: {payload}")
@@ -111,7 +120,65 @@ def active_resource_id() -> str:
     return active[-1]["id"]
 
 
+def exact_count(rid):
+    result = ckan("datastore_search", resource_id=rid, limit=0)
+    total = result.get("total")
+    if result.get("total_was_estimated") or type(total) is not int or total <= 0:
+        raise RuntimeError("Cannot confirm exact DineSafe source count.")
+    return total
+
+
+def bulk_records(rid):
+    """Recover from failing API pages using the catalogue's complete CSV.
+
+    Datastore dumps can be silently truncated, so use the published export and
+    validate against an exact live count before allowing normalization/publication.
+    """
+    resources = ckan("package_show", id=DATASET)["resources"]
+    exports = [r for r in resources if r.get("name", "").lower() == "dinesafe.csv"]
+    if len(exports) != 1:
+        raise RuntimeError("Cannot identify unique official DineSafe CSV.")
+    expected = exact_count(rid)
+    for attempt in range(3):
+        try:
+            with tempfile.TemporaryDirectory() as directory:
+                path = pathlib.Path(directory) / "dinesafe.csv"
+                with requests.get(exports[0]["url"], stream=True, timeout=(30, 180)) as response:
+                    response.raise_for_status()
+                    with path.open("wb") as stream:
+                        for block in response.iter_content(1024 * 1024):
+                            stream.write(block)
+                with path.open(encoding="utf-8-sig", newline="") as stream:
+                    reader = csv.DictReader(stream)
+                    if not {"estId", "inspectionDate", "inspectionStatus", "address"}.issubset(reader.fieldnames or []):
+                        raise RuntimeError("Unexpected DineSafe CSV schema.")
+                    rows = list(reader)
+                if any(None in row or None in row.values() for row in rows):
+                    raise RuntimeError("Malformed DineSafe CSV row.")
+                if len(rows) != expected or exact_count(rid) != expected:
+                    raise RuntimeError("Incomplete or changing DineSafe export; retry make data.")
+                return rows
+        except requests.RequestException:
+            if attempt == 2:
+                raise
+            time.sleep(2 ** attempt)
+
+
 def iter_records(rid, batch=10000):
+    # Buffer a whole source before returning it: a failing later page must never
+    # leak rows into the CSV fallback and duplicate the first pages.
+    try:
+        expected = exact_count(rid)
+        rows = list(datastore_records(rid, batch))
+        if len(rows) != expected or exact_count(rid) != expected:
+            raise RuntimeError("Incomplete or changing DineSafe datastore.")
+        return iter(rows)
+    except (requests.RequestException, RuntimeError) as error:
+        print(f"Datastore unavailable ({error}); trying official CSV export.")
+        return iter(bulk_records(rid))
+
+
+def datastore_records(rid, batch=10000):
     """Page through every row of a datastore resource."""
     offset = 0
     while True:

@@ -52,6 +52,14 @@ its individual infractions) that powers the detail sidebar. Most rows carry
 `Latitude`/`Longitude`; the few that don't are geocoded from their address with
 OpenStreetMap Nominatim (cached in `data/geocode_cache.json`, 1 request/second).
 
+`make data` retries API requests up to three times. If pagination fails or
+returns an incomplete dataset, it discards the partial rows and downloads the
+official `dinesafe.csv` export discovered from the same catalogue. The CSV must
+have the expected columns and match an exact, non-estimated datastore row count
+before and after download. A truncated export, changing count, or failure of
+both sources fails the command and retains the previous snapshot. No manual
+download or temporary import script is needed for this recovery.
+
 > **The committed `data/dinesafe.json` includes inspection history and infraction
 > details.** The sidebar shows every inspection in the snapshot, grouped by visit.
 > Run **`make data`** to refresh the snapshot from the latest upstream records.
