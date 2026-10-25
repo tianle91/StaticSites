@@ -8,6 +8,7 @@ requires-python = ">=3.11"
 # Stream the City's large municipal address GeoJSON without loading it into RAM.
 dependencies = [
     "ijson>=3.3",
+    "requests>=2.31", # reliable streamed downloads of the City's official bulk exports
 ]
 
 [dependency-groups]

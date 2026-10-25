@@ -32,7 +32,7 @@ make test   # run the tests
 standard — see the [repo README](../README.md).
 
 > **Committed data is the live dataset.** `data/dinesafe.json` holds the full
-> DineSafe set (~18k establishments, one pin each) so the site builds and tests
+> DineSafe set (~20k establishments, one pin each) so the site builds and tests
 > offline straight from a clone. `make data` re-pulls it from Toronto Open Data
 > (needs internet) whenever you want fresher inspection results.
 
@@ -52,11 +52,17 @@ its individual infractions) that powers the detail sidebar. Most rows carry
 `Latitude`/`Longitude`; the few that don't are geocoded from their address with
 OpenStreetMap Nominatim (cached in `data/geocode_cache.json`, 1 request/second).
 
-> **The committed `data/dinesafe.json` is summary-only** (latest inspection per
-> establishment, without the per-infraction detail). The build handles both
-> shapes: with summary data the sidebar shows the latest inspection and notes that
-> details load on refresh; run **`make data`** to pull the full per-inspection
-> history and the sidebar fills in every past inspection and infraction.
+`make data` retries API requests up to three times. If pagination fails or
+returns an incomplete dataset, it discards the partial rows and downloads the
+official `dinesafe.csv` export discovered from the same catalogue. The CSV must
+have the expected columns and match an exact, non-estimated datastore row count
+before and after download. A truncated export, changing count, or failure of
+both sources fails the command and retains the previous snapshot. No manual
+download or temporary import script is needed for this recovery.
+
+> **The committed `data/dinesafe.json` includes inspection history and infraction
+> details.** The sidebar shows every inspection in the snapshot, grouped by visit.
+> Run **`make data`** to refresh the snapshot from the latest upstream records.
 
 ## Data sources
 

@@ -14,9 +14,9 @@ import pathlib
 import tempfile
 import time
 import urllib.parse
-import urllib.request
 
 import ijson
+import requests
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 DATA_DIR = ROOT / "data"
@@ -29,15 +29,15 @@ COLUMNS = ["number", "revision", "address", "type", "structure", "work", "status
 def download(url, target):
     for attempt in range(3):
         try:
-            request = urllib.request.Request(url, headers={"User-Agent": "StaticSites-toronto-building-permits-map/1.0"})
-            with urllib.request.urlopen(request, timeout=180) as source, target.open("wb") as output:
-                while True:
-                    block = source.read(1024 * 1024)
-                    if not block:
-                        break
-                    output.write(block)
+            # requests follows the portal's download redirects reliably. Stream
+            # the large address export and restart from zero after a disconnect.
+            with requests.get(url, stream=True, timeout=(30, 180)) as source:
+                source.raise_for_status()
+                with target.open("wb") as output:
+                    for block in source.iter_content(1024 * 1024):
+                        output.write(block)
             return
-        except OSError:
+        except (OSError, requests.RequestException):
             if attempt == 2:
                 raise
             time.sleep(2 ** attempt)

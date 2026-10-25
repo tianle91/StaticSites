@@ -73,3 +73,47 @@ def test_csv_schema_failure_and_bad_coordinates_fail(tmp_path):
         list(fetch_data.records(path, {"PERMIT_NUM"}))
     with pytest.raises(ValueError, match="Invalid municipal"):
         fetch_data.point({"geometry": {"type": "Point", "coordinates": [0, 0]}})
+
+
+def test_download_retries_interrupted_stream_without_appending(tmp_path, monkeypatch):
+    import requests
+
+    attempts = []
+
+    class Response:
+        def __enter__(self):
+            attempts.append(1)
+            return self
+
+        def __exit__(self, *args):
+            pass
+
+        def raise_for_status(self):
+            pass
+
+        def iter_content(self, size):
+            if len(attempts) == 1:
+                yield b'partial'
+                raise requests.ConnectionError('interrupted download')
+            yield b'complete export'
+
+    monkeypatch.setattr(fetch_data.requests, "get", lambda *a, **kw: Response())
+    monkeypatch.setattr(fetch_data.time, "sleep", lambda delay: None)
+    target = tmp_path / "export.csv"
+    fetch_data.download("https://example.test/export.csv", target)
+    assert target.read_bytes() == b'complete export'
+    assert len(attempts) == 2
+
+
+def test_download_server_failure_has_bounded_retries(tmp_path, monkeypatch):
+    import requests
+
+    attempts = []
+    def fail(*args, **kwargs):
+        attempts.append(1)
+        raise requests.HTTPError('500')
+    monkeypatch.setattr(fetch_data.requests, "get", fail)
+    monkeypatch.setattr(fetch_data.time, "sleep", lambda delay: None)
+    with pytest.raises(requests.HTTPError):
+        fetch_data.download("https://example.test/export.csv", tmp_path / "export.csv")
+    assert len(attempts) == 3

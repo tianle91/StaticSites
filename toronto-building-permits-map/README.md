@@ -45,6 +45,10 @@ can be supplied explicitly with `src/fetch_data.py --permits-csv PATH
 no partial or empty snapshot is published. `--addresses-csv PATH` is also accepted in place of GeoJSON. The standard `make data` downloads
 both sources and verifies row counts against the datastore. Raw downloads are temporary; the normalized snapshot is committed.
 Unchanged normalized content retains its retrieval timestamp, bytes and mtime.
+Downloads use `requests` with streamed responses and three bounded attempts;
+an interrupted transfer restarts its temporary file rather than appending to it.
+These official bulk downloads and count checks run directly through `make data`;
+manual overrides are optional recovery tools, not a normal refresh prerequisite.
 
 ## Caveats
 

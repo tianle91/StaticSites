@@ -99,22 +99,28 @@ def refine_curated() -> None:
 def fetch_shelters() -> None:
     print("Fetching shelter locations from Toronto Open Data...")
     pkg = ckan("package_show", id=DATASET)
-    active = sorted(
-        (r for r in pkg["resources"] if r.get("datastore_active")),
-        key=lambda r: r.get("name", ""),
-    )
+    active = [r for r in pkg["resources"] if r.get("datastore_active")]
     if not active:
         raise RuntimeError("No datastore-active resource on the dataset.")
-    rid = active[-1]["id"]
-
     # The SQL endpoint (datastore_search_sql) is disabled on Toronto's CKAN, so
-    # use datastore_search: find the latest date, then pull that day's rows and
-    # aggregate by location in Python.
-    top = ckan("datastore_search", resource_id=rid, limit=1, sort="OCCUPANCY_DATE desc")["records"]
-    if not top:
+    # compare actual dates: annual archives sort after the unsuffixed live table
+    # by name and would otherwise hide the current records.
+    snapshots = []
+    for resource in active:
+        top = ckan("datastore_search", resource_id=resource["id"], limit=1,
+                   sort="OCCUPANCY_DATE desc")["records"]
+        if top:
+            day_raw = top[0]["OCCUPANCY_DATE"]
+            day = str(day_raw)[:10]
+            try:
+                day = datetime.date.fromisoformat(day).isoformat()
+            except ValueError:
+                # Some older annual exports use YY-MM-DD rather than ISO dates.
+                day = datetime.datetime.strptime(day, "%y-%m-%d").date().isoformat()
+            snapshots.append((day, resource["id"], day_raw))
+    if not snapshots:
         raise RuntimeError("Resource has no records.")
-    day_raw = top[0]["OCCUPANCY_DATE"]
-    day = str(day_raw)[:10]
+    day, rid, day_raw = max(snapshots)
     rows = ckan("datastore_search", resource_id=rid, limit=10000,
                 filters=json.dumps({"OCCUPANCY_DATE": day_raw}))["records"]
     print(f"  {len(rows)} program rows for {day}; aggregating by location...")

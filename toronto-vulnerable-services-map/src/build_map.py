@@ -270,14 +270,24 @@ async function loadShelterStats() {
     const pkg = await fetch(CKAN + '/api/3/action/package_show?id=' + DATASET).then(r => r.json());
     const active = pkg.result.resources.filter(r => r.datastore_active);
     if (!active.length) throw new Error('no active resource');
-    active.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-    const rid = active[active.length - 1].id;
+    // Annual archive names sort after the live table: compare occupancy dates.
+    const snapshots = (await Promise.all(active.map(async resource => {
+      const query = '/api/3/action/datastore_search?resource_id=' + resource.id;
+      const top = await fetch(CKAN + query + '&limit=1&sort=' + encodeURIComponent('OCCUPANCY_DATE desc')).then(r => r.json());
+      if (!top.success) throw new Error('cannot verify latest shelter date');
+      const recs = top.result.records;
+      if (!recs.length) return null;
+      const dayRaw = recs[0].OCCUPANCY_DATE;
+      const raw = String(dayRaw).slice(0, 10);
+      // Older 2020s archives use two-digit years; keep their filter value intact.
+      const day = /^[0-9]{2}-[0-9]{2}-[0-9]{2}$/.test(raw) ? '20' + raw : raw;
+      return { rid: resource.id, dayRaw, day };
+    }))).filter(Boolean);
+    snapshots.sort((a, b) => a.day.localeCompare(b.day) || a.rid.localeCompare(b.rid));
+    if (!snapshots.length) throw new Error('no records');
+    const { rid, dayRaw } = snapshots[snapshots.length - 1];
     // SQL endpoint is disabled on Toronto's CKAN; use datastore_search + aggregate here.
     const ds = '/api/3/action/datastore_search?resource_id=' + rid;
-    const top = await fetch(CKAN + ds + '&limit=1&sort=' + encodeURIComponent('OCCUPANCY_DATE desc')).then(r => r.json());
-    const recs = top.result.records;
-    if (!recs.length) throw new Error('no records');
-    const dayRaw = recs[0].OCCUPANCY_DATE;
     const filt = encodeURIComponent(JSON.stringify({ OCCUPANCY_DATE: dayRaw }));
     const all = await fetch(CKAN + ds + '&limit=10000&filters=' + filt).then(r => r.json());
     const rows = all.result.records;

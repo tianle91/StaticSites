@@ -193,6 +193,27 @@ make refresh                   # alias for make data
 make -C toronto-dinesafe-map data  # refresh just one project
 ```
 
+Before a full refresh, provide the SEC identification required by the FCF
+project, using your own name/organization and contact email:
+
+```bash
+export SEC_USER_AGENT='Your Name contact@example.com'
+make data
+make test
+```
+
+With system tools installed and credentials supplied, these Make commands handle
+fetching, preparation, and rendering. Toronto permit downloads retry interrupted
+transfers; DineSafe automatically falls back from failed pagination to the
+official bulk CSV. Both validate exact source counts before publishing data.
+Persistent upstream failures still return an error and preserve the last snapshot.
+
+If an existing environment is damaged, explicitly run
+`make -C <project> clean-deps` followed by `make -C <project> deps` before retrying.
+To preserve it and use a separate environment instead, the matching commands are
+`make data VENV=.venv/ci-verification` and
+`make test CI_VENV=.venv/ci-verification`; each project still has its own environment.
+
 Root `make data` invokes each project's existing `make data` sequentially. Each
 project fetches all its required inputs and rebuilds its output; failures are
 reported and the other independent projects still get an attempt. This is an
