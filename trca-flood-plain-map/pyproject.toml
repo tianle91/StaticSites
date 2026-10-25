@@ -27,11 +27,3 @@ pythonpath = ["src"]
 # [project].description with the leading "<title> — " stripped, so description
 # must start with "<title> — ".
 title = "TRCA flood plain map"
-
-[tool.staticsite.refresh]
-# Scheduled `make data` is opt-in. Set enabled=true once the real fetch is
-# content-aware, then choose its cadence and first UTC run date.
-enabled = false
-every_days = 7
-anchor_date = "2026-01-01"
-timeout_minutes = 30

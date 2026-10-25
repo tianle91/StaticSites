@@ -36,7 +36,7 @@ Repo-admin tools remain separate from project builds:
   metadata" below).
 - [`Makefile`](Makefile) — root `test` delegates checks/builds to each project;
   root `data` (alias `refresh`) delegates each project's data-and-output refresh.
-  `manifest`, `check`, `refresh-due`, and `help` support repo administration.
+  `manifest`, `check`, and `help` support repo administration.
   Rendering, data preparation and dependency recipes remain project-local.
 - [`local_ci.py`](local_ci.py) — stdlib-only local CI orchestration and GitHub
   commit statuses. Discovery uses one-level-deep `*/Makefile`, never the root
@@ -159,34 +159,16 @@ make check       # fail if sites.json is stale  (root make test runs this)
 run on the system `python3`, which is 3.9 and predates `tomllib`), matching the
 scaffolder.
 
-## Scheduled data-refresh metadata
+## Manual data and output updates
 
-Every project also declares whether and how the optional local cadence selector
-runs its networked `make data` target:
+Data is refreshed only by explicit root `make data` / `make refresh` or a
+project's `make data`. Those commands also rebuild outputs; project `make` /
+`make all` and the build step in root `make test` rebuild from committed inputs.
+There is no update-frequency configuration or automatic refresh mechanism.
 
-```toml
-[tool.staticsite.refresh]
-enabled = true
-every_days = 7
-anchor_date = "2026-08-03"
-timeout_minutes = 45
-```
-
-The project is due on `anchor_date` and every `every_days` UTC dates after it.
-Runtime "last run" state is intentionally not committed: deterministic dates
-keep scheduling source-controlled without creating state-only commits. Local
-command output records attempts and results.
-
-[`refresh_projects.py`](refresh_projects.py) validates and selects this metadata.
-It is stdlib-only because it runs before any project environment is installed.
-`make check` validates both refresh metadata and `sites.json`.
-
-New projects start with refresh disabled. Enable one only after its real fetch is
-safe for unattended use and content-aware: when upstream records are unchanged,
-`make data` must preserve committed data timestamps and produce byte-identical
-output. `make refresh-due` runs all due projects sequentially. It does not commit, push,
-or open PRs. Root `make data` explicitly refreshes every project regardless of
-this metadata, including disabled projects.
+Fetches must be content-aware: unchanged upstream records must preserve committed
+data timestamps and produce byte-identical output. Required-source failures must
+fail the command without publishing partial datasets.
 
 ## The standard Make target contract
 
@@ -328,10 +310,9 @@ Do **not** run `make data` as a routine check: it is slow and hits live APIs
 (Nominatim allows 1 request/second, so one map takes ~5 minutes).
 `union-station-transit-isochrone` additionally needs Java 21 and `osmium-tool`.
 Root `make data` (alias `make refresh`) explicitly invokes every project's data
-and output refresh, including projects with cadence selection disabled. It
-continues after failures and returns nonzero if any project failed. It does not
-commit, push, open PRs, or install system tools. Use `make refresh-due` for the
-optional UTC cadence selector; there is no automatic scheduler.
+and output refresh. It continues after failures and returns nonzero if any
+project failed. It does not commit, push, open PRs, or install system tools.
+Updates run only when the relevant Make commands are invoked.
 
 ## GitHub CLI access
 

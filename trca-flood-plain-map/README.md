@@ -52,7 +52,7 @@ Confirm precise limits and current information directly with TRCA.
 
 The page searches watershed and source names, not arbitrary street addresses.
 The snapshot is embedded; Leaflet and base-map tiles require internet access.
-Scheduled refresh is initially disabled; use `make data` to refresh deliberately.
+Data refreshes run only when `make data` is invoked.
 
 ## Refresh and dependencies
 

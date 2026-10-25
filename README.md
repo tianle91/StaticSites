@@ -188,10 +188,9 @@ that configuration separately.
 ## Refreshing data and outputs locally
 
 ```bash
-make data                      # refresh every project, including disabled cadences
+make data                      # refresh data and outputs for every project
 make refresh                   # alias for make data
 make -C toronto-dinesafe-map data  # refresh just one project
-make refresh-due               # refresh/test/build only projects due today (UTC)
 ```
 
 Root `make data` invokes each project's existing `make data` sequentially. Each
@@ -203,29 +202,10 @@ such as `SEC_USER_AGENT`. It does not install system tools, publish statuses,
 commit changes, push, or open PRs. Review generated changes, commit them, then
 run `make test` to publish checks for that commit.
 
-There is no hosted scheduler. The existing `[tool.staticsite.refresh]` metadata
-remains available for optional local cadence selection through
-`refresh_projects.py`. A project is due on `anchor_date` and every `every_days`
-UTC dates thereafter; runtime last-run state is not committed.
-
-```toml
-[tool.staticsite.refresh]
-enabled = true
-every_days = 7
-anchor_date = "2026-08-03"
-timeout_minutes = 45
-```
-
-```bash
-./refresh_projects.py check
-./refresh_projects.py select --date 2026-08-03
-./refresh_projects.py run --all  # every cadence-enabled project
-./refresh_projects.py run --project union-station-transit-isochrone
-```
-
-The selector's `--all` respects `enabled`; root `make data` deliberately includes
-every project. The selector applies each project's timeout separately to its
-`data`, `test`, and `all` commands. It does not schedule itself.
+Data refreshes run only when root `make data` / `make refresh` or a project's
+`make data` is invoked. Outputs are rebuilt by those commands and by explicit
+build commands (`make` / `make all` inside a project, including the build step in
+root `make test`). There is no configured update frequency or automatic refresh.
 
 ## Adding a project
 
@@ -242,9 +222,9 @@ writes `data/`, `src/build_site.py` renders `output/my-new-map.html` from it, an
 a smoke test covers the build. Replace those three with the real thing, fill in
 the `TODO`s in the project's `README.md`, set the homepage blurb in
 `pyproject.toml` (`[project].description` + `[tool.staticsite].title`), and add a
-row to the table at the top of this README. Once its real fetch is content-aware,
-enable and configure `[tool.staticsite.refresh]` for optional local cadence
-selection. Root `make test` and `make data` discover the project automatically.
+row to the table at the top of this README. Make its real fetch content-aware
+so unchanged upstream data preserves committed bytes and timestamps. Root
+`make test` and `make data` discover the project automatically.
 
 Do not hand-roll a new project directory; scaffolding keeps the projects
 identical in shape.

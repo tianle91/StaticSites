@@ -58,7 +58,7 @@ Address points approximate a property's location and do not identify the exact
 construction footprint. Unmatched permits have no pin. Data is embedded in the
 HTML; the Leaflet library and map tiles require internet access. The complete
 register is large, so initial page loading may take a few seconds.
-Scheduled refresh is initially disabled; use `make data` to refresh deliberately.
+Data refreshes run only when `make data` is invoked.
 
 ## Refresh and dependencies
 
