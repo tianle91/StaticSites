@@ -58,6 +58,10 @@ only for map tiles and the live stats panel.
   Until you run it, only the curated locations appear and the stats panel +
   dataset link represent the full system.
 
+Both the data refresh and live statistics compare the newest occupancy date in
+each active resource. Annual archive names can sort after the live table, so
+resource names are not used to decide which snapshot is current.
+
 ## Refresh and dependencies
 
 This project includes the repository's [shared Python/uv Make template](../python-project.mk).

@@ -32,7 +32,7 @@ make test   # run the tests
 standard — see the [repo README](../README.md).
 
 > **Committed data is the live dataset.** `data/dinesafe.json` holds the full
-> DineSafe set (~18k establishments, one pin each) so the site builds and tests
+> DineSafe set (~20k establishments, one pin each) so the site builds and tests
 > offline straight from a clone. `make data` re-pulls it from Toronto Open Data
 > (needs internet) whenever you want fresher inspection results.
 
@@ -52,11 +52,9 @@ its individual infractions) that powers the detail sidebar. Most rows carry
 `Latitude`/`Longitude`; the few that don't are geocoded from their address with
 OpenStreetMap Nominatim (cached in `data/geocode_cache.json`, 1 request/second).
 
-> **The committed `data/dinesafe.json` is summary-only** (latest inspection per
-> establishment, without the per-infraction detail). The build handles both
-> shapes: with summary data the sidebar shows the latest inspection and notes that
-> details load on refresh; run **`make data`** to pull the full per-inspection
-> history and the sidebar fills in every past inspection and infraction.
+> **The committed `data/dinesafe.json` includes inspection history and infraction
+> details.** The sidebar shows every inspection in the snapshot, grouped by visit.
+> Run **`make data`** to refresh the snapshot from the latest upstream records.
 
 ## Data sources
 
