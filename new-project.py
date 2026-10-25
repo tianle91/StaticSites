@@ -9,7 +9,7 @@ after scaffolding:
 
     cd my-new-map && make && make test
 
-both pass, and CI picks the project up with no changes. Replace the placeholder
+both pass, and root make test / make data discover the project automatically. Replace the placeholder
 fetch/build/test with the real thing from there.
 
 Stdlib only, so it runs on whatever python3 is on PATH (no venv needed yet).
@@ -57,13 +57,6 @@ pythonpath = ["src"]
 # must start with "<title> — ".
 title = "__TITLE__"
 
-[tool.staticsite.refresh]
-# Scheduled `make data` is opt-in. Set enabled=true once the real fetch is
-# content-aware, then choose its cadence and first UTC run date.
-enabled = false
-every_days = 7
-anchor_date = "2026-01-01"
-timeout_minutes = 30
 '''
 
 # Generated with uv lock for the empty placeholder + pytest. Shipping the lock
@@ -462,9 +455,9 @@ Then replace the placeholders: src/fetch_data.py (the real upstream fetch),
 src/build_site.py (the real rendering), the TODOs in README.md, and add a row
 for the project to the table in ../README.md. Set the homepage blurb in
 pyproject.toml ([project].description + [tool.staticsite].title), then run
-`make manifest` from the repo root to add the project to sites.json. Once the
-real fetch preserves committed files when upstream content is unchanged, set
-[tool.staticsite.refresh].enabled=true and choose its cadence.
+`make manifest` from the repo root to add the project to sites.json. Refresh data
+only when `make data` is invoked; unchanged upstream content must preserve
+committed bytes and timestamps.
 """.format(name=name))
 
 

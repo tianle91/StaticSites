@@ -222,3 +222,6 @@ __marimo__/
 
 # Repository-local GitHub Actions runner installation and work directory.
 /actions-runner/
+
+# Local CI transcripts (one log per project and commit).
+/.local-ci/

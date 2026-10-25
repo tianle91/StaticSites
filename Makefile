@@ -1,26 +1,39 @@
-# Repo-admin targets only -- NOT a project build system.
-#
-# Every project has its own Makefile, venv, and dependencies; see
-# AGENTS.md. This root Makefile exists solely for repo-wide bookkeeping that has
-# no home inside a single project: the sites.json manifest and refresh schedule.
-# Build/test/data/deps targets belong in each project's Makefile.
-# Common Python/uv recipes live in python-project.mk, included by projects.
-#
-# CI discovers projects with `*/Makefile` (one level deep), so this root Makefile
-# is invisible to that glob and never becomes a phantom project.
+# Repository entry points delegate to independent project Makefiles.
+# Rendering, fetching, tests and dependency environments remain project-local.
+.DEFAULT_GOAL := help
+PROJECTS := $(sort $(patsubst %/Makefile,%,$(wildcard */Makefile)))
+STATUSES ?= auto
+CI_VENV ?=
 
-.PHONY: manifest check help
+.PHONY: test data refresh manifest check help
+
+# Dirty checkouts run locally; clean commits also get GitHub commit statuses.
+# STATUSES=off is fully local; STATUSES=required refuses uncommitted changes.
+test:
+	./local_ci.py --statuses "$(STATUSES)" $(if $(CI_VENV),--venv "$(CI_VENV)")
+
+# Each project's data target already rebuilds all its declared outputs.
+# Continue after a failure so every independent project gets an attempt.
+data:
+	@failed=0; for project in $(PROJECTS); do \
+		$(MAKE) -C "$$project" data || failed=1; \
+	done; exit $$failed
+
+refresh: data
 
 # Regenerate the committed sites.json from every project's pyproject.toml.
 manifest:
 	./generate_manifest.py
 
-# Verify sites.json and scheduled-refresh metadata (what CI runs).
+# Verify sites.json and repo-admin tests.
 check:
 	./generate_manifest.py --check
-	./refresh_projects.py check
 	python3 -m unittest discover -s admin_tests
 
 help:
+	@echo "make test      - check metadata, test/build every project, report clean commits to GitHub"
+	@echo "                 STATUSES=off: local only; STATUSES=required: require publishing"
+	@echo "                 CI_VENV=.venv/ci-verification: use separate per-project environments"
+	@echo "make data      - refresh data and outputs for every project (network; refresh is an alias)"
 	@echo "make manifest  - regenerate sites.json from the projects' metadata"
-	@echo "make check     - validate sites.json and project refresh metadata"
+	@echo "make check     - validate sites.json and run repo-admin tests"

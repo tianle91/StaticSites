@@ -10,8 +10,10 @@ independent sites as **projects**. Each project lives in its own top-level direc
 - `fcf-macro-indicators/`
 - `margin-sp500-m2-visualization/`
 - `ontario-physiotherapy-clinics-map/`
+- `toronto-building-permits-map/`
 - `toronto-dinesafe-map/`
 - `toronto-vulnerable-services-map/`
+- `trca-flood-plain-map/`
 - `union-station-transit-isochrone/`
 
 Projects have separate source, data, dependencies, environments, and outputs.
@@ -32,13 +34,13 @@ Repo-admin tools remain separate from project builds:
 - [`generate_manifest.py`](generate_manifest.py) — regenerates
   [`sites.json`](sites.json) from the projects' metadata (see "Site-listing
   metadata" below).
-- [`Makefile`](Makefile) — **admin targets only** (`make manifest`, `make
-  check`, `make help`). This is the one allowed repo-root Makefile;
-  it is not a build system and must never gain build/test/data/deps targets —
-  those stay per project. CI recognizes projects by a one-level-deep `*/Makefile`.
-  Pull requests build projects with changed paths, or every project when
-  `python-project.mk` changes. Pushes to `main` build every project. The root
-  Makefile and shared `.mk` file are invisible to project discovery.
+- [`Makefile`](Makefile) — root `test` delegates checks/builds to each project;
+  root `data` (alias `refresh`) delegates each project's data-and-output refresh.
+  `manifest`, `check`, and `help` support repo administration.
+  Rendering, data preparation and dependency recipes remain project-local.
+- [`local_ci.py`](local_ci.py) — stdlib-only local CI orchestration and GitHub
+  commit statuses. Discovery uses one-level-deep `*/Makefile`, never the root
+  Makefile or shared `.mk` template. There are no GitHub Actions workflows.
 
 ## Creating a project
 
@@ -50,8 +52,8 @@ Repo-admin tools remain separate from project builds:
 
 That writes the full standard layout (including an initial `uv.lock`) and a
 working end-to-end placeholder, so
-`cd my-new-map && make && make test` passes immediately and CI picks it up with
-no workflow changes when the project is added or modified in a pull request.
+`cd my-new-map && make && make test` passes immediately. Root `make test` and
+`make data` discover it automatically.
 Then replace `src/fetch_data.py` (the real upstream fetch),
 `src/build_site.py` (the real rendering), and the `TODO`s in the project's
 `README.md`, and add a row to the table in [README.md](README.md).
@@ -148,46 +150,29 @@ Regenerate and verify from the repo root:
 
 ```bash
 make manifest    # rewrite sites.json  (== ./generate_manifest.py)
-make check       # fail if sites.json is stale  (CI runs this)
+make check       # fail if sites.json is stale  (root make test runs this)
 ```
 
-`sites.json` must not drift: CI fails the `manifest` job if it is out of date, so
+`sites.json` must not drift: root `make test` fails if it is out of date, so
 **run `make manifest` and commit the result whenever you change a project's
 `title`/`description` or add a project.** The generator is stdlib-only (it must
 run on the system `python3`, which is 3.9 and predates `tomllib`), matching the
 scaffolder.
 
-## Scheduled data-refresh metadata
+## Manual data and output updates
 
-Every project also declares whether and how the self-hosted refresh workflow
-runs its networked `make data` target:
+Data is refreshed only by explicit root `make data` / `make refresh` or a
+project's `make data`. Those commands also rebuild outputs; project `make` /
+`make all` and the build step in root `make test` rebuild from committed inputs.
+There is no update-frequency configuration or automatic refresh mechanism.
 
-```toml
-[tool.staticsite.refresh]
-enabled = true
-every_days = 7
-anchor_date = "2026-08-03"
-timeout_minutes = 45
-```
-
-The project is due on `anchor_date` and every `every_days` UTC dates after it.
-Runtime "last run" state is intentionally not committed: deterministic dates
-keep scheduling source-controlled without creating state-only commits. GitHub
-Actions history records attempts and results.
-
-[`refresh_projects.py`](refresh_projects.py) validates and selects this metadata.
-It is stdlib-only because it runs before any project environment is installed.
-`make check` validates both refresh metadata and `sites.json`.
-
-New projects start with refresh disabled. Enable one only after its real fetch is
-safe for unattended use and content-aware: when upstream records are unchanged,
-`make data` must preserve committed data timestamps and produce byte-identical
-output. A scheduled invocation runs all due projects sequentially and opens one
-PR only if the checkout has meaningful changes.
+Fetches must be content-aware: unchanged upstream records must preserve committed
+data timestamps and produce byte-identical output. Required-source failures must
+fail the command without publishing partial datasets.
 
 ## The standard Make target contract
 
-CI and humans only ever invoke these. Every project implements every target;
+Local CI and humans invoke these. Every project implements every target;
 inapplicable ones are omitted only if genuinely meaningless.
 
 Target names and contracts are consistent across projects. Each Python project's
@@ -210,9 +195,10 @@ These are requirements for every existing project and the scaffolder:
 
 1. **Keep commands project-specific.** Reuse standard Python/uv recipes from
    `python-project.mk`; project Makefiles configure them and implement artifact
-   build rules and extra targets. Do not add repo-root
-   `all`, `test`, `data`, `deps`, `system-deps`, or dependency-cleaning dispatchers. The root
-   Makefile is limited to `manifest`, `check`, and `help`.
+   build rules and extra targets. Root `make test` and `make data` are thin
+   dispatchers as requested by the repository owner; they do not share project
+   environments or duplicate project recipes. Do not add root dependency,
+   system-installation or cleanup dispatchers.
 2. **Install the whole project's Python dependencies.** `make deps` must cover
    fetching, building, and testing from the committed `pyproject.toml` and
    `uv.lock`, using `uv sync --locked`. Declare directly used third-party packages
@@ -244,7 +230,7 @@ These are requirements for every existing project and the scaffolder:
    `deps`, `data`, `all`, and `test` must never invoke `system-deps` automatically.
    Credentials remain operator-supplied and must never be obtained automatically.
 
-**The rule CI depends on: build/test logic never touches the network.**
+**Project build/test logic never touches the network.**
 Dependency bootstrap may need the network when the environment is missing or
 stale. Once dependencies are installed, `all` and `test` stay offline. Anything
 that fetches from an API, geocodes, or downloads lives behind `data`, whose
@@ -310,33 +296,23 @@ on other platforms. Credentials remain operator prerequisites.
 cd <project> && make && make test
 ```
 
-On pull requests, CI runs those exact targets once for each changed project
-(every project when `python-project.mk` changes),
-using a matrix derived from `*/Makefile` directories. Pushes to `main` run them
-for every project — see [.github/workflows/ci.yml](.github/workflows/ci.yml).
-Adding a project that follows this standard needs no CI changes.
+Root `make test` runs `make check`, then `make -C <project> test all` for every
+project, continuing after independent failures. No hosted workflows remain.
+`STATUSES=off` disables GitHub access. The default `STATUSES=auto` runs dirty
+checkouts locally; clean, pushed commits receive `local-ci/<project>` and
+`local-ci/metadata` statuses via the existing `gh` login. `STATUSES=required`
+refuses uncommitted work. Pin the verified HEAD and recheck all tracked/untracked
+changes before publishing success; never label a commit with tests of a dirty
+checkout. Status-publication failures must be visible and return nonzero.
+Full logs are ignored under `.local-ci/<sha>/` and are never uploaded.
 
 Do **not** run `make data` as a routine check: it is slow and hits live APIs
 (Nominatim allows 1 request/second, so one map takes ~5 minutes).
-`union-station-transit-isochrone`'s `make data` additionally needs a Java 21 JDK
-and `osmium-tool`.
-
-The automated refresh workflow is the exception to the routine-check warning:
-it deliberately runs `make data` only for projects due according to their
-metadata. The transit project remains disabled until its self-hosted runner has
-the system prerequisites and capacity for automatic OSM/GTFS downloads.
-
-## Self-hosted CI and refresh runner
-
-Both workflows currently use the same standard `self-hosted` runner. This is an
-explicit trust tradeoff: pull-request CI executes repository code on a
-persistent machine that later receives refresh GitHub App credentials and
-upstream-specific secrets. GitHub runner labels route jobs but do not isolate
-them, so malicious PR code could leave state behind and capture later secrets.
-
-Assume every PR is trusted. Before accepting untrusted contributions, split the
-workflows onto separate custom-labelled runners and make the PR runner ephemeral
-or tightly sandboxed.
+`union-station-transit-isochrone` additionally needs Java 21 and `osmium-tool`.
+Root `make data` (alias `make refresh`) explicitly invokes every project's data
+and output refresh. It continues after failures and returns nonzero if any
+project failed. It does not commit, push, open PRs, or install system tools.
+Updates run only when the relevant Make commands are invoked.
 
 ## GitHub CLI access
 

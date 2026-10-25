@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>TRCA flood plain explorer</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,sans-serif;color:#182d39;background:#f4f7f8}header{padding:22px 26px;background:#123d50;color:white}header p{margin:8px 0 0;color:#c9dce5;font-size:14px}h1{font-size:25px;margin:0;letter-spacing:-.6px}h2{font-size:16px}main{display:grid;grid-template-columns:350px 1fr;height:calc(100dvh - 108px);min-height:540px}aside{padding:20px;overflow:auto;border-right:1px solid #d6e0e5;background:white}#map{height:100%;min-height:380px}label{display:block;font-size:13px;font-weight:650;margin:14px 0 6px}input,select,button{font:inherit}input,select{width:100%;padding:10px;border:1px solid #b6c9d3;border-radius:7px;background:white}button{cursor:pointer;border:1px solid #b6c9d3;background:#edf5f8;border-radius:7px;padding:9px 12px;color:#123d50}button:hover{background:#dcecf3}button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #eeaa40;outline-offset:2px}.muted{font-size:12px;color:#536975;line-height:1.55}.notice{font-size:12px;background:#fff4dc;border-left:3px solid #d99b25;padding:12px;line-height:1.6}a{color:#126482}footer{font-size:12px;line-height:1.6;border-top:1px solid #dce5ea;margin-top:20px;padding-top:8px}#results button{display:block;text-align:left;width:100%;margin:8px 0;background:white}#results button small{display:block;color:#536975;margin-top:4px}.swatch{display:inline-block;width:16px;height:5px;vertical-align:middle;margin-right:5px}.leaflet-popup-content{max-height:300px;overflow:auto;line-height:1.6}#count{font-weight:650;margin:16px 0 8px}@media(max-width:720px){header{padding:17px}h1{font-size:21px}main{display:flex;flex-direction:column;height:auto}aside{max-height:48dvh;border-right:0}#map{height:55dvh;order:-1}}</style></head><body><header><h1>TRCA flood plain explorer</h1><p>River corridors, flood plains, and the boundaries that need a closer look.</p></header>
+<main><aside><p class="muted" id="snapshot-date"></p>
+<div class="notice">Generalized riverine flood plain mapping for exploration only. It does not show urban drainage flooding or establish precise property limits. Areas outside the shading may still be at risk or regulated. <a href="https://trca.ca/conservation/flood-risk-management/flood-plain-map-viewer/">Confirm with TRCA</a>.</div>
+<label for="watershed">Watershed</label><select id="watershed"><option value="">All watersheds</option></select>
+<label for="search">Find a watershed or mapped source</label><input id="search" type="search" placeholder="e.g. Don River, Humber">
+<p><button id="fit">Fit selected features</button> <button id="reset">Toronto view</button></p>
+<p class="muted">Click a polygon or line for its source and watershed. Use the layer control to show or hide overlays.</p>
+<p class="muted"><span class="swatch" style="background:#258ac2"></span>Flood plain / engineered boundary<br><span class="swatch" style="background:#56abc3"></span>Estimated floodline (dashed)<br><span class="swatch" style="background:#e33636"></span>Spill (unmapped)<br><span class="swatch" style="background:#7f2020"></span>Spill screening<br><span class="swatch" style="background:#c655d8"></span>Undefined boundary<br><span class="swatch" style="background:#d68d12"></span>Other / pending updates</p>
+<p id="count" role="status" aria-live="polite"></p><div id="results"></div>
+<footer><h2>Data sources</h2><ul><li>© Toronto and Region Conservation Authority: <a href="https://trca-camaps.opendata.arcgis.com/datasets/camaps::floodline-trca-polygon">Floodline TRCA Polygon</a> and <a href="https://trca-camaps.opendata.arcgis.com/datasets/camaps::floodline-trca-line">Floodline TRCA Line</a>, via the <a href="https://trca-camaps.opendata.arcgis.com/">TRCA Open Data Portal</a>.</li><li><a href="https://www.arcgis.com/home/item.html?id=50ee80b4a2dc4d3ebfb71a2fc33d597a">TRCA data terms and disclaimer</a>. Supplied as is; TRCA does not warrant completeness or currency.</li><li><a href="https://trca.ca/conservation/flood-risk-management/flood-plain-map-viewer/">Official viewer and explanations</a></li><li>Map: <a href="https://leafletjs.com/">Leaflet</a> / © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a></li></ul><p>Coordinates are generalized by approximately ten metres for display. No property-level flood determination is made here.</p></footer></aside><div id="map" aria-label="Interactive flood plain map"></div></main><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script id="snapshot" type="application/json">__PAYLOAD__</script>
+<script>
+const DATA=JSON.parse(document.getElementById('snapshot').textContent);
+const $=id=>document.getElementById(id);
+const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+if(typeof L==='undefined'){$('count').textContent='Map library could not load. Internet access is required for Leaflet and base-map tiles.';throw new Error('Leaflet unavailable');}
+const map=L.map('map',{preferCanvas:true}).setView([43.74,-79.43],11);
+L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'}).addTo(map);
+$('snapshot-date').textContent='Snapshot retrieved '+DATA.retrieved_at.slice(0,10)+' (UTC)';
+$('reset').onclick=()=>map.setView([43.74,-79.43],11);
+const groups={polygons:L.featureGroup().addTo(map),lines:L.featureGroup().addTo(map)};
+L.control.layers(null,{'Flood plain polygons':groups.polygons,'Floodline boundaries, spills and updates':groups.lines}).addTo(map);
+const features=[...DATA.polygons.features,...DATA.lines.features];
+const options=[...new Set(features.map(f=>f.properties.Watershed).filter(Boolean))].sort();
+for(const name of options){const o=document.createElement('option');o.value=name;o.textContent=name;$('watershed').append(o);}
+function lineColor(label){label=label.toUpperCase();return label.includes('SCREENING')?'#7f2020':label.includes('SPILL')?'#e33636':label.includes('UNDEFINED')?'#c655d8':label.includes('ENGINEERED')?'#258ac2':label.includes('ESTIMATED')?'#56abc3':'#d68d12';}
+let visible=[];
+function update(){
+ const query=$('search').value.toLowerCase().trim(),watershed=$('watershed').value;
+ visible=[];for(const group of Object.values(groups))group.clearLayers();
+ for(const kind of ['polygons','lines']){
+  const chosen=DATA[kind].features.filter(f=>{const p=f.properties;return (!watershed||p.Watershed===watershed)&&(!query||[p.Watershed,p.FloodPlainSource,p.Layer].join(' ').toLowerCase().includes(query));});
+  const layer=L.geoJSON(chosen,{style:f=>kind==='polygons'?{color:'#258ac2',weight:1,fillOpacity:.35}:{color:lineColor(f.properties.Layer||''),weight:/ENGINEERED|ESTIMATED/.test(f.properties.Layer||'')?1.3:2.5,dashArray:(f.properties.Layer||'').includes('ESTIMATED')?'5 4':null},onEachFeature:(f,l)=>{
+   const p=f.properties,title=p.FloodPlainSource||p.Layer||'Flood plain';
+   l.bindPopup('<strong>'+esc(title)+'</strong><br>'+esc(p.Watershed)+'<br><small>Generalized TRCA data; confirm precise limits with TRCA.</small>');visible.push(l);
+  }});groups[kind].addLayer(layer);
+ }
+ $('count').textContent=visible.length.toLocaleString()+' mapped features · '+features.filter(f=>!f.geometry).length+' records without drawable geometry in this snapshot';
+ $('results').replaceChildren();
+}
+$('fit').onclick=()=>{const bounds=L.featureGroup(visible).getBounds();if(bounds.isValid())map.fitBounds(bounds,{padding:[20,20],maxZoom:15});};
+let pending; $('search').oninput=()=>{clearTimeout(pending);pending=setTimeout(update,200);};
+$('watershed').onchange=()=>{update();$('fit').click();};update();$('fit').click();
+</script></body></html>
