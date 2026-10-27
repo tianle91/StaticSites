@@ -24,6 +24,12 @@
     "output": "toronto-building-permits-map/output/toronto-building-permits-map.html"
   },
   {
+    "slug": "toronto-crime-map",
+    "title": "Toronto reported crime map",
+    "description": "approximate Toronto Police crime locations with offence, date and neighbourhood filters, plus homicide and shooting layers.",
+    "output": "toronto-crime-map/output/toronto-crime-map.html"
+  },
+  {
     "slug": "toronto-dinesafe-map",
     "title": "Toronto DineSafe food-safety inspections",
     "description": "one pin per establishment, coloured by its latest outcome (Pass / Conditional Pass / Closed); search by name / type / address and open any business for its inspection history.",
