@@ -395,6 +395,12 @@ summary {
   font-size: 12px;
   line-height: 1.6;
 }
+.leaflet-popup-content a {
+  color: var(--accent);
+}
+.precision-note {
+  font-weight: 600;
+}
 .leaflet-popup-content .event {
   border-bottom: 1px solid var(--line);
   padding: 9px 0;
@@ -641,7 +647,7 @@ summary {
 
     </style>
     <style>
-      /* Detail sidebar: slides in from the left when a business is clicked. */
+      /* Detail sidebar uses the explorer surface/text pairs in both themes. */
       #sidebar {
         position: absolute;
         top: 0;
@@ -665,14 +671,14 @@ summary {
         top: 0;
         background: var(--paper);
         padding: 14px 16px 10px;
-        border-bottom: 1px solid #eee;
+        border-bottom: 1px solid var(--line);
       }
       .sb-close {
         position: absolute;
         top: 10px;
         right: 10px;
         border: none;
-        background: #f2f2f2;
+        background: var(--soft);
         border-radius: 50%;
         width: 28px;
         height: 28px;
@@ -682,7 +688,7 @@ summary {
         color: var(--muted);
       }
       .sb-close:hover {
-        background: #e4e4e4;
+        background: var(--line);
       }
       .sb-head h2 {
         font-size: 17px;
@@ -713,8 +719,8 @@ summary {
         margin: 14px 0;
       }
       .fact {
-        background: #f6f8fa;
-        border: 1px solid #e6ebf0;
+        background: var(--soft);
+        border: 1px solid var(--line);
         border-radius: 8px;
         padding: 8px 10px;
       }
@@ -722,7 +728,7 @@ summary {
         font-size: 10.5px;
         text-transform: uppercase;
         letter-spacing: 0.03em;
-        color: #7a8794;
+        color: var(--muted);
       }
       .fact .v {
         font-size: 15px;
@@ -749,8 +755,8 @@ summary {
         color: #fff;
       }
       .sb-actions a.secondary {
-        background: #eef2f6;
-        color: #1f78b4;
+        background: var(--soft);
+        color: var(--accent);
       }
       .sb-actions a:hover {
         filter: brightness(0.95);
@@ -768,7 +774,7 @@ summary {
         padding: 0;
       }
       .insp {
-        border: 1px solid #e6ebf0;
+        border: 1px solid var(--line);
         border-radius: 8px;
         padding: 10px 12px;
         margin-bottom: 10px;
@@ -793,7 +799,7 @@ summary {
         font-size: 12.5px;
         color: var(--ink);
         padding: 7px 0;
-        border-top: 1px dashed #e6ebf0;
+        border-top: 1px dashed var(--line);
       }
       .infractions li:first-child {
         border-top: none;
@@ -814,8 +820,8 @@ summary {
         color: #b71c1c;
       }
       .sev-significant {
-        background: var(--paper) 3;
-        color: #b25b00;
+        background: #fff3e0;
+        color: #9c4f00;
       }
       .sev-minor {
         background: #f1f8e9;
@@ -826,17 +832,17 @@ summary {
         color: #546e7a;
       }
       .action {
-        color: #667;
+        color: var(--muted);
         font-size: 11.5px;
         margin-top: 3px;
       }
       .muted {
-        color: #888;
+        color: var(--muted);
         font-size: 12.5px;
         margin: 8px 0 0;
       }
       .no-infr {
-        color: #2e7d32;
+        color: var(--ink);
         font-size: 12.5px;
         margin: 8px 0 0;
       }
@@ -997,7 +1003,7 @@ summary {
               contributors (via Nominatim)
             </li>
           </ul>
-          <p id="generated" style="color: #666"></p>
+          <p id="generated" class="muted"></p>
 
           <details>
             <summary>Notes &amp; caveats</summary>

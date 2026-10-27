@@ -40,14 +40,12 @@ for (const c of DATA.clinics) {
     "<b>" +
     esc(c.name) +
     "</b><br>" +
-    '<span class="cat" style="color:' +
-    cat.color +
-    '">' +
+    '<span class="cat">' +
     esc(cat.label) +
     "</span><br>" +
     (c.address ? esc(c.address) + "<br>" : "") +
     (c.precision === "city"
-      ? '<span style="color:#a15c00">Pin shows the city centre &mdash; exact address above.</span><br>'
+      ? '<span class="precision-note">Pin shows the city centre &mdash; exact address above.</span><br>'
       : "") +
     (c.phone
       ? '<a href="tel:' +

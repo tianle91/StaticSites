@@ -395,6 +395,12 @@ summary {
   font-size: 12px;
   line-height: 1.6;
 }
+.leaflet-popup-content a {
+  color: var(--accent);
+}
+.precision-note {
+  font-weight: 600;
+}
 .leaflet-popup-content .event {
   border-bottom: 1px solid var(--line);
   padding: 9px 0;
@@ -756,7 +762,7 @@ summary {
             >
             CKAN datastore)
           </p>
-          <p style="color: #666">
+          <p class="muted">
             Coordinates geocoded with &copy;
             <a
               href="https://www.openstreetmap.org/copyright"
@@ -766,7 +772,7 @@ summary {
             >
             Nominatim; map tiles &copy; OpenStreetMap contributors.
           </p>
-          <p id="generated" style="color: #666"></p>
+          <p id="generated" class="muted"></p>
 
           <details>
             <summary>Notes &amp; caveats</summary>
@@ -4543,14 +4549,12 @@ for (const c of DATA.clinics) {
     "<b>" +
     esc(c.name) +
     "</b><br>" +
-    '<span class="cat" style="color:' +
-    cat.color +
-    '">' +
+    '<span class="cat">' +
     esc(cat.label) +
     "</span><br>" +
     (c.address ? esc(c.address) + "<br>" : "") +
     (c.precision === "city"
-      ? '<span style="color:#a15c00">Pin shows the city centre &mdash; exact address above.</span><br>'
+      ? '<span class="precision-note">Pin shows the city centre &mdash; exact address above.</span><br>'
       : "") +
     (c.phone
       ? '<a href="tel:' +

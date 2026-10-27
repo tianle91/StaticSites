@@ -171,7 +171,7 @@ async function loadShelterStats() {
       "</b> programs at <b>" +
       locs.size +
       "</b> locations<br>" +
-      '<span style="color:#666">Toronto shelter system, ' +
+      '<span class="muted">Toronto shelter system, ' +
       day +
       " &middot; " +
       '<a href="https://open.toronto.ca/dataset/' +
@@ -179,7 +179,7 @@ async function loadShelterStats() {
       '/" target="_blank" rel="noopener">source</a></span>';
   } catch (e) {
     stats.innerHTML =
-      '<span style="color:#888">Live shelter stats unavailable offline. ' +
+      '<span class="muted">Live shelter stats unavailable offline. ' +
       '<a href="https://open.toronto.ca/dataset/' +
       DATASET +
       '/" target="_blank" rel="noopener">Open the dataset &rarr;</a></span>';

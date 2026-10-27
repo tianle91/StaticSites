@@ -395,6 +395,12 @@ summary {
   font-size: 12px;
   line-height: 1.6;
 }
+.leaflet-popup-content a {
+  color: var(--accent);
+}
+.precision-note {
+  font-weight: 600;
+}
 .leaflet-popup-content .event {
   border-bottom: 1px solid var(--line);
   padding: 9px 0;
@@ -805,7 +811,7 @@ summary {
               contributors
             </li>
           </ul>
-          <p id="generated" style="color: #666; font-size: 12px"></p>
+          <p id="generated" class="muted"></p>
 
           <details>
             <summary>Method &amp; caveats</summary>
@@ -42871,9 +42877,7 @@ let clickMarker = null;
 function showTrip(lat, lon) {
   const band = bandForPoint(lat, lon);
   result.innerHTML = band
-    ? 'From here you can reach Union within <b style="color:' +
-      band.color +
-      '">' +
+    ? "From here you can reach Union within <b>" +
       esc(band.label) +
       "</b> by transit (morning peak)." +
       itineraryHtml(lat, lon)

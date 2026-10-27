@@ -253,9 +253,7 @@ let clickMarker = null;
 function showTrip(lat, lon) {
   const band = bandForPoint(lat, lon);
   result.innerHTML = band
-    ? 'From here you can reach Union within <b style="color:' +
-      band.color +
-      '">' +
+    ? "From here you can reach Union within <b>" +
       esc(band.label) +
       "</b> by transit (morning peak)." +
       itineraryHtml(lat, lon)
