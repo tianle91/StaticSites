@@ -15,6 +15,68 @@ function summarize(rows) {
   }
   return [...groups.values()].sort((a,b) => b.count-a.count || a.name.localeCompare(b.name));
 }
+// Use the same locate-control and blue-dot convention as the other maps.
+// Keep this outside the crime cluster layer so filters do not remove the marker.
+function addLocationControl(map, status) {
+  let button, youMarker = null, accuracyCircle = null;
+  function finish(message) {
+    button.disabled = false;
+    button.removeAttribute('aria-busy');
+    status.textContent = message;
+  }
+  function locate() {
+    if (!navigator.geolocation) {
+      status.textContent = 'Location is unavailable. Use a browser with location support on HTTPS or localhost.';
+      return;
+    }
+    button.disabled = true;
+    button.setAttribute('aria-busy', 'true');
+    status.textContent = 'Finding your location…';
+    navigator.geolocation.getCurrentPosition(pos => {
+      const ll = [pos.coords.latitude, pos.coords.longitude];
+      if (youMarker) youMarker.setLatLng(ll);
+      else youMarker = L.circleMarker(ll, {radius:8, color:'#fff', weight:2,
+        fillColor:'#2b8cbe', fillOpacity:1}).addTo(map).bindPopup('You are here');
+      const accuracy = pos.coords.accuracy;
+      if (Number.isFinite(accuracy) && accuracy > 0) {
+        if (accuracyCircle) accuracyCircle.setLatLng(ll).setRadius(accuracy);
+        else accuracyCircle = L.circle(ll, {radius:accuracy, color:'#2b8cbe',
+          weight:1, fillOpacity:0.08, interactive:false}).addTo(map);
+      } else if (accuracyCircle) {
+        map.removeLayer(accuracyCircle);
+        accuracyCircle = null;
+      }
+      map.setView(ll, 14);
+      finish('Centered on your location.' + (Number.isFinite(accuracy) && accuracy > 0
+        ? ' Browser accuracy: about ' + Math.max(1, Math.round(accuracy)).toLocaleString() + ' m.' : ''));
+    }, error => {
+      const messages = {
+        1:'Location access was denied. Enable location for this site in your browser, then try again.',
+        2:'Your location could not be determined. Try again when a position is available.',
+        3:'Finding your location timed out. Please try again.'
+      };
+      finish(messages[error.code] || 'Your location could not be determined. Please try again.');
+    }, {enableHighAccuracy:true, timeout:8000, maximumAge:60000});
+  }
+  const LocateControl = L.Control.extend({
+    options:{position:'topleft'},
+    onAdd() {
+      const container = L.DomUtil.create('div', 'leaflet-bar');
+      button = L.DomUtil.create('button', 'locate-button', container);
+      button.type = 'button';
+      button.id = 'locate';
+      button.title = 'Center on my location';
+      button.setAttribute('aria-label', 'Center on my location');
+      button.textContent = '◎';
+      L.DomEvent.disableClickPropagation(container);
+      L.DomEvent.disableScrollPropagation(container);
+      L.DomEvent.on(button, 'click', locate);
+      return container;
+    }
+  });
+  map.addControl(new LocateControl());
+  // No startup request: visitors choose when to share their location.
+}
 if (typeof module !== 'undefined') module.exports = {selectRows, summarize};
 if (typeof document !== 'undefined') {
   const data = JSON.parse(document.getElementById('crime-data').textContent);
@@ -25,6 +87,7 @@ if (typeof document !== 'undefined') {
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors', maxZoom:19
   }).addTo(map);
+  addLocationControl(map, $('location-status'));
   // Group repeated published coordinates before clustering. Synchronous insertion
   // prevents a previous filter's deferred chunks from reappearing after reset.
   const clusters = L.markerClusterGroup({maxClusterRadius:45,

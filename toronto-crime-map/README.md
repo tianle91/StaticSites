@@ -6,6 +6,13 @@ cover the five main offence categories, homicides, and shootings/firearm
 discharges. Cluster numbers count records, including records sharing the same
 published point. Clicking a point shows its record details (up to 20 at once).
 The neighbourhood table follows the same filters and can focus the map.
+Use the **◎ Center on my location** control below the zoom buttons to request
+browser location access and center the map at street level. A blue “You are here”
+marker and accuracy circle show the browser's estimated position and uncertainty.
+Location is requested only on click, remains in the page's memory, and is not
+saved to project data or sent to TPS. Crime filters continue to apply. Permission
+denial, unavailable positions and timeouts display a message and allow a retry.
+Browser geolocation generally requires HTTPS or localhost.
 
 ## Usage
 

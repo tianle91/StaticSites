@@ -745,6 +745,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
 <style>
 :root{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#182e40;background:#f4f6f8;font-size:14px}*{box-sizing:border-box}body{margin:0;height:100dvh;display:flex;flex-direction:column}header,footer{flex-shrink:0}header{padding:18px 24px;background:#132d3f;color:white;display:flex;justify-content:space-between;align-items:center;gap:16px}h1{font-size:23px;margin:0 0 4px;letter-spacing:-.5px}header p{margin:0;color:#cad7e0;font-size:13px}.tag{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:#8fdbc9;margin-bottom:6px}.layout{display:flex;flex:1;min-height:0}aside{width:350px;flex-shrink:0;overflow:auto;padding:20px;background:#fff;border-right:1px solid #d9e0e5}#map{flex:1;min-width:0;background:#dce6e9}.notice{font-size:12px;line-height:1.5;background:#fff3d9;border-left:3px solid #d29c30;padding:10px 12px;margin:0 0 16px}.field{display:block;margin:15px 0 6px;font-weight:650;font-size:12px}select,input[type=date],input[type=search]{width:100%;padding:9px;border:1px solid #c4cfd7;border-radius:5px;background:#fff;color:#182e40;font:inherit}.dates{display:flex;gap:10px}.dates>div{width:50%}#categories{display:grid;gap:8px;margin-top:10px}#categories label{display:flex;align-items:center;gap:7px;font-size:13px}.swatch{width:9px;height:9px;border-radius:50%;display:inline-block}.muted{font-size:12px;color:#536779;line-height:1.5}#stats{padding:14px 0;border-top:1px solid #e0e6ea;margin-top:18px;line-height:1.8}#stats strong{font-size:24px}button{border:1px solid #b9c8d2;border-radius:5px;padding:8px 12px;background:#fff;color:#183c53;cursor:pointer;font:inherit}button:hover{background:#edf3f6}button.link{border:0;padding:0;text-align:left;color:#176c89;font-size:12px}h2{font-size:14px;margin:18px 0 8px}table{width:100%;border-collapse:collapse;font-size:12px}td,th{padding:8px 3px;text-align:right;border-bottom:1px solid #e4eaee}td:first-child,th:first-child{text-align:left}th{font-size:11px;color:#536779}details{margin:18px 0}summary{cursor:pointer;font-weight:650}a{color:#176c89}#sources{line-height:1.6;font-size:12px}#sources ul{padding-left:16px}.pin{border:2px solid white;border-radius:50%;box-shadow:0 1px 4px #0007;color:white;text-align:center;line-height:28px;font-size:11px;font-weight:700}.cluster{background:#173f54;border:3px solid #fff;border-radius:50%;color:#fff;text-align:center;line-height:36px;box-shadow:0 1px 5px #0006;font-size:12px;font-weight:700}.leaflet-popup-content{max-height:320px;overflow:auto;line-height:1.5}.event{padding:8px 0;border-bottom:1px solid #ddd}.event p{margin:3px 0}#tile-note{position:absolute;bottom:24px;left:55px;z-index:500;background:#fffc;padding:5px 8px;font-size:11px;pointer-events:none}.map-wrap{position:relative;display:flex;flex:1;min-width:0}#status{max-width:240px;text-align:right;font-size:12px;color:#cad7e0}#empty{position:absolute;top:20px;left:50%;transform:translateX(-50%);z-index:500;background:#fff;padding:12px 20px;box-shadow:0 2px 10px #0003;max-width:90%}footer{padding:6px 24px;font-size:11px;background:#e7edf1;color:#415c6e}
 @media(max-width:760px){body{height:auto;min-height:100dvh}header{padding:14px 16px}h1{font-size:20px}#status{display:none}.layout{height:auto;min-height:0;flex-direction:column;flex:none}aside{width:100%;max-height:46dvh;border-right:0;border-bottom:1px solid #c9d5df;padding:16px}.map-wrap{height:54dvh;flex:auto;min-height:350px}footer{padding:7px 16px}.notice{margin-bottom:8px}}
+.locate-button{display:block;width:34px;height:34px;padding:0;border:0;border-radius:3px;background:white;color:#183c53;font-size:22px;line-height:34px;text-align:center}.locate-button:disabled{opacity:.6;cursor:progress}.locate-button:focus-visible{outline:3px solid #267ba0;outline-offset:2px}#location-status{position:absolute;bottom:55px;left:12px;z-index:500;max-width:calc(100% - 24px);padding:8px 12px;background:#fff;box-shadow:0 1px 5px #0003;border-radius:4px;font-size:12px;line-height:1.5}#location-status:empty{display:none}
 </style>
 </head>
 <body>
@@ -771,7 +772,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
 <li>© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a> (basemap)</li>
 </ul><p>Contains information licensed under the <a href="https://www.ontario.ca/page/open-government-licence-ontario">Open Government Licence – Ontario</a>. Toronto Police Service is the information provider. This is an independent project.</p><p id="snapshot"></p></details>
 </aside>
-<div class="map-wrap"><div id="map" aria-label="Map of approximate reported crime locations"></div><div id="empty" hidden></div><div id="tile-note">Basemap tiles require internet; records and map controls are embedded.</div></div>
+<div class="map-wrap"><div id="map" aria-label="Map of approximate reported crime locations"></div><div id="location-status" role="status" aria-live="polite"></div><div id="empty" hidden></div><div id="tile-note">Basemap tiles require internet; records and map controls are embedded.</div></div>
 </main><footer>Source: Toronto Police Service · Approximate locations · Counts reflect the selected snapshot and filters</footer>
 <script>/* @preserve
  * Leaflet 1.9.4, a JS library for interactive maps. https://leafletjs.com
@@ -1224157,6 +1224158,68 @@ function summarize(rows) {
   }
   return [...groups.values()].sort((a,b) => b.count-a.count || a.name.localeCompare(b.name));
 }
+// Use the same locate-control and blue-dot convention as the other maps.
+// Keep this outside the crime cluster layer so filters do not remove the marker.
+function addLocationControl(map, status) {
+  let button, youMarker = null, accuracyCircle = null;
+  function finish(message) {
+    button.disabled = false;
+    button.removeAttribute('aria-busy');
+    status.textContent = message;
+  }
+  function locate() {
+    if (!navigator.geolocation) {
+      status.textContent = 'Location is unavailable. Use a browser with location support on HTTPS or localhost.';
+      return;
+    }
+    button.disabled = true;
+    button.setAttribute('aria-busy', 'true');
+    status.textContent = 'Finding your location…';
+    navigator.geolocation.getCurrentPosition(pos => {
+      const ll = [pos.coords.latitude, pos.coords.longitude];
+      if (youMarker) youMarker.setLatLng(ll);
+      else youMarker = L.circleMarker(ll, {radius:8, color:'#fff', weight:2,
+        fillColor:'#2b8cbe', fillOpacity:1}).addTo(map).bindPopup('You are here');
+      const accuracy = pos.coords.accuracy;
+      if (Number.isFinite(accuracy) && accuracy > 0) {
+        if (accuracyCircle) accuracyCircle.setLatLng(ll).setRadius(accuracy);
+        else accuracyCircle = L.circle(ll, {radius:accuracy, color:'#2b8cbe',
+          weight:1, fillOpacity:0.08, interactive:false}).addTo(map);
+      } else if (accuracyCircle) {
+        map.removeLayer(accuracyCircle);
+        accuracyCircle = null;
+      }
+      map.setView(ll, 14);
+      finish('Centered on your location.' + (Number.isFinite(accuracy) && accuracy > 0
+        ? ' Browser accuracy: about ' + Math.max(1, Math.round(accuracy)).toLocaleString() + ' m.' : ''));
+    }, error => {
+      const messages = {
+        1:'Location access was denied. Enable location for this site in your browser, then try again.',
+        2:'Your location could not be determined. Try again when a position is available.',
+        3:'Finding your location timed out. Please try again.'
+      };
+      finish(messages[error.code] || 'Your location could not be determined. Please try again.');
+    }, {enableHighAccuracy:true, timeout:8000, maximumAge:60000});
+  }
+  const LocateControl = L.Control.extend({
+    options:{position:'topleft'},
+    onAdd() {
+      const container = L.DomUtil.create('div', 'leaflet-bar');
+      button = L.DomUtil.create('button', 'locate-button', container);
+      button.type = 'button';
+      button.id = 'locate';
+      button.title = 'Center on my location';
+      button.setAttribute('aria-label', 'Center on my location');
+      button.textContent = '◎';
+      L.DomEvent.disableClickPropagation(container);
+      L.DomEvent.disableScrollPropagation(container);
+      L.DomEvent.on(button, 'click', locate);
+      return container;
+    }
+  });
+  map.addControl(new LocateControl());
+  // No startup request: visitors choose when to share their location.
+}
 if (typeof module !== 'undefined') module.exports = {selectRows, summarize};
 if (typeof document !== 'undefined') {
   const data = JSON.parse(document.getElementById('crime-data').textContent);
@@ -1224167,6 +1224230,7 @@ if (typeof document !== 'undefined') {
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors', maxZoom:19
   }).addTo(map);
+  addLocationControl(map, $('location-status'));
   // Group repeated published coordinates before clustering. Synchronous insertion
   // prevents a previous filter's deferred chunks from reappearing after reset.
   const clusters = L.markerClusterGroup({maxClusterRadius:45,
