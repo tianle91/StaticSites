@@ -6,6 +6,21 @@ Filter by watershed or search mapped source names; click features for details,
 fit the selection, and toggle polygon and boundary overlays independently. Engineered boundaries are blue,
 estimated boundaries are dashed cyan, spills are red, and pending updates are amber.
 
+## Map controls
+
+The desktop sidebar puts search and the matching count above **Layers**,
+**Results**, and **Data sources** tabs. On phones, the same controls live in an
+expandable bottom panel. Search and selected layers determine both the count
+and results; layer badges show matches available before layer selection. Results
+list up to 50 matches; narrow the search to find a specific feature.
+
+Use **Center on my location** (◎) to request browser location and show its
+accuracy circle, or **Fit matching features** (⛶) to frame the current selection.
+Location is requested only after a click and stays in browser memory. HTTPS or
+localhost is needed for location in most browsers. Denied, unavailable and timed
+out requests show a message and can be retried. The **Provenance** footer opens
+source links, snapshot information and accuracy caveats.
+
 ## Usage
 
 ```sh

@@ -1,11 +1,26 @@
 # Toronto reported crime map
 
 An interactive Leaflet map of Toronto Police Service (TPS) reports from **2025
-onward**, with offence, date, neighbourhood and text filters. Separate datasets
-cover the five main offence categories, homicides, and shootings/firearm
-discharges. Cluster numbers count records, including records sharing the same
-published point. Clicking a point shows its record details (up to 20 at once).
-The neighbourhood table follows the same filters and can focus the map.
+onward**. The five main offence categories, homicides, and shootings/firearm
+discharges are merged into one view with seven type selectors and text search.
+Search incident ID, offence, neighbourhood, division, premises or date text.
+The total and cluster labels count distinct incident IDs. Click a point or result
+for all offence/victim/source rows, dates and published coordinates for an incident.
+
+## Map controls
+
+The desktop sidebar puts search and the matching count above **Layers**,
+**Results**, and **Data sources** tabs. On phones, the same controls live in an
+expandable bottom panel. Search and selected layers determine both the count
+and results; layer badges show matches available before layer selection. Results
+list up to 50 matches; narrow the search to find a specific feature.
+
+Use **Center on my location** (◎) to request browser location and show its
+accuracy circle, or **Fit matching features** (⛶) to frame the current selection.
+Location is requested only after a click and stays in browser memory. HTTPS or
+localhost is needed for location in most browsers. Denied, unavailable and timed
+out requests show a message and can be retried. The **Provenance** footer opens
+source links, snapshot information and accuracy caveats.
 
 ## Usage
 
@@ -18,7 +33,7 @@ make open     # open output/toronto-crime-map.html
 
 Open the committed HTML directly without a server. All records, Leaflet and
 marker-cluster code/styles are embedded; only OpenStreetMap basemap tiles need
-internet. On narrow screens the filter panel scrolls above the map.
+internet. On narrow screens the controls appear in an expandable bottom panel.
 
 The default inclusion window is fixed at 2025 onward to keep the portable file
 manageable. Earlier records are available upstream (main offences since 2014;
@@ -54,20 +69,23 @@ test dependency.
   individual or property; there is no fixed published accuracy radius.
 - **Record counts versus incidents:** main-feed records represent offences and/or
   victims, so several rows can share an incident ID. All rows are retained;
-  incident counts use distinct event IDs within the selected dataset.
-- **Layers overlap:** shootings may also appear as assaults or homicides. Do not
-  add layer totals. The dataset selector presents one source at a time.
+  totals count distinct `EVENT_UNIQUE_ID` values across selected types.
+- **Types overlap:** shootings may also appear as assaults or homicides. Type
+  badges count distinct incident IDs independently and must not be added.
+  Details retain every source row even when only one type is selected.
+- **Multiple published positions:** some incident IDs carry more than one valid
+  coordinate pair. All selected-type positions are retained. Each cluster counts
+  distinct IDs, but one ID may appear in different clusters. The sidebar total
+  deduplicates IDs across the entire selection.
 - **Different inclusion dates:** main-feed rows are selected by report year;
-  homicide/shooting rows by occurrence year. Date controls use Toronto calendar
-  dates converted from upstream UTC timestamps. Main offences can be filtered
-  by either report or occurrence date; older occurrences may be present when
-  reported within the window. Occurrence filtering cannot recover reports
-  excluded by the report-year scope. Each layer shows its latest included date.
+  homicide/shooting rows by occurrence year. Displayed dates use Toronto time.
+  Older occurrences can be included when reported within the snapshot window.
+  Latest included dates for each feed are shown under Data sources.
 - **Unmapped records:** missing, nonfinite, zero or out-of-Toronto coordinates
-  remain in totals and neighbourhood summaries, with their number displayed.
-- **Neighbourhood counts:** use the supplied 158-neighbourhood labels, not a
-  spatial join of displaced points. Displacement can still affect TPS geographic
-  counts. These are raw counts, not population-adjusted rates or a safety score.
+  remain searchable and counted. An incident is mapped if at least one row of
+  a selected type has valid coordinates.
+- **Neighbourhood labels:** supplied by TPS, not a spatial join of displaced
+  points. These are raw counts, not population-adjusted rates or a safety score.
 - Data covers police-reported records, is preliminary, can be revised, and does
   not represent all crime or personal risk. It is a committed snapshot, not a
   live feed. Categories and coverage are limited to the selected datasets.
@@ -93,7 +111,7 @@ network code and writes byte-identical HTML from identical inputs.
 | --- | --- |
 | `src/fetch_data.py` | Explicit network step and source validation |
 | `src/build_site.py` | Offline HTML assembly |
-| `src/map.html`, `src/map.js` | Map layout, filters, clusters and summaries |
+| `src/page.html`, `src/app.js`, `src/explorer.*` | Map layout, incident grouping, type layers and controls |
 | `data/crimes.json` | Timestamped snapshot; `columns` describes each readable array row |
 | `data/*.js`, `data/*.css`, `data/*LICENSE.txt` | Pinned browser dependencies and licences |
 | `output/toronto-crime-map.html` | Committed portable page |

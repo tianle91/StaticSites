@@ -4,8 +4,25 @@ An interactive Leaflet map of Toronto's **complete active building permit
 register**, with address / permit-number / description search and filters for
 status, permit type and application year. Pins group permits at the same address;
 click for work, structure, application / issue dates, estimated cost and description.
-The map draws up to 6,000 locations in the current view; zoom in to see more.
+All matching locations are clustered; cluster numbers count permit records,
+not addresses. Type layers group the six most common permit types plus Other,
+with exact type, status and year controls under More filters.
 The sidebar lists the first 50 matching records, including unmatched addresses.
+
+## Map controls
+
+The desktop sidebar puts search and the matching count above **Layers**,
+**Results**, and **Data sources** tabs. On phones, the same controls live in an
+expandable bottom panel. Search and selected layers determine both the count
+and results; layer badges show matches available before layer selection. Results
+list up to 50 matches; narrow the search to find a specific feature.
+
+Use **Center on my location** (◎) to request browser location and show its
+accuracy circle, or **Fit matching features** (⛶) to frame the current selection.
+Location is requested only after a click and stays in browser memory. HTTPS or
+localhost is needed for location in most browsers. Denied, unavailable and timed
+out requests show a message and can be retried. The **Provenance** footer opens
+source links, snapshot information and accuracy caveats.
 
 ## Usage
 
@@ -23,6 +40,9 @@ make open   # open output/toronto-building-permits-map.html
 - Contains information licensed under the [Open Government Licence – Toronto](https://open.toronto.ca/open-data-license/).
 - [Leaflet](https://leafletjs.com/) and © [OpenStreetMap contributors](https://www.openstreetmap.org/copyright)
   for the map library and base-map tiles.
+
+Leaflet.markercluster 1.5.3 is vendored in `src/vendor/` with its upstream
+MIT licence, so clustering builds without downloads.
 
 ## Fetch and layout
 

@@ -6,5 +6,5 @@ PROJECT := toronto-vulnerable-services-map
 
 include ../python-project.mk
 
-$(OUT): src/build_map.py data/services.json $(wildcard data/shelters.json data/geocode_cache.json)
+$(OUT): $(wildcard src/*.html src/*.js src/*.css src/vendor/*) src/build_map.py data/services.json $(wildcard data/shelters.json data/geocode_cache.json)
 	$(PY) src/build_map.py

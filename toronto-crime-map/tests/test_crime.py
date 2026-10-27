@@ -141,7 +141,7 @@ def test_offline_build_is_portable_deterministic_and_escapes_text(tmp_path):
     assert '</script><script>alert(1)' not in html
     assert '\\u003c/script>' in html
     assert '__DATA__' not in html and '__APP__' not in html
-    assert 'Data sources' in html and 'Approximate locations' in html
+    assert 'Data sources' in html and 'Approximate intersection locations' in html
     assert 'src="http' not in html  # no remote JS libraries
 
 
@@ -162,3 +162,16 @@ def test_builder_runs_from_other_directory(tmp_path):
     shutil.copytree(ROOT / 'data', project / 'data')
     subprocess.run([sys.executable,str(project / 'src/build_site.py')], cwd=tmp_path, check=True)
     assert (project / 'output/toronto-crime-map.html').exists()
+
+
+def test_merge_retains_source_rows_types_and_differing_points():
+    a = fetch.normalize('main', attributes())
+    b = list(a); b[0] = 'homicide'; b[1] = 99; b[3] = 'Homicide'; b[10] += .001
+    c = list(a); c[2] = 'GO-OTHER'; c[10:12] = [None, None]
+    data = {"columns": fetch.COLUMNS, "rows": [a, b, c], "start_year": 2025}
+    payload = build_site.prepare_payload(data)
+    assert "rows" not in payload
+    assert payload["incidents"] == [{"id": a[2], "rows": [a, b]}, {"id": c[2], "rows": [c]}]
+    assert payload["start_year"] == 2025
+    # Grouping must leave the committed source model untouched.
+    assert data["rows"] == [a, b, c]

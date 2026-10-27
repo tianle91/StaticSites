@@ -1,103 +1,863 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Union Station Transit Isochrones</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-  integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
-<style>
-  html, body { margin: 0; height: 100%; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
-  #map { position: absolute; inset: 0; }
-  .panel {
-    position: absolute; top: 10px; right: 10px; z-index: 1000; width: 300px;
-    max-height: calc(100% - 20px); overflow: auto; background: #fff;
-    border-radius: 8px; box-shadow: 0 1px 6px rgba(0,0,0,.3); padding: 12px 14px;
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Morning commute to Union Station</title>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+    <style>
+      /* Copied project-local on purpose: independent projects share no runtime files. */
+:root {
+  color-scheme: light dark;
+  --paper: #fff;
+  --ink: #193343;
+  --muted: #526b7c;
+  --soft: #f1f5f7;
+  --line: #d7e1e7;
+  --accent: #176e8c;
+  --head: #163c4d;
+  --warning: #fff4dc;
+  font-family:
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    sans-serif;
+  color: var(--ink);
+  background: var(--soft);
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  font-size: 14px;
+}
+a {
+  color: var(--accent);
+}
+button,
+input,
+select {
+  font: inherit;
+  color: inherit;
+}
+button {
+  cursor: pointer;
+}
+button:disabled {
+  cursor: progress;
+  opacity: 0.6;
+}
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+summary:focus-visible {
+  outline: 3px solid #da9a28;
+  outline-offset: 2px;
+}
+[hidden] {
+  display: none !important;
+}
+.explorer-header {
+  background: var(--head);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 17px 22px;
+  flex-shrink: 0;
+}
+.explorer-header h1 {
+  font-size: 21px;
+  line-height: 1.2;
+  font-weight: 600;
+  margin: 0 0 5px;
+}
+.explorer-header p {
+  font-size: 12px;
+  color: #d2e1e9;
+  margin: 0;
+}
+.explorer-header #snapshot-date {
+  font-size: 12px;
+  color: #d2e1e9;
+  text-align: right;
+  max-width: 240px;
+}
+.explorer-layout {
+  position: relative;
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+.explorer-sidebar {
+  width: 310px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--paper);
+  border-right: 1px solid var(--line);
+  min-height: 0;
+  z-index: 1001;
+}
+.search-area {
+  padding: 16px 17px 10px;
+}
+.search-area > label {
+  font-size: 12px;
+  font-weight: 600;
+  display: block;
+  margin: 0 0 6px;
+}
+input[type="search"],
+select,
+input[type="date"] {
+  width: 100%;
+  min-width: 0;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 10px;
+  font-size: 14px;
+}
+#stats {
+  padding: 0 17px 14px;
+  min-height: 75px;
+  font-size: 13px;
+}
+#stats strong,
+#stats > b {
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: -0.5px;
+  font-variant-numeric: tabular-nums;
+}
+#stats .secondary {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 4px;
+  line-height: 1.5;
+}
+.explorer-tabs {
+  display: flex;
+  border-block: 1px solid var(--line);
+  padding: 0 9px;
+}
+.explorer-tabs button {
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  padding: 11px 8px;
+  font-size: 12px;
+  min-height: 40px;
+}
+.explorer-tabs button[aria-selected="true"] {
+  border-bottom-color: var(--accent);
+  color: var(--ink);
+  font-weight: 600;
+}
+.explorer-panel {
+  padding: 13px 17px;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+.explorer-panel h2 {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0 0 12px;
+}
+.explorer-panel h3 {
+  font-size: 13px;
+  margin: 18px 0 7px;
+}
+.explorer-panel p,
+.explorer-panel li {
+  font-size: 12px;
+  line-height: 1.6;
+}
+.explorer-panel ul.sources {
+  padding-left: 18px;
+}
+.explorer-panel select {
+  margin: 5px 0 10px;
+}
+.explorer-panel label.field {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  margin-top: 10px;
+}
+.layer-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+  min-height: 36px;
+  cursor: pointer;
+  font-size: 12px;
+}
+.layer-row input {
+  margin: 0;
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
+  flex-shrink: 0;
+}
+.layer-label {
+  flex: 1;
+  overflow-wrap: anywhere;
+}
+.layer-count {
+  color: var(--muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.swatch {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+.layer-actions {
+  display: flex;
+  gap: 14px;
+  margin: 12px 0;
+}
+.text-button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  font-size: 12px;
+}
+.muted,
+.hint {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+.notice {
+  background: var(--warning);
+  padding: 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  line-height: 1.6;
+  margin: 12px 0;
+}
+details {
+  font-size: 12px;
+  margin: 14px 0;
+}
+summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+#results {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.feature-result {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 12px 0;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+}
+.feature-result strong {
+  display: block;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.feature-result small {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.5;
+  margin-top: 3px;
+}
+.feature-result:hover {
+  background: var(--soft);
+}
+.explorer-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 17px;
+  border-top: 1px solid var(--line);
+  background: var(--soft);
+  font-size: 11px;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+.explorer-footer span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.map-canvas {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+#map {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background: #d2e3e8;
+}
+.map-message {
+  position: absolute;
+  left: 12px;
+  bottom: 25px;
+  z-index: 1000;
+  padding: 8px 11px;
+  background: var(--paper);
+  box-shadow: 0 1px 7px #0003;
+  border-radius: 5px;
+  max-width: calc(100% - 24px);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.map-message:empty {
+  display: none;
+}
+.explorer-control button {
+  display: block;
+  width: 34px;
+  height: 34px;
+  border: 0;
+  background: var(--paper);
+  color: var(--ink);
+  padding: 0;
+  text-align: center;
+  font-size: 20px;
+  line-height: 34px;
+}
+.explorer-control button:hover {
+  background: var(--soft);
+}
+.you-dot {
+  width: 18px;
+  height: 18px;
+  background: #258fc1;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 0 3px #258fc155;
+}
+.count-pin {
+  border: 2px solid #fff;
+  border-radius: 50%;
+  min-width: 32px;
+  height: 32px;
+  padding: 0 4px;
+  line-height: 28px;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: #fff;
+  background: #176e8c;
+  box-shadow: 0 1px 5px #0005;
+}
+.count-cluster {
+  height: 42px;
+  min-width: 42px;
+  line-height: 36px;
+  border: 3px solid #fff;
+  font-size: 12px;
+  background: #18465b;
+}
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+  background: var(--paper);
+  color: var(--ink);
+}
+.leaflet-popup-content {
+  max-height: 340px;
+  overflow: auto;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.leaflet-popup-content .event {
+  border-bottom: 1px solid var(--line);
+  padding: 9px 0;
+}
+.leaflet-popup-content p {
+  margin: 4px 0;
+}
+.sheet-toggle {
+  display: none;
+}
+.record-dialog {
+  background: var(--paper);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  width: 520px;
+  max-width: 92vw;
+  max-height: 85dvh;
+  padding: 20px;
+  overflow: auto;
+}
+.record-dialog::backdrop {
+  background: #0007;
+}
+.record-dialog h2 {
+  font-size: 18px;
+  margin-right: 30px;
+}
+.record-dialog .close {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  border: 0;
+  background: var(--soft);
+  border-radius: 4px;
+  padding: 5px 10px;
+}
+.record-dialog p {
+  font-size: 13px;
+  line-height: 1.6;
+}
+.inline-options {
+  font-size: 12px;
+  margin: 0 0 12px;
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.inline-options input {
+  accent-color: var(--accent);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #172732;
+    --ink: #e2ecf2;
+    --muted: #aec2ce;
+    --soft: #203541;
+    --line: #3c505b;
+    --accent: #75bfd6;
+    --head: #0a202e;
+    --warning: #3e3525;
   }
-  .panel h1 { font-size: 16px; margin: 0 0 4px; }
-  .panel h2 { font-size: 12px; margin: 14px 0 6px; text-transform: uppercase; letter-spacing: .03em; color: #555; }
-  .panel p { font-size: 12px; color: #444; margin: 4px 0; }
-  .panel a { color: #1f78b4; text-decoration: none; }
-  .panel a:hover { text-decoration: underline; }
-  .sources { font-size: 12px; color: #444; margin: 4px 0; padding-left: 18px; }
-  .sources li { margin: 3px 0; }
-  .legend-row { display: flex; align-items: center; font-size: 12px; margin: 4px 0; }
-  .swatch { width: 14px; height: 14px; border-radius: 3px; margin-right: 8px; border: 1px solid rgba(0,0,0,.25); }
-  .dot { width: 11px; height: 11px; border-radius: 50%; margin-right: 8px; border: 1px solid rgba(0,0,0,.3); }
-  #result { font-size: 12px; background: #f3f7fb; border: 1px solid #d6e4f0; border-radius: 6px; padding: 8px; }
-  #result b { font-size: 15px; }
-  .itin { margin-top: 8px; border-top: 1px solid #d6e4f0; padding-top: 6px; }
-  .itin-h { margin-bottom: 4px; }
-  .itin-h b { font-size: 12px; }
-  .itin ul { margin: 4px 0 0; padding-left: 16px; }
-  .itin li { margin: 2px 0; }
-  .itin li b { font-size: 12px; }
-  .legstops { color: #667; }
-  details > summary { cursor: pointer; font-weight: 600; font-size: 12px; margin-top: 10px; }
-  .leaflet-popup-content { font-size: 13px; }
-  .toggle { position: absolute; top: 10px; right: 10px; z-index: 1001; display: none;
-    background: #fff; border: none; border-radius: 6px; padding: 8px 10px; box-shadow: 0 1px 6px rgba(0,0,0,.3); cursor: pointer; }
-  @media (max-width: 620px) {
-    .panel { width: auto; left: 10px; right: 10px; max-height: 55%; display: none; }
-    .toggle { display: block; }
+  .leaflet-control-zoom a {
+    background: var(--paper);
+    color: var(--ink);
   }
-</style>
-</head>
-<body>
-<div id="map"></div>
-<button class="toggle" id="toggle">Info</button>
-<div class="panel" id="panel">
-  <h1>Morning commute to Union Station</h1>
-  <p>Where you can live and still reach Toronto&rsquo;s Union Station by public
-     transit in 30&nbsp;min, 1&nbsp;h, 1.5&nbsp;h and 2&nbsp;h, arriving during the
-     weekday morning peak &mdash; subway, streetcar, bus, GO rail and UP Express,
-     plus the walk at each end.</p>
+}
+@media (max-width: 760px) {
+  .explorer-header {
+    padding: 14px 16px;
+    min-height: 79px;
+  }
+  .explorer-header h1 {
+    font-size: 19px;
+  }
+  .explorer-header #snapshot-date {
+    display: none;
+  }
+  .explorer-sidebar {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: min(45dvh, 370px);
+    min-height: 285px;
+    border: 0;
+    border-radius: 15px 15px 0 0;
+    box-shadow: 0 -3px 14px #0003;
+  }
+  .explorer-sidebar.expanded {
+    height: 80%;
+  }
+  .sheet-toggle {
+    display: block;
+    height: 24px;
+    min-height: 24px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    flex-shrink: 0;
+  }
+  .sheet-toggle::before {
+    content: "";
+    display: block;
+    width: 35px;
+    height: 4px;
+    margin: auto;
+    border-radius: 3px;
+    background: var(--line);
+  }
+  .search-area {
+    padding: 0 15px 8px;
+  }
+  .search-area > label {
+    display: none;
+  }
+  input[type="search"] {
+    font-size: 16px;
+    padding: 9px;
+  }
+  #stats {
+    padding: 0 15px 8px;
+    min-height: 55px;
+  }
+  #stats strong,
+  #stats > b {
+    font-size: 24px;
+  }
+  .explorer-tabs button {
+    padding: 8px 10px;
+    min-height: 36px;
+  }
+  .explorer-panel {
+    padding: 10px 15px;
+  }
+  .explorer-footer {
+    padding: 8px 15px;
+  }
+  .map-canvas {
+    position: absolute;
+    inset: 0;
+  }
+  .leaflet-top.leaflet-left {
+    display: flex;
+    align-items: flex-start;
+    gap: 7px;
+    padding: 10px;
+  }
+  .leaflet-top.leaflet-left .leaflet-control {
+    margin: 0;
+  }
+  .leaflet-control-zoom {
+    display: flex;
+  }
+  .leaflet-control-zoom a:first-child {
+    border-bottom: 0;
+    border-right: 1px solid #ccc;
+  }
+  .leaflet-control-zoom a {
+    border-radius: 0 !important;
+  }
+  .map-message {
+    top: 60px;
+    bottom: auto;
+    left: 10px;
+    max-width: calc(100% - 20px);
+  }
+  .leaflet-control-attribution {
+    max-width: 85vw;
+    font-size: 9px !important;
+  }
+  .layer-row {
+    min-height: 40px;
+  }
+}
+@media (pointer: coarse) {
+  .explorer-control button {
+    width: 40px;
+    height: 40px;
+    line-height: 40px;
+  }
+  .explorer-tabs button,
+  .layer-row,
+  .sheet-toggle {
+    min-height: 44px;
+  }
+  .leaflet-control-zoom a {
+    width: 40px;
+    height: 40px;
+    line-height: 40px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  * {
+    scroll-behavior: auto !important;
+    transition: none !important;
+  }
+}
 
-  <div id="result">Click anywhere on the map to estimate the transit trip to Union.</div>
+.feature-dot {
+  width: 100%;
+  height: 100%;
+  border: 2px solid white;
+  border-radius: 50%;
+  box-shadow: 0 1px 4px #0006;
+}
+.pin,
+.cluster {
+  border-radius: 50%;
+  color: white;
+  background: #254b60;
+  border: 2px solid #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  box-shadow: 0 1px 5px #0005;
+  width: 100%;
+  height: 100%;
+}
+.cluster {
+  font-size: 12px;
+}
+.event {
+  border-top: 1px solid #ddd;
+  padding: 8px 0;
+}
+.event p {
+  margin: 4px 0;
+}
+.leaflet-popup-content {
+  max-height: 360px;
+  overflow: auto;
+}
+.itin ul {
+  padding-left: 20px;
+}
+.itin li {
+  margin: 8px 0;
+}
 
-  <h2>Time bands</h2>
-  <div id="legend"></div>
+    </style>
+    <style></style>
+  </head>
+  <body>
+    <header class="explorer-header">
+      <div>
+        <h1>Morning commute to Union Station</h1>
+        <p>Modelled weekday morning arrival · travel-time bands</p>
+      </div>
+      <div id="snapshot-date"></div>
+    </header>
+    <main class="explorer-layout">
+      <aside
+        id="panel"
+        class="explorer-sidebar"
+        aria-label="Map exploration controls"
+      >
+        <button
+          type="button"
+          id="sheet-toggle"
+          class="sheet-toggle"
+          aria-label="Expand map controls"
+          aria-expanded="false"
+        ></button>
+        <div class="search-area">
+          <label for="search">Search features</label
+          ><input
+            id="search"
+            type="search"
+            placeholder="Station name, transit line or mode"
+            aria-label="Search features"
+            autocomplete="off"
+          />
+        </div>
+        <div id="stats" role="status" aria-live="polite"></div>
+        <nav class="explorer-tabs" role="tablist" aria-label="Map exploration">
+          <button
+            type="button"
+            role="tab"
+            id="layers-tab"
+            data-tab="layers"
+            aria-controls="layers-panel"
+            aria-selected="true"
+          >
+            Layers</button
+          ><button
+            type="button"
+            role="tab"
+            id="results-tab"
+            data-tab="results"
+            aria-controls="results-panel"
+            aria-selected="false"
+          >
+            Results</button
+          ><button
+            type="button"
+            role="tab"
+            id="sources-tab"
+            data-tab="sources"
+            aria-controls="sources-panel"
+            aria-selected="false"
+          >
+            Data sources
+          </button>
+        </nav>
+        <section
+          id="layers-panel"
+          class="explorer-panel"
+          role="tabpanel"
+          aria-labelledby="layers-tab"
+        >
+          <div id="layer-controls"></div>
+          <div class="layer-actions">
+            <button type="button" class="text-button" id="select-all">
+              Select all</button
+            ><button type="button" class="text-button" id="clear-all">
+              Clear all
+            </button>
+          </div>
+          <p class="notice">
+            Modelled travel times, not live service. Time your departure to
+            catch transit.
+          </p>
+        </section>
+        <section
+          id="results-panel"
+          class="explorer-panel"
+          role="tabpanel"
+          aria-labelledby="results-tab"
+          hidden
+        >
+          <div id="result" class="notice">
+            Click a point on the map to inspect its travel-time band and
+            suggested trip.
+          </div>
+          <p id="result-note" class="hint"></p>
+          <div id="results"></div>
+        </section>
+        <section
+          id="sources-panel"
+          class="explorer-panel"
+          role="tabpanel"
+          aria-labelledby="sources-tab"
+          hidden
+        >
+          <p id="snapshot-provenance" class="muted"></p>
+          <h3>Service assumptions</h3>
+          <p id="assume"></p>
+          <h2>Data sources</h2>
+          <ul class="sources">
+            <li>
+              Street &amp; walk network:
+              <a
+                href="https://www.openstreetmap.org/copyright"
+                target="_blank"
+                rel="noopener"
+                >OpenStreetMap</a
+              >
+              (&copy; OpenStreetMap contributors), via a
+              <a
+                href="https://download.geofabrik.de/north-america/canada/ontario.html"
+                target="_blank"
+                rel="noopener"
+                >Geofabrik</a
+              >
+              extract
+            </li>
+            <li>
+              TTC subway / streetcar / bus schedules (GTFS):
+              <a
+                href="https://open.toronto.ca/dataset/ttc-routes-and-schedules/"
+                target="_blank"
+                rel="noopener"
+                >Toronto Open Data</a
+              >
+            </li>
+            <li>
+              GO Transit &amp; UP Express schedules (GTFS):
+              <a
+                href="https://www.metrolinx.com/en/about-us/open-data"
+                target="_blank"
+                rel="noopener"
+                >Metrolinx Open Data</a
+              >
+            </li>
+            <li>
+              Multimodal transit routing:
+              <a
+                href="https://r5py.readthedocs.io/"
+                target="_blank"
+                rel="noopener"
+                >r5py</a
+              >
+              (Conveyal R5)
+            </li>
+            <li>
+              Map tiles: &copy;
+              <a
+                href="https://www.openstreetmap.org/copyright"
+                target="_blank"
+                rel="noopener"
+                >OpenStreetMap</a
+              >
+              contributors
+            </li>
+          </ul>
+          <p id="generated" style="color: #666; font-size: 12px"></p>
 
-  <h2>Stations</h2>
-  <div id="modes"></div>
-
-  <h2>Assumptions</h2>
-  <p id="assume"></p>
-
-  <h2>Data sources</h2>
-  <ul class="sources">
-    <li>Street &amp; walk network:
-      <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>
-      (&copy; OpenStreetMap contributors), via a
-      <a href="https://download.geofabrik.de/north-america/canada/ontario.html" target="_blank" rel="noopener">Geofabrik</a> extract</li>
-    <li>TTC subway / streetcar / bus schedules (GTFS):
-      <a href="https://open.toronto.ca/dataset/ttc-routes-and-schedules/" target="_blank" rel="noopener">Toronto Open Data</a></li>
-    <li>GO Transit &amp; UP Express schedules (GTFS):
-      <a href="https://www.metrolinx.com/en/about-us/open-data" target="_blank" rel="noopener">Metrolinx Open Data</a></li>
-    <li>Multimodal transit routing:
-      <a href="https://r5py.readthedocs.io/" target="_blank" rel="noopener">r5py</a> (Conveyal R5)</li>
-    <li>Map tiles: &copy;
-      <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors</li>
-  </ul>
-  <p id="generated" style="color:#666;font-size:12px"></p>
-
-  <details>
-    <summary>Method &amp; caveats</summary>
-    <p>Each band is the area from which you can <i>reach</i> Union Station within
-       that time, arriving during the weekday morning peak. It is computed by
-       routing a grid of points to Union with r5py &mdash; real multimodal transit
-       (subway + streetcar + bus + GO + UP) including the walk at each end &mdash;
-       and tracing the reachable area, assuming you time your departure to catch
-       service. <b>GO &amp; UP service varies a lot by time of day</b> and several
-       GO lines run peak-direction only, so reach is larger in the morning peak
-       than off-peak. Coordinates and grid are approximate.</p>
-  </details>
-</div>
-
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-  integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-<script>
-const DATA = {
+          <details>
+            <summary>Method &amp; caveats</summary>
+            <p>
+              Each band is the area from which you can <i>reach</i> Union
+              Station within that time, arriving during the weekday morning
+              peak. It is computed by routing a grid of points to Union with
+              r5py &mdash; real multimodal transit (subway + streetcar + bus +
+              GO + UP) including the walk at each end &mdash; and tracing the
+              reachable area, assuming you time your departure to catch service.
+              <b>GO &amp; UP service varies a lot by time of day</b> and several
+              GO lines run peak-direction only, so reach is larger in the
+              morning peak than off-peak. Coordinates and grid are approximate.
+            </p>
+          </details>
+        </section>
+        <footer class="explorer-footer">
+          <span>TTC, GO Transit, UP Express & OSM</span
+          ><button type="button" id="provenance" class="text-button">
+            Provenance
+          </button>
+        </footer>
+      </aside>
+      <div class="map-canvas">
+        <div id="map" aria-label="Morning commute to Union Station map"></div>
+        <div
+          id="location-status"
+          class="map-message"
+          role="status"
+          aria-live="polite"
+        ></div>
+      </div>
+    </main>
+    <dialog
+      id="record-detail"
+      class="record-dialog"
+      aria-labelledby="record-title"
+    >
+      <button
+        type="button"
+        id="record-close"
+        class="close"
+        aria-label="Close details"
+      >
+        ×
+      </button>
+      <h2 id="record-title"></h2>
+      <div id="record-body"></div>
+    </dialog>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+      const DATA = {
   "geo": {
     "type": "FeatureCollection",
     "properties": {
@@ -41511,104 +42271,421 @@ const DATA = {
     "bus": "Bus"
   }
 };
-
-const map = L.map('map').setView([DATA.origin.lat, DATA.origin.lon], 11);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  maxZoom: 19, attribution: '&copy; OpenStreetMap contributors'
+    </script>
+    <script>
+      /* Project-local explorer UI. No source is loaded from another project. */
+const Explorer = (() => {
+  const byId = (id) => document.getElementById(id);
+  const esc = (value) =>
+    String(value ?? "").replace(
+      /[&<>"']/g,
+      (c) =>
+        ({
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          '"': "&quot;",
+          "'": "&#39;",
+        })[c],
+    );
+  const choices = new Map();
+  const mobile = () => matchMedia("(max-width:760px)").matches;
+  function collapse() {
+    byId("panel").classList.remove("expanded");
+    byId("sheet-toggle").setAttribute("aria-expanded", "false");
+    byId("sheet-toggle").setAttribute("aria-label", "Expand map controls");
+  }
+  function sheetHeight() {
+    return mobile() ? byId("panel").getBoundingClientRect().height : 0;
+  }
+  function tab(name) {
+    document.querySelectorAll(".explorer-tabs [role=tab]").forEach((button) => {
+      button.setAttribute("aria-selected", String(button.dataset.tab === name));
+      button.tabIndex = button.dataset.tab === name ? 0 : -1;
+    });
+    document
+      .querySelectorAll(".explorer-panel")
+      .forEach((panel) => (panel.hidden = panel.id !== name + "-panel"));
+  }
+  document.querySelectorAll(".explorer-tabs [role=tab]").forEach((button) => {
+    button.onclick = () => tab(button.dataset.tab);
+    button.onkeydown = (event) => {
+      if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key))
+        return;
+      event.preventDefault();
+      const buttons = [
+        ...document.querySelectorAll(".explorer-tabs [role=tab]"),
+      ];
+      const index = buttons.indexOf(button);
+      const next =
+        event.key === "Home"
+          ? 0
+          : event.key === "End"
+            ? buttons.length - 1
+            : (index + (event.key === "ArrowRight" ? 1 : buttons.length - 1)) %
+              buttons.length;
+      buttons[next].focus();
+      tab(buttons[next].dataset.tab);
+    };
+  });
+  tab("layers");
+  byId("provenance").onclick = () => tab("sources");
+  byId("sheet-toggle").onclick = () => {
+    const expanded = byId("panel").classList.toggle("expanded");
+    byId("sheet-toggle").setAttribute("aria-expanded", String(expanded));
+    byId("sheet-toggle").setAttribute(
+      "aria-label",
+      expanded ? "Collapse map controls" : "Expand map controls",
+    );
+  };
+  byId("search").addEventListener("input", () =>
+    tab(byId("search").value.trim() ? "results" : "layers"),
+  );
+  const status = (message) => {
+    byId("location-status").textContent = message;
+  };
+  function count(
+    total,
+    unit,
+    mapped,
+    note = "",
+    missingLabel = "without a pin",
+  ) {
+    const stats = byId("stats");
+    stats.replaceChildren();
+    const number = document.createElement("strong");
+    number.textContent = total.toLocaleString();
+    stats.append(number, document.createTextNode(" " + unit));
+    const secondary = document.createElement("div");
+    secondary.className = "secondary";
+    secondary.textContent =
+      mapped == null
+        ? note
+        : mapped.toLocaleString() +
+          " mapped · " +
+          (total - mapped).toLocaleString() +
+          " " +
+          missingLabel +
+          (note ? " · " + note : "");
+    stats.append(secondary);
+  }
+  function layers(items, onChange) {
+    const target = byId("layer-controls");
+    target.replaceChildren();
+    choices.clear();
+    for (const item of items) {
+      const label = document.createElement("label");
+      label.className = "layer-row";
+      const input = document.createElement("input");
+      input.type = "checkbox";
+      input.checked = item.checked !== false;
+      input.dataset.layer = item.id;
+      const name = document.createElement("span");
+      name.className = "layer-label";
+      const dot = document.createElement("span");
+      dot.className = "swatch";
+      dot.style.background = item.color;
+      name.append(dot, document.createTextNode(item.label));
+      const n = document.createElement("span");
+      n.className = "layer-count";
+      n.textContent =
+        typeof item.count === "number"
+          ? item.count.toLocaleString()
+          : (item.count ?? "");
+      label.append(input, name, n);
+      target.append(label);
+      choices.set(item.id, { input, n, item });
+      input.onchange = () => {
+        if (item.layer) {
+          if (input.checked) item.layer.addTo(item.map);
+          else item.map.removeLayer(item.layer);
+        }
+        onChange();
+      };
+    }
+    for (const [id, value] of [
+      ["select-all", true],
+      ["clear-all", false],
+    ])
+      byId(id).onclick = () => {
+        for (const { input, item } of choices.values()) {
+          input.checked = value;
+          if (item.layer) {
+            if (value) item.layer.addTo(item.map);
+            else item.map.removeLayer(item.layer);
+          }
+        }
+        onChange();
+      };
+  }
+  const enabled = (id) => choices.get(id)?.input.checked ?? false;
+  function layerCounts(counts) {
+    for (const [id, n] of Object.entries(counts)) {
+      const choice = choices.get(id);
+      if (choice) choice.n.textContent = Number(n).toLocaleString();
+    }
+  }
+  function results(items, label, summary, onSelect, limit = 50) {
+    const target = byId("results");
+    target.replaceChildren();
+    for (const item of items.slice(0, limit)) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "feature-result";
+      const title = document.createElement("strong");
+      title.textContent = label(item);
+      const sub = document.createElement("small");
+      sub.textContent = summary(item);
+      button.append(title, sub);
+      button.onclick = () => onSelect(item);
+      target.append(button);
+    }
+    byId("result-note").textContent = !items.length
+      ? "No features match the selected layers and search."
+      : items.length > limit
+        ? "First " +
+          limit +
+          " of " +
+          items.length.toLocaleString() +
+          " matches listed. Narrow the search to find a specific feature."
+        : items.length.toLocaleString() + " matching features.";
+  }
+  function stamp(value) {
+    byId("snapshot-date").textContent = value
+      ? "Snapshot " + String(value).slice(0, 10)
+      : "Committed snapshot";
+    byId("snapshot-provenance").textContent = byId("snapshot-date").textContent;
+  }
+  function fit(map, bounds, maxZoom = 16) {
+    collapse();
+    if (bounds?.isValid()) {
+      map.fitBounds(bounds, {
+        paddingTopLeft: [30, 30],
+        paddingBottomRight: [30, sheetHeight() + 30],
+        maxZoom,
+      });
+      status("");
+    } else status("No mapped features match the selected layers and search.");
+  }
+  function focus(map, ll, zoom = 16) {
+    collapse();
+    map.setView(ll, zoom, { animate: false });
+    if (mobile()) map.panBy([0, sheetHeight() / 2], { animate: false });
+  }
+  function detail(title, html) {
+    const dialog = byId("record-detail");
+    byId("record-title").textContent = title;
+    byId("record-body").innerHTML = html;
+    if (!dialog.open) dialog.showModal();
+  }
+  byId("record-close").onclick = () => byId("record-detail").close();
+  function connect(map, config) {
+    if (mobile()) map.panBy([0, sheetHeight() / 2], { animate: false });
+    let userMarker = null,
+      accuracyCircle = null;
+    const Control = L.Control.extend({
+      options: { position: "topleft" },
+      onAdd() {
+        const container = L.DomUtil.create(
+          "div",
+          "leaflet-bar explorer-control",
+        );
+        const button = L.DomUtil.create("button", "", container);
+        button.type = "button";
+        button.id = "locate";
+        button.title = "Center on my location";
+        button.setAttribute("aria-label", "Center on my location");
+        button.textContent = "◎";
+        L.DomEvent.disableClickPropagation(container);
+        L.DomEvent.disableScrollPropagation(container);
+        button.onclick = () => {
+          if (!navigator.geolocation) {
+            status(
+              "Location is unavailable. Use a browser with location support on HTTPS or localhost.",
+            );
+            return;
+          }
+          button.disabled = true;
+          button.setAttribute("aria-busy", "true");
+          status("Finding your location…");
+          const finish = (message) => {
+            button.disabled = false;
+            button.removeAttribute("aria-busy");
+            status(message);
+          };
+          navigator.geolocation.getCurrentPosition(
+            (pos) => {
+              const ll = [pos.coords.latitude, pos.coords.longitude],
+                accuracy = pos.coords.accuracy;
+              if (userMarker) userMarker.setLatLng(ll);
+              else
+                userMarker = L.marker(ll, {
+                  icon: L.divIcon({
+                    className: "",
+                    html: '<div class="you-dot"></div>',
+                    iconSize: [18, 18],
+                    iconAnchor: [9, 9],
+                  }),
+                  zIndexOffset: 2000,
+                  title: "You are here",
+                })
+                  .addTo(map)
+                  .bindPopup("You are here");
+              if (Number.isFinite(accuracy) && accuracy > 0) {
+                if (accuracyCircle)
+                  accuracyCircle.setLatLng(ll).setRadius(accuracy);
+                else
+                  accuracyCircle = L.circle(ll, {
+                    radius: accuracy,
+                    color: "#258fc1",
+                    weight: 1,
+                    fillOpacity: 0.08,
+                    interactive: false,
+                  }).addTo(map);
+              } else if (accuracyCircle) {
+                map.removeLayer(accuracyCircle);
+                accuracyCircle = null;
+              }
+              focus(map, ll, 14);
+              finish(
+                "Centered on your location." +
+                  (Number.isFinite(accuracy) && accuracy > 0
+                    ? " Browser accuracy: about " +
+                      Math.max(1, Math.round(accuracy)).toLocaleString() +
+                      " m."
+                    : ""),
+              );
+              if (config.located) config.located(pos);
+            },
+            (error) =>
+              finish(
+                {
+                  1: "Location access was denied. Enable location for this site in your browser, then try again.",
+                  2: "Your location could not be determined. Please try again.",
+                  3: "Finding your location timed out. Please try again.",
+                }[error.code] ||
+                  "Your location could not be determined. Please try again.",
+              ),
+            { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 },
+          );
+        };
+        return container;
+      },
+    });
+    map.addControl(new Control());
+    const Fit = L.Control.extend({
+      options: { position: "topleft" },
+      onAdd() {
+        const container = L.DomUtil.create(
+            "div",
+            "leaflet-bar explorer-control",
+          ),
+          button = L.DomUtil.create("button", "", container);
+        button.type = "button";
+        button.id = "fit";
+        button.title = "Fit matching features";
+        button.setAttribute("aria-label", "Fit matching features");
+        button.textContent = "⛶";
+        L.DomEvent.disableClickPropagation(container);
+        button.onclick = () => {
+          fit(map, config.bounds(), config.maxZoom || 16);
+        };
+        return container;
+      },
+    });
+    map.addControl(new Fit());
+    // Location stays in memory only and is requested solely by the locate button.
+  }
+  return {
+    esc,
+    tab,
+    count,
+    layers,
+    enabled,
+    layerCounts,
+    results,
+    stamp,
+    fit,
+    focus,
+    detail,
+    connect,
+    collapse,
+    status,
+  };
+})();
+;
+    </script>
+    <script>
+      const esc = Explorer.esc;
+const map = L.map("map").setView([DATA.origin.lat, DATA.origin.lon], 11);
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+  maxZoom: 19,
+  attribution: "&copy; OpenStreetMap contributors",
 }).addTo(map);
 
 // --- Isochrone band layers (drawn largest-first so shorter times sit on top) ---
-const bandLayers = {};      // minutes -> L.GeoJSON
-const bandByMin = {};       // minutes -> band meta
+const bandLayers = {}; // minutes -> L.GeoJSON
+const bandByMin = {}; // minutes -> band meta
 for (const b of DATA.bands) bandByMin[b.minutes] = b;
 
-const feats = DATA.geo.features.slice().sort((a, b) => b.properties.minutes - a.properties.minutes);
-const overlays = {};
+const feats = DATA.geo.features
+  .slice()
+  .sort((a, b) => b.properties.minutes - a.properties.minutes);
+
 for (const f of feats) {
   const color = f.properties.color;
   const layer = L.geoJSON(f, {
-    style: { color: color, weight: 1.5, opacity: 0.9, fillColor: color, fillOpacity: 0.28 }
+    style: {
+      color: color,
+      weight: 1.5,
+      opacity: 0.9,
+      fillColor: color,
+      fillOpacity: 0.28,
+    },
   }).addTo(map);
   bandLayers[f.properties.minutes] = layer;
-  overlays[f.properties.label] = layer;
 }
 
 // Origin marker.
 L.marker([DATA.origin.lat, DATA.origin.lon], {
-  icon: L.divIcon({ className: '', iconSize: [22, 22], iconAnchor: [11, 11],
-    html: '<div style="font-size:20px;line-height:22px;text-align:center">&#9733;</div>' }),
-  title: 'Union Station', zIndexOffset: 1000
-}).bindPopup('<b>Union Station</b><br>Origin (0 min)').addTo(map);
-
-// --- Station markers (toggleable layer) ---
-const stationLayer = L.layerGroup();
-function stationIcon(color) {
-  return L.divIcon({ className: '',
-    html: '<div style="width:9px;height:9px;border-radius:50%;background:' + color +
-          ';border:1.5px solid #fff;box-shadow:0 0 2px rgba(0,0,0,.6)"></div>',
-    iconSize: [9, 9], iconAnchor: [4.5, 4.5], popupAnchor: [0, -5] });
-}
-const STN_BY_NAME = {};
-for (const s of (DATA.stations || [])) STN_BY_NAME[s.name] = s;
-for (const n of DATA.nodes) {
-  if (n.mode === 'origin') continue;
-  const color = DATA.mode_color[n.mode] || '#555';
-  let popup = '<b>' + n.name + '</b><br>' + n.line + ' &middot; ' +
-              (DATA.mode_label[n.mode] || n.mode) + '<br>';
-  const s = STN_BY_NAME[n.name];
-  if (s && s.legs && s.legs.length) {
-    popup += '<b>' + s.minutes + ' min</b> to Union (morning peak):' + legsUl(s.legs);
-  } else {
-    popup += '<b>~' + n.minutes + ' min</b> to/from Union (typical)';
-  }
-  L.marker([n.lat, n.lon], { icon: stationIcon(color), title: n.name })
-    .bindPopup(popup).addTo(stationLayer);
-}
-stationLayer.addTo(map);
-overlays['Stations'] = stationLayer;
-
-L.control.layers(null, overlays, { collapsed: false }).addTo(map);
-
-// --- Legend ---
-const legend = document.getElementById('legend');
-for (const b of DATA.bands) {
-  const row = document.createElement('div');
-  row.className = 'legend-row';
-  row.innerHTML = '<span class="swatch" style="background:' + b.color + '"></span>' + b.label;
-  legend.appendChild(row);
-}
-const modes = document.getElementById('modes');
-const presentModes = [...new Set(DATA.nodes.map(n => n.mode))].filter(m => m !== 'origin');
-const modeOrder = ['subway', 'streetcar', 'bus', 'go', 'up'];
-presentModes.sort((a, b) => (modeOrder.indexOf(a) + 1 || 99) - (modeOrder.indexOf(b) + 1 || 99));
-for (const m of presentModes) {
-  const row = document.createElement('div');
-  row.className = 'legend-row';
-  row.innerHTML = '<span class="dot" style="background:' + (DATA.mode_color[m] || '#555') +
-                  '"></span>' + (DATA.mode_label[m] || m);
-  modes.appendChild(row);
-}
-document.getElementById('assume').textContent = DATA.service_assumption;
-document.getElementById('generated').textContent = DATA.generated_at
-  ? 'Data pulled ' + DATA.generated_at : '';
+  icon: L.divIcon({
+    className: "",
+    iconSize: [22, 22],
+    iconAnchor: [11, 11],
+    html: '<div style="font-size:20px;line-height:22px;text-align:center">&#9733;</div>',
+  }),
+  title: "Union Station",
+  zIndexOffset: 1000,
+})
+  .bindPopup("<b>Union Station</b><br>Origin (0 min)")
+  .addTo(map);
 
 // --- Point-in-polygon: which band contains a clicked point? ---
 function pointInRing(lon, lat, ring) {
   let inside = false;
   for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
-    const xi = ring[i][0], yi = ring[i][1], xj = ring[j][0], yj = ring[j][1];
-    const hit = ((yi > lat) !== (yj > lat)) &&
-                (lon < (xj - xi) * (lat - yi) / (yj - yi) + xi);
+    const xi = ring[i][0],
+      yi = ring[i][1],
+      xj = ring[j][0],
+      yj = ring[j][1];
+    const hit =
+      yi > lat !== yj > lat && lon < ((xj - xi) * (lat - yi)) / (yj - yi) + xi;
     if (hit) inside = !inside;
   }
   return inside;
 }
 function bandForPoint(lat, lon) {
-  // Smallest-minute band whose any polygon ring contains the point.
-  const sorted = DATA.geo.features.slice().sort((a, b) => a.properties.minutes - b.properties.minutes);
+  // Smallest-minute polygon containing the point, excluding interior holes.
+  const sorted = DATA.geo.features
+    .slice()
+    .sort((a, b) => a.properties.minutes - b.properties.minutes);
   for (const f of sorted) {
     for (const poly of f.geometry.coordinates) {
-      if (pointInRing(lon, lat, poly[0])) return f.properties;
+      if (
+        pointInRing(lon, lat, poly[0]) &&
+        !poly.slice(1).some((hole) => pointInRing(lon, lat, hole))
+      )
+        return f.properties;
     }
   }
   return null;
@@ -41616,107 +42693,221 @@ function bandForPoint(lat, lon) {
 
 // --- Nearest-station itinerary (precomputed step-by-step trip to Union) ---
 function haversineM(lat1, lon1, lat2, lon2) {
-  const R = 6371000, t = Math.PI / 180;
-  const dLat = (lat2 - lat1) * t, dLon = (lon2 - lon1) * t;
-  const a = Math.sin(dLat / 2) ** 2 +
-            Math.cos(lat1 * t) * Math.cos(lat2 * t) * Math.sin(dLon / 2) ** 2;
+  const R = 6371000,
+    t = Math.PI / 180;
+  const dLat = (lat2 - lat1) * t,
+    dLon = (lon2 - lon1) * t;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1 * t) * Math.cos(lat2 * t) * Math.sin(dLon / 2) ** 2;
   return 2 * R * Math.asin(Math.sqrt(a));
 }
 function nearestStation(lat, lon) {
-  let best = null, bd = Infinity;
-  for (const s of (DATA.stations || [])) {
+  let best = null,
+    bd = Infinity;
+  for (const s of DATA.stations || []) {
     const d = haversineM(lat, lon, s.lat, s.lon);
-    if (d < bd) { bd = d; best = s; }
+    if (d < bd) {
+      bd = d;
+      best = s;
+    }
   }
   return best ? { station: best, dist: bd } : null;
 }
 function legHtml(l) {
-  if (l.mode === 'Walk') return '<li>&#128694; Walk ' + l.min + ' min</li>';
-  let s = '<b>' + l.mode + (l.route ? ' ' + l.route : '') + '</b> &middot; ' + l.min + ' min';
-  if (l.from && l.to) s += '<br><span class="legstops">' + l.from + ' &rarr; ' + l.to +
-                           (l.dep ? ' (dep ' + l.dep + ')' : '') + '</span>';
-  return '<li>' + s + '</li>';
+  if (l.mode === "Walk") return "<li>&#128694; Walk " + l.min + " min</li>";
+  let s =
+    "<b>" +
+    esc(l.mode) +
+    (l.route ? " " + esc(l.route) : "") +
+    "</b> &middot; " +
+    l.min +
+    " min";
+  if (l.from && l.to)
+    s +=
+      '<br><span class="legstops">' +
+      esc(l.from) +
+      " &rarr; " +
+      esc(l.to) +
+      (l.dep ? " (dep " + esc(l.dep) + ")" : "") +
+      "</span>";
+  return "<li>" + s + "</li>";
 }
 function legsUl(legs) {
-  return '<ul>' + legs.map(legHtml).join('') + '</ul>';
+  return "<ul>" + legs.map(legHtml).join("") + "</ul>";
 }
 // Itinerary via the nearest station, plus the walk from the point to that station.
-const MAX_STATION_WALK_M = 3000;  // hide the suggestion if no station is near
+const MAX_STATION_WALK_M = 3000; // hide the suggestion if no station is near
 function itineraryHtml(lat, lon) {
   const n = nearestStation(lat, lon);
-  if (!n || n.dist > MAX_STATION_WALK_M || !n.station.legs || !n.station.legs.length) return '';
+  if (
+    !n ||
+    n.dist > MAX_STATION_WALK_M ||
+    !n.station.legs ||
+    !n.station.legs.length
+  )
+    return "";
   const s = n.station;
-  const walkMin = Math.round(n.dist / 80);  // 80 m/min, matches the model
-  const walk = walkMin > 0
-    ? '<li>&#128694; Walk ~' + walkMin + ' min to ' + s.name + '</li>' : '';
-  return '<div class="itin"><div class="itin-h">Suggested trip via nearest station ' +
-         '<b>' + s.name + '</b> (' + s.minutes + ' min to Union):</div><ul>' +
-         walk + s.legs.map(legHtml).join('') + '</ul></div>';
+  const walkMin = Math.round(n.dist / 80); // 80 m/min, matches the model
+  const walk =
+    walkMin > 0
+      ? "<li>&#128694; Walk ~" + walkMin + " min to " + esc(s.name) + "</li>"
+      : "";
+  return (
+    '<div class="itin"><div class="itin-h">Suggested trip via nearest station ' +
+    "<b>" +
+    esc(s.name) +
+    "</b> (" +
+    s.minutes +
+    " min to Union):</div><ul>" +
+    walk +
+    s.legs.map(legHtml).join("") +
+    "</ul></div>"
+  );
 }
 
-const result = document.getElementById('result');
-let clickMarker = null;
-map.on('click', e => {
-  const { lat, lng } = e.latlng;
-  const band = bandForPoint(lat, lng);
-  if (clickMarker) map.removeLayer(clickMarker);
-  clickMarker = L.circleMarker([lat, lng], { radius: 6, color: '#222', weight: 2,
-    fillColor: '#fff', fillOpacity: 1 }).addTo(map);
-  if (band) {
-    result.innerHTML = 'From here you can reach Union within <b style="color:' + band.color + '">' +
-      band.label + '</b> by transit (morning peak).' + itineraryHtml(lat, lng);
-    clickMarker.bindPopup('&le; ' + band.minutes + ' min to Union').openPopup();
-  } else {
-    result.innerHTML = 'From here Union is <b>more than 2&nbsp;hours</b> away by the modelled transit network.';
-    clickMarker.bindPopup('Beyond 2 h').openPopup();
+const STN_BY_NAME = Object.fromEntries(
+  (DATA.stations || []).map((s) => [s.name, s]),
+);
+const stations = L.layerGroup().addTo(map),
+  entries = DATA.nodes
+    .filter((n) => n.mode !== "origin")
+    .map((rec) => {
+      const s = STN_BY_NAME[rec.name],
+        popup =
+          "<b>" +
+          esc(rec.name) +
+          "</b><br>" +
+          esc(rec.line) +
+          " · " +
+          esc(DATA.mode_label[rec.mode] || rec.mode) +
+          "<br>" +
+          (s && s.legs?.length
+            ? "<b>" +
+              s.minutes +
+              " min</b> to Union (morning peak):" +
+              legsUl(s.legs)
+            : "<b>~" + rec.minutes + " min</b> to/from Union (typical)");
+      const marker = L.marker([rec.lat, rec.lon], {
+        title: rec.name,
+        icon: L.divIcon({
+          className: "",
+          iconSize: [12, 12],
+          html:
+            '<div class="feature-dot" style="background:' +
+            (DATA.mode_color[rec.mode] || "#555") +
+            '"></div>',
+        }),
+      }).bindPopup(popup);
+      return {
+        rec,
+        marker,
+        haystack: [rec.name, rec.line, DATA.mode_label[rec.mode], rec.mode]
+          .join(" ")
+          .toLowerCase(),
+      };
+    });
+let visible = [];
+function update() {
+  const q = document.getElementById("search").value.trim().toLowerCase(),
+    counts = {};
+  stations.clearLayers();
+  visible = [];
+  for (const e of entries) {
+    if (q && !e.haystack.includes(q)) continue;
+    counts[e.rec.mode] = (counts[e.rec.mode] || 0) + 1;
+    if (Explorer.enabled(e.rec.mode)) {
+      visible.push(e);
+      stations.addLayer(e.marker);
+    }
   }
+  for (const b of DATA.bands) {
+    const layer = bandLayers[b.minutes];
+    if (Explorer.enabled("band-" + b.minutes)) layer.addTo(map);
+    else map.removeLayer(layer);
+  }
+  Explorer.layerCounts(
+    Object.fromEntries(
+      [...new Set(entries.map((e) => e.rec.mode))].map((id) => [
+        id,
+        counts[id] || 0,
+      ]),
+    ),
+  );
+  Explorer.count(
+    visible.length,
+    "stations",
+    null,
+    DATA.bands.filter((b) => Explorer.enabled("band-" + b.minutes)).length +
+      " travel-time bands enabled",
+  );
+  Explorer.results(
+    visible,
+    (e) => e.rec.name,
+    (e) => e.rec.line + " · " + (DATA.mode_label[e.rec.mode] || e.rec.mode),
+    (e) => {
+      Explorer.focus(map, e.marker.getLatLng());
+      e.marker.openPopup();
+    },
+  );
+}
+Explorer.layers(
+  [
+    ...DATA.bands.map((b) => ({
+      id: "band-" + b.minutes,
+      label: b.label,
+      color: b.color,
+    })),
+    ...[...new Set(entries.map((e) => e.rec.mode))].map((id) => ({
+      id,
+      label: DATA.mode_label[id] || id,
+      color: DATA.mode_color[id],
+    })),
+  ],
+  update,
+);
+const result = document.getElementById("result");
+let clickMarker = null;
+function showTrip(lat, lon) {
+  const band = bandForPoint(lat, lon);
+  result.innerHTML = band
+    ? 'From here you can reach Union within <b style="color:' +
+      band.color +
+      '">' +
+      esc(band.label) +
+      "</b> by transit (morning peak)." +
+      itineraryHtml(lat, lon)
+    : "This point is outside the modelled travel-time bands. Coverage is limited to the modelled transit network.";
+  Explorer.tab("results");
+}
+map.on("click", (e) => {
+  const { lat, lng } = e.latlng;
+  if (clickMarker) map.removeLayer(clickMarker);
+  clickMarker = L.circleMarker([lat, lng], {
+    radius: 6,
+    color: "#222",
+    weight: 2,
+    fillColor: "#fff",
+    fillOpacity: 1,
+  }).addTo(map);
+  showTrip(lat, lng);
 });
-
-// --- Geolocation: "you are here" + check against the bands ---
-let youMarker = null;
-function locate(recenter = true) {
-  if (!navigator.geolocation) return;
-  navigator.geolocation.getCurrentPosition(pos => {
-    const ll = [pos.coords.latitude, pos.coords.longitude];
-    if (youMarker) youMarker.setLatLng(ll);
-    else youMarker = L.circleMarker(ll, { radius: 8, color: '#fff', weight: 2,
-      fillColor: '#2b8cbe', fillOpacity: 1 }).addTo(map).bindPopup('You are here');
-    const band = bandForPoint(ll[0], ll[1]);
-    result.innerHTML = band
-      ? 'From you, Union is within <b style="color:' + band.color + '">' + band.label + '</b> by transit (morning peak).' + itineraryHtml(ll[0], ll[1])
-      : 'From you, Union is <b>more than 2&nbsp;hours</b> away by the modelled network.';
-    if (recenter) map.setView(ll, 12);
-  }, () => {}, { enableHighAccuracy: true, timeout: 8000 });
-}
-
-// Auto-show the user's location on load ONLY if geolocation is already granted -
-// so first-time visitors keep the "Click anywhere..." intro and aren't hit with an
-// unsolicited permission prompt. Otherwise they use the locate button (which asks).
-if (navigator.permissions && navigator.permissions.query) {
-  navigator.permissions.query({ name: 'geolocation' })
-    .then(p => { if (p.state === 'granted') locate(false); })  // no recenter on load
-    .catch(() => {});
-}
-const LocateControl = L.Control.extend({
-  options: { position: 'topleft' },
-  onAdd() {
-    const a = L.DomUtil.create('a', 'leaflet-bar leaflet-control');
-    a.href = '#'; a.title = 'Center on my location'; a.innerHTML = '&#9678;';
-    a.style.cssText = 'width:30px;height:30px;line-height:30px;text-align:center;font-size:18px;background:#fff;';
-    L.DomEvent.on(a, 'click', ev => { L.DomEvent.preventDefault(ev); locate(); });
-    return a;
+document.getElementById("assume").textContent = DATA.service_assumption;
+document.getElementById("generated").textContent = DATA.generated_at;
+document.getElementById("search").addEventListener("input", update);
+Explorer.stamp(DATA.generated_at);
+Explorer.connect(map, {
+  bounds: () => {
+    const b = L.latLngBounds(visible.map((e) => e.marker.getLatLng()));
+    for (const band of DATA.bands)
+      if (Explorer.enabled("band-" + band.minutes))
+        b.extend(bandLayers[band.minutes].getBounds());
+    return b;
   },
+  located: (pos) => showTrip(pos.coords.latitude, pos.coords.longitude),
 });
-map.addControl(new LocateControl());
-
-// Mobile info toggle.
-const panel = document.getElementById('panel');
-const toggle = document.getElementById('toggle');
-toggle.addEventListener('click', () => {
-  const shown = panel.style.display === 'block';
-  panel.style.display = shown ? 'none' : 'block';
-  toggle.textContent = shown ? 'Info' : 'Close';
-});
-</script>
-</body>
+update();
+;
+    </script>
+  </body>
 </html>

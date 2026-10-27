@@ -1,82 +1,833 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Toronto &amp; Ontario Vulnerable-Population Services Map</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-  integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
-<style>
-  html, body { margin: 0; height: 100%; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
-  #map { position: absolute; inset: 0; }
-  .panel {
-    position: absolute; top: 10px; right: 10px; z-index: 1000; width: 320px;
-    max-height: calc(100% - 20px); overflow: auto; background: #fff;
-    border-radius: 8px; box-shadow: 0 1px 6px rgba(0,0,0,.3); padding: 12px 14px;
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Toronto & Ontario services</title>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+    <style>
+      /* Copied project-local on purpose: independent projects share no runtime files. */
+:root {
+  color-scheme: light dark;
+  --paper: #fff;
+  --ink: #193343;
+  --muted: #526b7c;
+  --soft: #f1f5f7;
+  --line: #d7e1e7;
+  --accent: #176e8c;
+  --head: #163c4d;
+  --warning: #fff4dc;
+  font-family:
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    sans-serif;
+  color: var(--ink);
+  background: var(--soft);
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  font-size: 14px;
+}
+a {
+  color: var(--accent);
+}
+button,
+input,
+select {
+  font: inherit;
+  color: inherit;
+}
+button {
+  cursor: pointer;
+}
+button:disabled {
+  cursor: progress;
+  opacity: 0.6;
+}
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+summary:focus-visible {
+  outline: 3px solid #da9a28;
+  outline-offset: 2px;
+}
+[hidden] {
+  display: none !important;
+}
+.explorer-header {
+  background: var(--head);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 17px 22px;
+  flex-shrink: 0;
+}
+.explorer-header h1 {
+  font-size: 21px;
+  line-height: 1.2;
+  font-weight: 600;
+  margin: 0 0 5px;
+}
+.explorer-header p {
+  font-size: 12px;
+  color: #d2e1e9;
+  margin: 0;
+}
+.explorer-header #snapshot-date {
+  font-size: 12px;
+  color: #d2e1e9;
+  text-align: right;
+  max-width: 240px;
+}
+.explorer-layout {
+  position: relative;
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+.explorer-sidebar {
+  width: 310px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--paper);
+  border-right: 1px solid var(--line);
+  min-height: 0;
+  z-index: 1001;
+}
+.search-area {
+  padding: 16px 17px 10px;
+}
+.search-area > label {
+  font-size: 12px;
+  font-weight: 600;
+  display: block;
+  margin: 0 0 6px;
+}
+input[type="search"],
+select,
+input[type="date"] {
+  width: 100%;
+  min-width: 0;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 10px;
+  font-size: 14px;
+}
+#stats {
+  padding: 0 17px 14px;
+  min-height: 75px;
+  font-size: 13px;
+}
+#stats strong,
+#stats > b {
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: -0.5px;
+  font-variant-numeric: tabular-nums;
+}
+#stats .secondary {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 4px;
+  line-height: 1.5;
+}
+.explorer-tabs {
+  display: flex;
+  border-block: 1px solid var(--line);
+  padding: 0 9px;
+}
+.explorer-tabs button {
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  padding: 11px 8px;
+  font-size: 12px;
+  min-height: 40px;
+}
+.explorer-tabs button[aria-selected="true"] {
+  border-bottom-color: var(--accent);
+  color: var(--ink);
+  font-weight: 600;
+}
+.explorer-panel {
+  padding: 13px 17px;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+.explorer-panel h2 {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0 0 12px;
+}
+.explorer-panel h3 {
+  font-size: 13px;
+  margin: 18px 0 7px;
+}
+.explorer-panel p,
+.explorer-panel li {
+  font-size: 12px;
+  line-height: 1.6;
+}
+.explorer-panel ul.sources {
+  padding-left: 18px;
+}
+.explorer-panel select {
+  margin: 5px 0 10px;
+}
+.explorer-panel label.field {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  margin-top: 10px;
+}
+.layer-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+  min-height: 36px;
+  cursor: pointer;
+  font-size: 12px;
+}
+.layer-row input {
+  margin: 0;
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
+  flex-shrink: 0;
+}
+.layer-label {
+  flex: 1;
+  overflow-wrap: anywhere;
+}
+.layer-count {
+  color: var(--muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.swatch {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+.layer-actions {
+  display: flex;
+  gap: 14px;
+  margin: 12px 0;
+}
+.text-button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  font-size: 12px;
+}
+.muted,
+.hint {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+.notice {
+  background: var(--warning);
+  padding: 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  line-height: 1.6;
+  margin: 12px 0;
+}
+details {
+  font-size: 12px;
+  margin: 14px 0;
+}
+summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+#results {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.feature-result {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 12px 0;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+}
+.feature-result strong {
+  display: block;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.feature-result small {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.5;
+  margin-top: 3px;
+}
+.feature-result:hover {
+  background: var(--soft);
+}
+.explorer-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 17px;
+  border-top: 1px solid var(--line);
+  background: var(--soft);
+  font-size: 11px;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+.explorer-footer span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.map-canvas {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+#map {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background: #d2e3e8;
+}
+.map-message {
+  position: absolute;
+  left: 12px;
+  bottom: 25px;
+  z-index: 1000;
+  padding: 8px 11px;
+  background: var(--paper);
+  box-shadow: 0 1px 7px #0003;
+  border-radius: 5px;
+  max-width: calc(100% - 24px);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.map-message:empty {
+  display: none;
+}
+.explorer-control button {
+  display: block;
+  width: 34px;
+  height: 34px;
+  border: 0;
+  background: var(--paper);
+  color: var(--ink);
+  padding: 0;
+  text-align: center;
+  font-size: 20px;
+  line-height: 34px;
+}
+.explorer-control button:hover {
+  background: var(--soft);
+}
+.you-dot {
+  width: 18px;
+  height: 18px;
+  background: #258fc1;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 0 3px #258fc155;
+}
+.count-pin {
+  border: 2px solid #fff;
+  border-radius: 50%;
+  min-width: 32px;
+  height: 32px;
+  padding: 0 4px;
+  line-height: 28px;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: #fff;
+  background: #176e8c;
+  box-shadow: 0 1px 5px #0005;
+}
+.count-cluster {
+  height: 42px;
+  min-width: 42px;
+  line-height: 36px;
+  border: 3px solid #fff;
+  font-size: 12px;
+  background: #18465b;
+}
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+  background: var(--paper);
+  color: var(--ink);
+}
+.leaflet-popup-content {
+  max-height: 340px;
+  overflow: auto;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.leaflet-popup-content .event {
+  border-bottom: 1px solid var(--line);
+  padding: 9px 0;
+}
+.leaflet-popup-content p {
+  margin: 4px 0;
+}
+.sheet-toggle {
+  display: none;
+}
+.record-dialog {
+  background: var(--paper);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  width: 520px;
+  max-width: 92vw;
+  max-height: 85dvh;
+  padding: 20px;
+  overflow: auto;
+}
+.record-dialog::backdrop {
+  background: #0007;
+}
+.record-dialog h2 {
+  font-size: 18px;
+  margin-right: 30px;
+}
+.record-dialog .close {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  border: 0;
+  background: var(--soft);
+  border-radius: 4px;
+  padding: 5px 10px;
+}
+.record-dialog p {
+  font-size: 13px;
+  line-height: 1.6;
+}
+.inline-options {
+  font-size: 12px;
+  margin: 0 0 12px;
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.inline-options input {
+  accent-color: var(--accent);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #172732;
+    --ink: #e2ecf2;
+    --muted: #aec2ce;
+    --soft: #203541;
+    --line: #3c505b;
+    --accent: #75bfd6;
+    --head: #0a202e;
+    --warning: #3e3525;
   }
-  .panel h1 { font-size: 16px; margin: 0 0 4px; }
-  .panel h2 { font-size: 13px; margin: 14px 0 6px; text-transform: uppercase; letter-spacing: .03em; color: #555; }
-  .panel p { font-size: 12px; color: #444; margin: 4px 0; }
-  .panel a { color: #1f78b4; text-decoration: none; }
-  .panel a:hover { text-decoration: underline; }
-  .sources { font-size: 12px; color: #444; margin: 4px 0; padding-left: 18px; }
-  .sources li { margin: 3px 0; }
-  .dir { font-size: 12px; margin: 6px 0; }
-  .dir .note { color: #666; display: block; }
-  #stats { font-size: 12px; background: #f3f7fb; border: 1px solid #d6e4f0; border-radius: 6px; padding: 8px; }
-  #stats b { font-size: 16px; color: #1f78b4; }
-  .legend-row { display: flex; align-items: center; font-size: 12px; margin: 3px 0; }
-  .dot { width: 12px; height: 12px; border-radius: 50%; margin-right: 7px; border: 1px solid rgba(0,0,0,.3); }
-  .leaflet-popup-content { font-size: 13px; }
-  .leaflet-popup-content .cat { font-size: 11px; text-transform: uppercase; letter-spacing: .03em; }
-  details > summary { cursor: pointer; font-weight: 600; font-size: 13px; margin-top: 10px; }
-  .toggle { position: absolute; top: 10px; right: 10px; z-index: 1001; display: none;
-    background: #fff; border: none; border-radius: 6px; padding: 8px 10px; box-shadow: 0 1px 6px rgba(0,0,0,.3); cursor: pointer; }
-  @media (max-width: 620px) {
-    .panel { width: auto; left: 10px; right: 10px; max-height: 55%; display: none; }
-    .toggle { display: block; }
+  .leaflet-control-zoom a {
+    background: var(--paper);
+    color: var(--ink);
   }
-</style>
-</head>
-<body>
-<div id="map"></div>
-<button class="toggle" id="toggle">Info</button>
-<div class="panel" id="panel">
-  <h1>Toronto &amp; Ontario Services</h1>
-  <p>Shelters, warming &amp; respite centres, food, harm reduction and housing supports for vulnerable residents.</p>
+}
+@media (max-width: 760px) {
+  .explorer-header {
+    padding: 14px 16px;
+    min-height: 79px;
+  }
+  .explorer-header h1 {
+    font-size: 19px;
+  }
+  .explorer-header #snapshot-date {
+    display: none;
+  }
+  .explorer-sidebar {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: min(45dvh, 370px);
+    min-height: 285px;
+    border: 0;
+    border-radius: 15px 15px 0 0;
+    box-shadow: 0 -3px 14px #0003;
+  }
+  .explorer-sidebar.expanded {
+    height: 80%;
+  }
+  .sheet-toggle {
+    display: block;
+    height: 24px;
+    min-height: 24px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    flex-shrink: 0;
+  }
+  .sheet-toggle::before {
+    content: "";
+    display: block;
+    width: 35px;
+    height: 4px;
+    margin: auto;
+    border-radius: 3px;
+    background: var(--line);
+  }
+  .search-area {
+    padding: 0 15px 8px;
+  }
+  .search-area > label {
+    display: none;
+  }
+  input[type="search"] {
+    font-size: 16px;
+    padding: 9px;
+  }
+  #stats {
+    padding: 0 15px 8px;
+    min-height: 55px;
+  }
+  #stats strong,
+  #stats > b {
+    font-size: 24px;
+  }
+  .explorer-tabs button {
+    padding: 8px 10px;
+    min-height: 36px;
+  }
+  .explorer-panel {
+    padding: 10px 15px;
+  }
+  .explorer-footer {
+    padding: 8px 15px;
+  }
+  .map-canvas {
+    position: absolute;
+    inset: 0;
+  }
+  .leaflet-top.leaflet-left {
+    display: flex;
+    align-items: flex-start;
+    gap: 7px;
+    padding: 10px;
+  }
+  .leaflet-top.leaflet-left .leaflet-control {
+    margin: 0;
+  }
+  .leaflet-control-zoom {
+    display: flex;
+  }
+  .leaflet-control-zoom a:first-child {
+    border-bottom: 0;
+    border-right: 1px solid #ccc;
+  }
+  .leaflet-control-zoom a {
+    border-radius: 0 !important;
+  }
+  .map-message {
+    top: 60px;
+    bottom: auto;
+    left: 10px;
+    max-width: calc(100% - 20px);
+  }
+  .leaflet-control-attribution {
+    max-width: 85vw;
+    font-size: 9px !important;
+  }
+  .layer-row {
+    min-height: 40px;
+  }
+}
+@media (pointer: coarse) {
+  .explorer-control button {
+    width: 40px;
+    height: 40px;
+    line-height: 40px;
+  }
+  .explorer-tabs button,
+  .layer-row,
+  .sheet-toggle {
+    min-height: 44px;
+  }
+  .leaflet-control-zoom a {
+    width: 40px;
+    height: 40px;
+    line-height: 40px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  * {
+    scroll-behavior: auto !important;
+    transition: none !important;
+  }
+}
 
-  <div id="stats">Loading live shelter data&hellip;</div>
+.feature-dot {
+  width: 100%;
+  height: 100%;
+  border: 2px solid white;
+  border-radius: 50%;
+  box-shadow: 0 1px 4px #0006;
+}
+.pin,
+.cluster {
+  border-radius: 50%;
+  color: white;
+  background: #254b60;
+  border: 2px solid #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  box-shadow: 0 1px 5px #0005;
+  width: 100%;
+  height: 100%;
+}
+.cluster {
+  font-size: 12px;
+}
+.event {
+  border-top: 1px solid #ddd;
+  padding: 8px 0;
+}
+.event p {
+  margin: 4px 0;
+}
+.leaflet-popup-content {
+  max-height: 360px;
+  overflow: auto;
+}
+.itin ul {
+  padding-left: 20px;
+}
+.itin li {
+  margin: 8px 0;
+}
 
-  <div id="shelter-meta" style="font-size:11px;color:#666;margin-top:6px"></div>
+    </style>
+    <style></style>
+  </head>
+  <body>
+    <header class="explorer-header">
+      <div>
+        <h1>Toronto & Ontario services</h1>
+        <p>Shelters, warming centres, food and community support</p>
+      </div>
+      <div id="snapshot-date"></div>
+    </header>
+    <main class="explorer-layout">
+      <aside
+        id="panel"
+        class="explorer-sidebar"
+        aria-label="Map exploration controls"
+      >
+        <button
+          type="button"
+          id="sheet-toggle"
+          class="sheet-toggle"
+          aria-label="Expand map controls"
+          aria-expanded="false"
+        ></button>
+        <div class="search-area">
+          <label for="search">Search features</label
+          ><input
+            id="search"
+            type="search"
+            placeholder="Service name, address or category"
+            aria-label="Search features"
+            autocomplete="off"
+          />
+        </div>
+        <div id="stats" role="status" aria-live="polite"></div>
+        <nav class="explorer-tabs" role="tablist" aria-label="Map exploration">
+          <button
+            type="button"
+            role="tab"
+            id="layers-tab"
+            data-tab="layers"
+            aria-controls="layers-panel"
+            aria-selected="true"
+          >
+            Layers</button
+          ><button
+            type="button"
+            role="tab"
+            id="results-tab"
+            data-tab="results"
+            aria-controls="results-panel"
+            aria-selected="false"
+          >
+            Results</button
+          ><button
+            type="button"
+            role="tab"
+            id="sources-tab"
+            data-tab="sources"
+            aria-controls="sources-panel"
+            aria-selected="false"
+          >
+            Data sources
+          </button>
+        </nav>
+        <section
+          id="layers-panel"
+          class="explorer-panel"
+          role="tabpanel"
+          aria-labelledby="layers-tab"
+        >
+          <div id="layer-controls"></div>
+          <div class="layer-actions">
+            <button type="button" class="text-button" id="select-all">
+              Select all</button
+            ><button type="button" class="text-button" id="clear-all">
+              Clear all
+            </button>
+          </div>
+          <p class="notice">
+            Seasonal services change. Confirm availability with the provider.
+          </p>
+        </section>
+        <section
+          id="results-panel"
+          class="explorer-panel"
+          role="tabpanel"
+          aria-labelledby="results-tab"
+          hidden
+        >
+          <details>
+            <summary>Live shelter occupancy</summary>
+            <div id="live-stats" class="hint">Loading live shelter data…</div>
+          </details>
+          <p id="result-note" class="hint"></p>
+          <div id="results"></div>
+        </section>
+        <section
+          id="sources-panel"
+          class="explorer-panel"
+          role="tabpanel"
+          aria-labelledby="sources-tab"
+          hidden
+        >
+          <p id="snapshot-provenance" class="muted"></p>
+          <h3>Directories & data</h3>
+          <div id="directories"></div>
+          <p id="shelter-meta"></p>
+          <h2>Data sources</h2>
+          <ul class="sources">
+            <li>
+              Curated service locations &mdash; compiled from the City/Province
+              pages linked above; see the
+              <a
+                href="https://github.com/tianle91/StaticSites/blob/main/toronto-vulnerable-services-map/data/SOURCES.md"
+                target="_blank"
+                rel="noopener"
+                >Sources document</a
+              >
+            </li>
+            <li>
+              Live shelter occupancy &mdash;
+              <a
+                href="https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+                target="_blank"
+                rel="noopener"
+                >Toronto Open Data</a
+              >
+              (Daily Shelter &amp; Overnight Service Occupancy)
+            </li>
+            <li>
+              Geocoding &amp; map tiles &mdash; &copy;
+              <a
+                href="https://www.openstreetmap.org/copyright"
+                target="_blank"
+                rel="noopener"
+                >OpenStreetMap</a
+              >
+              contributors (via Nominatim)
+            </li>
+          </ul>
 
-  <h2>Legend</h2>
-  <div id="legend"></div>
-
-  <h2>Directories &amp; Data</h2>
-  <div id="directories"></div>
-
-  <h2>Data sources</h2>
-  <ul class="sources">
-    <li>Curated service locations &mdash; compiled from the City/Province pages linked above; see the
-      <a href="https://github.com/tianle91/StaticSites/blob/main/toronto-vulnerable-services-map/data/SOURCES.md" target="_blank" rel="noopener">Sources document</a></li>
-    <li>Live shelter occupancy &mdash;
-      <a href="https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/" target="_blank" rel="noopener">Toronto Open Data</a>
-      (Daily Shelter &amp; Overnight Service Occupancy)</li>
-    <li>Geocoding &amp; map tiles &mdash; &copy;
-      <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors
-      (via Nominatim)</li>
-  </ul>
-
-  <details>
-    <summary>Notes &amp; caveats</summary>
-    <p>Warming and respite sites are <b>seasonal</b> - confirm open/close status on the live City pages. Harm-reduction sites are volatile (several Ontario sites closed/relocated in 2025). Marker coordinates are approximate (from street addresses). For emergency shelter, call Central Intake <b>416-338-4766</b> or <b>311</b>.</p>
-  </details>
-</div>
-
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-  integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-<script>
-const DATA = {
+          <details>
+            <summary>Notes &amp; caveats</summary>
+            <p>
+              Warming and respite sites are <b>seasonal</b> - confirm open/close
+              status on the live City pages. Harm-reduction sites are volatile
+              (several Ontario sites closed/relocated in 2025). Marker
+              coordinates are approximate (from street addresses). For emergency
+              shelter, call Central Intake <b>416-338-4766</b> or <b>311</b>.
+            </p>
+          </details>
+        </section>
+        <footer class="explorer-footer">
+          <span>City of Toronto & service providers</span
+          ><button type="button" id="provenance" class="text-button">
+            Provenance
+          </button>
+        </footer>
+      </aside>
+      <div class="map-canvas">
+        <div id="map" aria-label="Toronto & Ontario services map"></div>
+        <div
+          id="location-status"
+          class="map-message"
+          role="status"
+          aria-live="polite"
+        ></div>
+      </div>
+    </main>
+    <dialog
+      id="record-detail"
+      class="record-dialog"
+      aria-labelledby="record-title"
+    >
+      <button
+        type="button"
+        id="record-close"
+        class="close"
+        aria-label="Close details"
+      >
+        ×
+      </button>
+      <h2 id="record-title"></h2>
+      <div id="record-body"></div>
+    </dialog>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+      const DATA = {
   "categories": {
     "intake": {
       "label": "Intake & Walk-in",
@@ -1223,163 +1974,540 @@ const DATA = {
     "count": 94
   }
 };
-
-const map = L.map('map').setView(DATA.center, DATA.zoom);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  maxZoom: 19, attribution: '&copy; OpenStreetMap contributors'
-}).addTo(map);
-
-// One toggleable layer per category.
-const layers = {};
-for (const key in DATA.categories) layers[key] = L.layerGroup().addTo(map);
-
-function markerIcon(color) {
-  return L.divIcon({
-    className: '',
-    html: '<div style="width:16px;height:16px;border-radius:50%;background:' + color +
-          ';border:2px solid #fff;box-shadow:0 0 3px rgba(0,0,0,.5)"></div>',
-    iconSize: [16, 16], iconAnchor: [8, 8], popupAnchor: [0, -8]
+    </script>
+    <script>
+      /* Project-local explorer UI. No source is loaded from another project. */
+const Explorer = (() => {
+  const byId = (id) => document.getElementById(id);
+  const esc = (value) =>
+    String(value ?? "").replace(
+      /[&<>"']/g,
+      (c) =>
+        ({
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          '"': "&quot;",
+          "'": "&#39;",
+        })[c],
+    );
+  const choices = new Map();
+  const mobile = () => matchMedia("(max-width:760px)").matches;
+  function collapse() {
+    byId("panel").classList.remove("expanded");
+    byId("sheet-toggle").setAttribute("aria-expanded", "false");
+    byId("sheet-toggle").setAttribute("aria-label", "Expand map controls");
+  }
+  function sheetHeight() {
+    return mobile() ? byId("panel").getBoundingClientRect().height : 0;
+  }
+  function tab(name) {
+    document.querySelectorAll(".explorer-tabs [role=tab]").forEach((button) => {
+      button.setAttribute("aria-selected", String(button.dataset.tab === name));
+      button.tabIndex = button.dataset.tab === name ? 0 : -1;
+    });
+    document
+      .querySelectorAll(".explorer-panel")
+      .forEach((panel) => (panel.hidden = panel.id !== name + "-panel"));
+  }
+  document.querySelectorAll(".explorer-tabs [role=tab]").forEach((button) => {
+    button.onclick = () => tab(button.dataset.tab);
+    button.onkeydown = (event) => {
+      if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key))
+        return;
+      event.preventDefault();
+      const buttons = [
+        ...document.querySelectorAll(".explorer-tabs [role=tab]"),
+      ];
+      const index = buttons.indexOf(button);
+      const next =
+        event.key === "Home"
+          ? 0
+          : event.key === "End"
+            ? buttons.length - 1
+            : (index + (event.key === "ArrowRight" ? 1 : buttons.length - 1)) %
+              buttons.length;
+      buttons[next].focus();
+      tab(buttons[next].dataset.tab);
+    };
   });
-}
-
-const bounds = [];
-for (const loc of DATA.locations) {
-  const cat = DATA.categories[loc.category] || { label: loc.category, color: '#555' };
-  const popup =
-    '<b>' + loc.name + '</b><br>' +
-    '<span class="cat" style="color:' + cat.color + '">' + cat.label + '</span><br>' +
-    (loc.address ? loc.address + '<br>' : '') +
-    (loc.notes ? '<span style="color:#555">' + loc.notes + '</span><br>' : '') +
-    (loc.url ? '<a href="' + loc.url + '" target="_blank" rel="noopener">More info &rarr;</a>' : '');
-  L.marker([loc.lat, loc.lon], { icon: markerIcon(cat.color), title: loc.name })
-    .bindPopup(popup)
-    .addTo(layers[loc.category]);
-  bounds.push([loc.lat, loc.lon]);
-}
-if (bounds.length) map.fitBounds(bounds, { padding: [40, 40] });
-
-// Layer toggle control + legend.
-const overlays = {};
-const legend = document.getElementById('legend');
-for (const key in DATA.categories) {
-  const c = DATA.categories[key];
-  overlays[c.label] = layers[key];
-  const row = document.createElement('div');
-  row.className = 'legend-row';
-  row.innerHTML = '<span class="dot" style="background:' + c.color + '"></span>' + c.label;
-  legend.appendChild(row);
-}
-L.control.layers(null, overlays, { collapsed: false }).addTo(map);
-
-// Shelter-layer provenance: snapshot date + when the data was pulled.
-if (DATA.shelter_meta) {
-  const m = DATA.shelter_meta;
-  document.getElementById('shelter-meta').innerHTML =
-    'Shelter pins: ' + m.count + ' locations &middot; occupancy ' + (m.snapshot || 'n/a') +
-    ' &middot; data pulled ' + (m.pulled || 'n/a');
-}
-
-// Center on the user's location when available/permitted (button + auto-attempt).
-let youMarker = null;
-function locate() {
-  if (!navigator.geolocation) return;
-  navigator.geolocation.getCurrentPosition(
-    pos => {
-      const ll = [pos.coords.latitude, pos.coords.longitude];
-      if (youMarker) youMarker.setLatLng(ll);
-      else youMarker = L.marker(ll, { icon: L.divIcon({
-          className: '',
-          html: '<div style="width:20px;height:20px;position:relative">' +
-                '<div style="position:absolute;top:50%;left:0;right:0;height:3px;background:#e63946;transform:translateY(-50%)"></div>' +
-                '<div style="position:absolute;left:50%;top:0;bottom:0;width:3px;background:#e63946;transform:translateX(-50%)"></div>' +
-                '<div style="position:absolute;top:50%;left:50%;width:8px;height:8px;background:#e63946;border:2px solid #fff;border-radius:50%;transform:translate(-50%,-50%)"></div>' +
-                '</div>',
-          iconSize: [20, 20], iconAnchor: [10, 10], popupAnchor: [0, -10]
-        }) }).addTo(map).bindPopup('You are here');
-      map.setView(ll, 14);
+  tab("layers");
+  byId("provenance").onclick = () => tab("sources");
+  byId("sheet-toggle").onclick = () => {
+    const expanded = byId("panel").classList.toggle("expanded");
+    byId("sheet-toggle").setAttribute("aria-expanded", String(expanded));
+    byId("sheet-toggle").setAttribute(
+      "aria-label",
+      expanded ? "Collapse map controls" : "Expand map controls",
+    );
+  };
+  byId("search").addEventListener("input", () =>
+    tab(byId("search").value.trim() ? "results" : "layers"),
+  );
+  const status = (message) => {
+    byId("location-status").textContent = message;
+  };
+  function count(
+    total,
+    unit,
+    mapped,
+    note = "",
+    missingLabel = "without a pin",
+  ) {
+    const stats = byId("stats");
+    stats.replaceChildren();
+    const number = document.createElement("strong");
+    number.textContent = total.toLocaleString();
+    stats.append(number, document.createTextNode(" " + unit));
+    const secondary = document.createElement("div");
+    secondary.className = "secondary";
+    secondary.textContent =
+      mapped == null
+        ? note
+        : mapped.toLocaleString() +
+          " mapped · " +
+          (total - mapped).toLocaleString() +
+          " " +
+          missingLabel +
+          (note ? " · " + note : "");
+    stats.append(secondary);
+  }
+  function layers(items, onChange) {
+    const target = byId("layer-controls");
+    target.replaceChildren();
+    choices.clear();
+    for (const item of items) {
+      const label = document.createElement("label");
+      label.className = "layer-row";
+      const input = document.createElement("input");
+      input.type = "checkbox";
+      input.checked = item.checked !== false;
+      input.dataset.layer = item.id;
+      const name = document.createElement("span");
+      name.className = "layer-label";
+      const dot = document.createElement("span");
+      dot.className = "swatch";
+      dot.style.background = item.color;
+      name.append(dot, document.createTextNode(item.label));
+      const n = document.createElement("span");
+      n.className = "layer-count";
+      n.textContent =
+        typeof item.count === "number"
+          ? item.count.toLocaleString()
+          : (item.count ?? "");
+      label.append(input, name, n);
+      target.append(label);
+      choices.set(item.id, { input, n, item });
+      input.onchange = () => {
+        if (item.layer) {
+          if (input.checked) item.layer.addTo(item.map);
+          else item.map.removeLayer(item.layer);
+        }
+        onChange();
+      };
+    }
+    for (const [id, value] of [
+      ["select-all", true],
+      ["clear-all", false],
+    ])
+      byId(id).onclick = () => {
+        for (const { input, item } of choices.values()) {
+          input.checked = value;
+          if (item.layer) {
+            if (value) item.layer.addTo(item.map);
+            else item.map.removeLayer(item.layer);
+          }
+        }
+        onChange();
+      };
+  }
+  const enabled = (id) => choices.get(id)?.input.checked ?? false;
+  function layerCounts(counts) {
+    for (const [id, n] of Object.entries(counts)) {
+      const choice = choices.get(id);
+      if (choice) choice.n.textContent = Number(n).toLocaleString();
+    }
+  }
+  function results(items, label, summary, onSelect, limit = 50) {
+    const target = byId("results");
+    target.replaceChildren();
+    for (const item of items.slice(0, limit)) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "feature-result";
+      const title = document.createElement("strong");
+      title.textContent = label(item);
+      const sub = document.createElement("small");
+      sub.textContent = summary(item);
+      button.append(title, sub);
+      button.onclick = () => onSelect(item);
+      target.append(button);
+    }
+    byId("result-note").textContent = !items.length
+      ? "No features match the selected layers and search."
+      : items.length > limit
+        ? "First " +
+          limit +
+          " of " +
+          items.length.toLocaleString() +
+          " matches listed. Narrow the search to find a specific feature."
+        : items.length.toLocaleString() + " matching features.";
+  }
+  function stamp(value) {
+    byId("snapshot-date").textContent = value
+      ? "Snapshot " + String(value).slice(0, 10)
+      : "Committed snapshot";
+    byId("snapshot-provenance").textContent = byId("snapshot-date").textContent;
+  }
+  function fit(map, bounds, maxZoom = 16) {
+    collapse();
+    if (bounds?.isValid()) {
+      map.fitBounds(bounds, {
+        paddingTopLeft: [30, 30],
+        paddingBottomRight: [30, sheetHeight() + 30],
+        maxZoom,
+      });
+      status("");
+    } else status("No mapped features match the selected layers and search.");
+  }
+  function focus(map, ll, zoom = 16) {
+    collapse();
+    map.setView(ll, zoom, { animate: false });
+    if (mobile()) map.panBy([0, sheetHeight() / 2], { animate: false });
+  }
+  function detail(title, html) {
+    const dialog = byId("record-detail");
+    byId("record-title").textContent = title;
+    byId("record-body").innerHTML = html;
+    if (!dialog.open) dialog.showModal();
+  }
+  byId("record-close").onclick = () => byId("record-detail").close();
+  function connect(map, config) {
+    if (mobile()) map.panBy([0, sheetHeight() / 2], { animate: false });
+    let userMarker = null,
+      accuracyCircle = null;
+    const Control = L.Control.extend({
+      options: { position: "topleft" },
+      onAdd() {
+        const container = L.DomUtil.create(
+          "div",
+          "leaflet-bar explorer-control",
+        );
+        const button = L.DomUtil.create("button", "", container);
+        button.type = "button";
+        button.id = "locate";
+        button.title = "Center on my location";
+        button.setAttribute("aria-label", "Center on my location");
+        button.textContent = "◎";
+        L.DomEvent.disableClickPropagation(container);
+        L.DomEvent.disableScrollPropagation(container);
+        button.onclick = () => {
+          if (!navigator.geolocation) {
+            status(
+              "Location is unavailable. Use a browser with location support on HTTPS or localhost.",
+            );
+            return;
+          }
+          button.disabled = true;
+          button.setAttribute("aria-busy", "true");
+          status("Finding your location…");
+          const finish = (message) => {
+            button.disabled = false;
+            button.removeAttribute("aria-busy");
+            status(message);
+          };
+          navigator.geolocation.getCurrentPosition(
+            (pos) => {
+              const ll = [pos.coords.latitude, pos.coords.longitude],
+                accuracy = pos.coords.accuracy;
+              if (userMarker) userMarker.setLatLng(ll);
+              else
+                userMarker = L.marker(ll, {
+                  icon: L.divIcon({
+                    className: "",
+                    html: '<div class="you-dot"></div>',
+                    iconSize: [18, 18],
+                    iconAnchor: [9, 9],
+                  }),
+                  zIndexOffset: 2000,
+                  title: "You are here",
+                })
+                  .addTo(map)
+                  .bindPopup("You are here");
+              if (Number.isFinite(accuracy) && accuracy > 0) {
+                if (accuracyCircle)
+                  accuracyCircle.setLatLng(ll).setRadius(accuracy);
+                else
+                  accuracyCircle = L.circle(ll, {
+                    radius: accuracy,
+                    color: "#258fc1",
+                    weight: 1,
+                    fillOpacity: 0.08,
+                    interactive: false,
+                  }).addTo(map);
+              } else if (accuracyCircle) {
+                map.removeLayer(accuracyCircle);
+                accuracyCircle = null;
+              }
+              focus(map, ll, 14);
+              finish(
+                "Centered on your location." +
+                  (Number.isFinite(accuracy) && accuracy > 0
+                    ? " Browser accuracy: about " +
+                      Math.max(1, Math.round(accuracy)).toLocaleString() +
+                      " m."
+                    : ""),
+              );
+              if (config.located) config.located(pos);
+            },
+            (error) =>
+              finish(
+                {
+                  1: "Location access was denied. Enable location for this site in your browser, then try again.",
+                  2: "Your location could not be determined. Please try again.",
+                  3: "Finding your location timed out. Please try again.",
+                }[error.code] ||
+                  "Your location could not be determined. Please try again.",
+              ),
+            { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 },
+          );
+        };
+        return container;
+      },
+    });
+    map.addControl(new Control());
+    const Fit = L.Control.extend({
+      options: { position: "topleft" },
+      onAdd() {
+        const container = L.DomUtil.create(
+            "div",
+            "leaflet-bar explorer-control",
+          ),
+          button = L.DomUtil.create("button", "", container);
+        button.type = "button";
+        button.id = "fit";
+        button.title = "Fit matching features";
+        button.setAttribute("aria-label", "Fit matching features");
+        button.textContent = "⛶";
+        L.DomEvent.disableClickPropagation(container);
+        button.onclick = () => {
+          fit(map, config.bounds(), config.maxZoom || 16);
+        };
+        return container;
+      },
+    });
+    map.addControl(new Fit());
+    // Location stays in memory only and is requested solely by the locate button.
+  }
+  return {
+    esc,
+    tab,
+    count,
+    layers,
+    enabled,
+    layerCounts,
+    results,
+    stamp,
+    fit,
+    focus,
+    detail,
+    connect,
+    collapse,
+    status,
+  };
+})();
+;
+    </script>
+    <script>
+      const esc = Explorer.esc;
+const map = L.map("map").setView(DATA.center, DATA.zoom);
+L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+  maxZoom: 19,
+  attribution: "&copy; OpenStreetMap contributors",
+}).addTo(map);
+const points = L.layerGroup().addTo(map),
+  entries = DATA.locations.map((rec) => {
+    const c = DATA.categories[rec.category] || {
+      color: "#555",
+      label: rec.category,
+    };
+    const marker = L.marker([rec.lat, rec.lon], {
+      title: rec.name,
+      icon: L.divIcon({
+        className: "",
+        iconSize: [16, 16],
+        html:
+          '<div class="feature-dot" style="background:' + c.color + '"></div>',
+      }),
+    }).bindPopup(
+      "<b>" +
+        esc(rec.name) +
+        "</b><br>" +
+        esc(c.label) +
+        "<br>" +
+        esc(rec.address) +
+        "<p>" +
+        esc(rec.notes) +
+        "</p>" +
+        (rec.url
+          ? '<a href="' +
+            esc(rec.url) +
+            '" target="_blank" rel="noopener">More information</a>'
+          : ""),
+    );
+    return {
+      rec,
+      marker,
+      haystack: [rec.name, rec.address, rec.notes, c.label]
+        .join(" ")
+        .toLowerCase(),
+    };
+  });
+let visible = [];
+function update() {
+  const q = document.getElementById("search").value.trim().toLowerCase(),
+    counts = Object.fromEntries(
+      Object.keys(DATA.categories).map((k) => [k, 0]),
+    );
+  points.clearLayers();
+  visible = [];
+  for (const e of entries) {
+    if (q && !e.haystack.includes(q)) continue;
+    counts[e.rec.category]++;
+    if (Explorer.enabled(e.rec.category)) {
+      points.addLayer(e.marker);
+      visible.push(e);
+    }
+  }
+  Explorer.layerCounts(counts);
+  Explorer.count(visible.length, "service locations", visible.length);
+  Explorer.results(
+    visible,
+    (e) => e.rec.name,
+    (e) => e.rec.address,
+    (e) => {
+      Explorer.focus(map, e.marker.getLatLng());
+      e.marker.openPopup();
     },
-    () => {},  // denied/unavailable: keep the default Toronto view
-    { enableHighAccuracy: true, timeout: 8000 }
   );
 }
-const LocateControl = L.Control.extend({
-  options: { position: 'topleft' },
-  onAdd() {
-    const a = L.DomUtil.create('a', 'leaflet-bar leaflet-control');
-    a.href = '#';
-    a.title = 'Center on my location';
-    a.innerHTML = '&#9678;';
-    a.style.cssText = 'width:30px;height:30px;line-height:30px;text-align:center;font-size:18px;background:#fff;';
-    L.DomEvent.on(a, 'click', e => { L.DomEvent.preventDefault(e); locate(); });
-    return a;
-  },
-});
-map.addControl(new LocateControl());
-locate();  // use the user's location if the browser provides it
-
-// Directories list.
-const dirs = document.getElementById('directories');
-for (const d of DATA.directories) {
-  const el = document.createElement('div');
-  el.className = 'dir';
-  el.innerHTML = '<a href="' + d.url + '" target="_blank" rel="noopener">' + d.name + '</a>' +
-                 (d.note ? '<span class="note">' + d.note + '</span>' : '');
-  dirs.appendChild(el);
+Explorer.layers(
+  Object.entries(DATA.categories).map(([id, c]) => ({ id, ...c })),
+  update,
+);
+document.getElementById("search").addEventListener("input", update);
+if (DATA.shelter_meta) {
+  const m = DATA.shelter_meta;
+  document.getElementById("shelter-meta").textContent =
+    "Shelter pins: " +
+    m.count +
+    " locations · occupancy " +
+    (m.snapshot || "n/a") +
+    " · data pulled " +
+    (m.pulled || "n/a");
 }
-
-// Mobile info toggle.
-const panel = document.getElementById('panel');
-const toggle = document.getElementById('toggle');
-toggle.addEventListener('click', () => {
-  const shown = panel.style.display === 'block';
-  panel.style.display = shown ? 'none' : 'block';
-  toggle.textContent = shown ? 'Info' : 'Close';
+for (const d of DATA.directories) {
+  const div = document.createElement("p"),
+    a = document.createElement("a");
+  a.href = d.url;
+  a.textContent = d.name;
+  a.target = "_blank";
+  a.rel = "noopener";
+  div.append(a, document.createTextNode(d.note ? " — " + d.note : ""));
+  document.getElementById("directories").append(div);
+}
+Explorer.stamp(DATA.shelter_meta?.pulled);
+Explorer.connect(map, {
+  bounds: () => L.latLngBounds(visible.map((e) => e.marker.getLatLng())),
 });
-
+update();
+if (visible.length)
+  Explorer.fit(
+    map,
+    L.latLngBounds(visible.map((e) => e.marker.getLatLng())),
+    14,
+  );
 // Live shelter occupancy from Toronto Open Data (CKAN). Graceful if offline/CORS-blocked.
-const CKAN = 'https://ckan0.cf.opendata.inter.prod-toronto.ca';
-const DATASET = 'daily-shelter-overnight-service-occupancy-capacity';
+const CKAN = "https://ckan0.cf.opendata.inter.prod-toronto.ca";
+const DATASET = "daily-shelter-overnight-service-occupancy-capacity";
 async function loadShelterStats() {
-  const stats = document.getElementById('stats');
+  const stats = document.getElementById("live-stats");
   try {
-    const pkg = await fetch(CKAN + '/api/3/action/package_show?id=' + DATASET).then(r => r.json());
-    const active = pkg.result.resources.filter(r => r.datastore_active);
-    if (!active.length) throw new Error('no active resource');
+    const pkg = await fetch(
+      CKAN + "/api/3/action/package_show?id=" + DATASET,
+    ).then((r) => r.json());
+    const active = pkg.result.resources.filter((r) => r.datastore_active);
+    if (!active.length) throw new Error("no active resource");
     // Annual archive names sort after the live table: compare occupancy dates.
-    const snapshots = (await Promise.all(active.map(async resource => {
-      const query = '/api/3/action/datastore_search?resource_id=' + resource.id;
-      const top = await fetch(CKAN + query + '&limit=1&sort=' + encodeURIComponent('OCCUPANCY_DATE desc')).then(r => r.json());
-      if (!top.success) throw new Error('cannot verify latest shelter date');
-      const recs = top.result.records;
-      if (!recs.length) return null;
-      const dayRaw = recs[0].OCCUPANCY_DATE;
-      const raw = String(dayRaw).slice(0, 10);
-      // Older 2020s archives use two-digit years; keep their filter value intact.
-      const day = /^[0-9]{2}-[0-9]{2}-[0-9]{2}$/.test(raw) ? '20' + raw : raw;
-      return { rid: resource.id, dayRaw, day };
-    }))).filter(Boolean);
-    snapshots.sort((a, b) => a.day.localeCompare(b.day) || a.rid.localeCompare(b.rid));
-    if (!snapshots.length) throw new Error('no records');
+    const snapshots = (
+      await Promise.all(
+        active.map(async (resource) => {
+          const query =
+            "/api/3/action/datastore_search?resource_id=" + resource.id;
+          const top = await fetch(
+            CKAN +
+              query +
+              "&limit=1&sort=" +
+              encodeURIComponent("OCCUPANCY_DATE desc"),
+          ).then((r) => r.json());
+          if (!top.success)
+            throw new Error("cannot verify latest shelter date");
+          const recs = top.result.records;
+          if (!recs.length) return null;
+          const dayRaw = recs[0].OCCUPANCY_DATE;
+          const raw = String(dayRaw).slice(0, 10);
+          // Older 2020s archives use two-digit years; keep their filter value intact.
+          const day = /^[0-9]{2}-[0-9]{2}-[0-9]{2}$/.test(raw)
+            ? "20" + raw
+            : raw;
+          return { rid: resource.id, dayRaw, day };
+        }),
+      )
+    ).filter(Boolean);
+    snapshots.sort(
+      (a, b) => a.day.localeCompare(b.day) || a.rid.localeCompare(b.rid),
+    );
+    if (!snapshots.length) throw new Error("no records");
     const { rid, dayRaw } = snapshots[snapshots.length - 1];
     // SQL endpoint is disabled on Toronto's CKAN; use datastore_search + aggregate here.
-    const ds = '/api/3/action/datastore_search?resource_id=' + rid;
+    const ds = "/api/3/action/datastore_search?resource_id=" + rid;
     const filt = encodeURIComponent(JSON.stringify({ OCCUPANCY_DATE: dayRaw }));
-    const all = await fetch(CKAN + ds + '&limit=10000&filters=' + filt).then(r => r.json());
+    const all = await fetch(CKAN + ds + "&limit=10000&filters=" + filt).then(
+      (r) => r.json(),
+    );
     const rows = all.result.records;
-    let users = 0; const locs = new Set();
-    for (const r of rows) { users += Number(r.SERVICE_USER_COUNT) || 0; locs.add(r.LOCATION_ID); }
+    let users = 0;
+    const locs = new Set();
+    for (const r of rows) {
+      users += Number(r.SERVICE_USER_COUNT) || 0;
+      locs.add(r.LOCATION_ID);
+    }
     const day = String(dayRaw).slice(0, 10);
     stats.innerHTML =
-      '<b>' + users.toLocaleString() + '</b> people served<br>' +
-      'across <b>' + rows.length + '</b> programs at <b>' + locs.size + '</b> locations<br>' +
-      '<span style="color:#666">Toronto shelter system, ' + day + ' &middot; ' +
-      '<a href="https://open.toronto.ca/dataset/' + DATASET + '/" target="_blank" rel="noopener">source</a></span>';
+      "<b>" +
+      users.toLocaleString() +
+      "</b> people served<br>" +
+      "across <b>" +
+      rows.length +
+      "</b> programs at <b>" +
+      locs.size +
+      "</b> locations<br>" +
+      '<span style="color:#666">Toronto shelter system, ' +
+      day +
+      " &middot; " +
+      '<a href="https://open.toronto.ca/dataset/' +
+      DATASET +
+      '/" target="_blank" rel="noopener">source</a></span>';
   } catch (e) {
-    stats.innerHTML = '<span style="color:#888">Live shelter stats unavailable offline. ' +
-      '<a href="https://open.toronto.ca/dataset/' + DATASET + '/" target="_blank" rel="noopener">Open the dataset &rarr;</a></span>';
+    stats.innerHTML =
+      '<span style="color:#888">Live shelter stats unavailable offline. ' +
+      '<a href="https://open.toronto.ca/dataset/' +
+      DATASET +
+      '/" target="_blank" rel="noopener">Open the dataset &rarr;</a></span>';
   }
 }
 loadShelterStats();
-</script>
-</body>
+;
+    </script>
+  </body>
 </html>

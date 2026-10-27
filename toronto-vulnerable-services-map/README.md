@@ -5,6 +5,22 @@ populations: emergency shelter access, warming & winter respite centres,
 food/drop-ins, harm reduction, and housing supports. Companion to
 [Toronto Vulnerable Services Sources](./data/SOURCES.md).
 
+## Map controls
+
+The desktop sidebar puts search and the matching count above **Layers**,
+**Results**, and **Data sources** tabs. On phones, the same controls live in an
+expandable bottom panel. Search and selected layers determine both the count
+and results; layer badges show matches available before layer selection. Results
+list up to 50 matches; narrow the search to find a specific feature.
+
+Use **Center on my location** (◎) to request browser location and show its
+accuracy circle, or **Fit matching features** (⛶) to frame the current selection.
+Location is requested only after a click and stays in browser memory. HTTPS or
+localhost is needed for location in most browsers. Denied, unavailable and timed
+out requests show a message and can be retried. The **Provenance** footer opens
+source links, snapshot information and accuracy caveats.
+
+
 ## Run
 
 ```bash
@@ -20,6 +36,11 @@ as its own toggleable layer. Results are cached on disk (`data/geocode_cache.jso
 so re-runs are fast and reproducible; commit the cache and `data/shelters.json` to
 share the geocoded data. Open `output/toronto-vulnerable-services-map.html` in any browser; internet is needed
 only for map tiles and the live stats panel.
+
+The main count is matching service locations. Live shelter occupancy is a
+separate expandable readout in Results and is independent of search/layers.
+Search names, addresses, service types and notes. Shelter pins are a committed
+snapshot; the live occupancy date is displayed separately.
 
 ## What's on the map
 

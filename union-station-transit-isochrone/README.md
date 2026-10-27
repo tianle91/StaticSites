@@ -5,13 +5,33 @@ Station**: where you can live and still **reach Union by public transit** in
 **30 min, 1 h, 1.5 h and 2 h**, arriving during the weekday morning peak — subway,
 streetcar, bus, GO rail and UP Express, plus the walk at each end. The result is a
 self-contained `output/union-station-transit-isochrone.html` with toggleable layers, a legend, geolocation, and a
-click-anywhere "which band is this in?" readout.
+click-anywhere "which band is this in?" readout. Search station names, lines or
+transport modes. Stations toggle independently by mode alongside the four
+travel-time bands. The matching count refers to station points; the band count
+is separate. Search filters stations while bands remain available as context.
+Clicking the map or using location keeps the nearest-station itinerary readout.
 
 This is a **reverse isochrone** (travel time *to* Union, arriving by ~9 am), so it
 respects peak-direction service. Routing direction is the one knob with real cost:
 each map point is a separate r5py search, so the grid is coarse (~1 km) and builds
 take a few minutes. Switch back to outbound or change resolution via the env vars
 below.
+
+## Map controls
+
+The desktop sidebar puts search and the matching count above **Layers**,
+**Results**, and **Data sources** tabs. On phones, the same controls live in an
+expandable bottom panel. Search and selected layers determine both the count
+and results; layer badges show matches available before layer selection. Results
+list up to 50 matches; narrow the search to find a specific feature.
+
+Use **Center on my location** (◎) to request browser location and show its
+accuracy circle, or **Fit matching features** (⛶) to frame the current selection.
+Location is requested only after a click and stays in browser memory. HTTPS or
+localhost is needed for location in most browsers. Denied, unavailable and timed
+out requests show a message and can be retried. The **Provenance** footer opens
+source links, snapshot information and accuracy caveats.
+
 
 ## Quick start
 

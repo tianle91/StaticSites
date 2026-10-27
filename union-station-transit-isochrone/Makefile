@@ -17,7 +17,7 @@ BBOX := -80.6,43.05,-78.7,44.40
 
 include ../python-project.mk
 
-$(OUT): src/build_map.py $(GEOJSON) data/transit_model.json $(wildcard data/reachability.json)
+$(OUT): $(wildcard src/*.html src/*.js src/*.css src/vendor/*) src/build_map.py $(GEOJSON) data/transit_model.json $(wildcard data/reachability.json)
 	$(PY) src/build_map.py
 
 # Depends on data/reachability.json when present so a fresh `make data`

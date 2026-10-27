@@ -6,5 +6,5 @@ PROJECT := toronto-dinesafe-map
 
 include ../python-project.mk
 
-$(OUT): src/build_map.py data/dinesafe.json $(wildcard data/geocode_cache.json)
+$(OUT): $(wildcard src/*.html src/*.js src/*.css src/vendor/*) src/build_map.py data/dinesafe.json $(wildcard data/geocode_cache.json)
 	$(PY) src/build_map.py

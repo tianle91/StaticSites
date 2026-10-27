@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Morning commute to Union Station</title>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+    <style>
+      __EXPLORER_CSS__
+    </style>
+    <style></style>
+  </head>
+  <body>
+    <header class="explorer-header">
+      <div>
+        <h1>Morning commute to Union Station</h1>
+        <p>Modelled weekday morning arrival · travel-time bands</p>
+      </div>
+      <div id="snapshot-date"></div>
+    </header>
+    <main class="explorer-layout">
+      <aside
+        id="panel"
+        class="explorer-sidebar"
+        aria-label="Map exploration controls"
+      >
+        <button
+          type="button"
+          id="sheet-toggle"
+          class="sheet-toggle"
+          aria-label="Expand map controls"
+          aria-expanded="false"
+        ></button>
+        <div class="search-area">
+          <label for="search">Search features</label
+          ><input
+            id="search"
+            type="search"
+            placeholder="Station name, transit line or mode"
+            aria-label="Search features"
+            autocomplete="off"
+          />
+        </div>
+        <div id="stats" role="status" aria-live="polite"></div>
+        <nav class="explorer-tabs" role="tablist" aria-label="Map exploration">
+          <button
+            type="button"
+            role="tab"
+            id="layers-tab"
+            data-tab="layers"
+            aria-controls="layers-panel"
+            aria-selected="true"
+          >
+            Layers</button
+          ><button
+            type="button"
+            role="tab"
+            id="results-tab"
+            data-tab="results"
+            aria-controls="results-panel"
+            aria-selected="false"
+          >
+            Results</button
+          ><button
+            type="button"
+            role="tab"
+            id="sources-tab"
+            data-tab="sources"
+            aria-controls="sources-panel"
+            aria-selected="false"
+          >
+            Data sources
+          </button>
+        </nav>
+        <section
+          id="layers-panel"
+          class="explorer-panel"
+          role="tabpanel"
+          aria-labelledby="layers-tab"
+        >
+          <div id="layer-controls"></div>
+          <div class="layer-actions">
+            <button type="button" class="text-button" id="select-all">
+              Select all</button
+            ><button type="button" class="text-button" id="clear-all">
+              Clear all
+            </button>
+          </div>
+          <p class="notice">
+            Modelled travel times, not live service. Time your departure to
+            catch transit.
+          </p>
+        </section>
+        <section
+          id="results-panel"
+          class="explorer-panel"
+          role="tabpanel"
+          aria-labelledby="results-tab"
+          hidden
+        >
+          <div id="result" class="notice">
+            Click a point on the map to inspect its travel-time band and
+            suggested trip.
+          </div>
+          <p id="result-note" class="hint"></p>
+          <div id="results"></div>
+        </section>
+        <section
+          id="sources-panel"
+          class="explorer-panel"
+          role="tabpanel"
+          aria-labelledby="sources-tab"
+          hidden
+        >
+          <p id="snapshot-provenance" class="muted"></p>
+          <h3>Service assumptions</h3>
+          <p id="assume"></p>
+          <h2>Data sources</h2>
+          <ul class="sources">
+            <li>
+              Street &amp; walk network:
+              <a
+                href="https://www.openstreetmap.org/copyright"
+                target="_blank"
+                rel="noopener"
+                >OpenStreetMap</a
+              >
+              (&copy; OpenStreetMap contributors), via a
+              <a
+                href="https://download.geofabrik.de/north-america/canada/ontario.html"
+                target="_blank"
+                rel="noopener"
+                >Geofabrik</a
+              >
+              extract
+            </li>
+            <li>
+              TTC subway / streetcar / bus schedules (GTFS):
+              <a
+                href="https://open.toronto.ca/dataset/ttc-routes-and-schedules/"
+                target="_blank"
+                rel="noopener"
+                >Toronto Open Data</a
+              >
+            </li>
+            <li>
+              GO Transit &amp; UP Express schedules (GTFS):
+              <a
+                href="https://www.metrolinx.com/en/about-us/open-data"
+                target="_blank"
+                rel="noopener"
+                >Metrolinx Open Data</a
+              >
+            </li>
+            <li>
+              Multimodal transit routing:
+              <a
+                href="https://r5py.readthedocs.io/"
+                target="_blank"
+                rel="noopener"
+                >r5py</a
+              >
+              (Conveyal R5)
+            </li>
+            <li>
+              Map tiles: &copy;
+              <a
+                href="https://www.openstreetmap.org/copyright"
+                target="_blank"
+                rel="noopener"
+                >OpenStreetMap</a
+              >
+              contributors
+            </li>
+          </ul>
+          <p id="generated" style="color: #666; font-size: 12px"></p>
+
+          <details>
+            <summary>Method &amp; caveats</summary>
+            <p>
+              Each band is the area from which you can <i>reach</i> Union
+              Station within that time, arriving during the weekday morning
+              peak. It is computed by routing a grid of points to Union with
+              r5py &mdash; real multimodal transit (subway + streetcar + bus +
+              GO + UP) including the walk at each end &mdash; and tracing the
+              reachable area, assuming you time your departure to catch service.
+              <b>GO &amp; UP service varies a lot by time of day</b> and several
+              GO lines run peak-direction only, so reach is larger in the
+              morning peak than off-peak. Coordinates and grid are approximate.
+            </p>
+          </details>
+        </section>
+        <footer class="explorer-footer">
+          <span>TTC, GO Transit, UP Express & OSM</span
+          ><button type="button" id="provenance" class="text-button">
+            Provenance
+          </button>
+        </footer>
+      </aside>
+      <div class="map-canvas">
+        <div id="map" aria-label="Morning commute to Union Station map"></div>
+        <div
+          id="location-status"
+          class="map-message"
+          role="status"
+          aria-live="polite"
+        ></div>
+      </div>
+    </main>
+    <dialog
+      id="record-detail"
+      class="record-dialog"
+      aria-labelledby="record-title"
+    >
+      <button
+        type="button"
+        id="record-close"
+        class="close"
+        aria-label="Close details"
+      >
+        ×
+      </button>
+      <h2 id="record-title"></h2>
+      <div id="record-body"></div>
+    </dialog>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+      const DATA = __PAYLOAD__;
+    </script>
+    <script>
+      __EXPLORER_JS__;
+    </script>
+    <script>
+      __APP_JS__;
+    </script>
+  </body>
+</html>
