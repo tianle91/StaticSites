@@ -15,6 +15,7 @@ so build them within the repository checkout.
 | [margin-sp500-m2-visualization/](margin-sp500-m2-visualization/) | FINRA margin debt vs. S&P 500, M2, CPI, and PPI, rebased to a configurable anchor date. Renders a static PNG and a zoomable HTML chart. |
 | [ontario-physiotherapy-clinics-map/](ontario-physiotherapy-clinics-map/) | The 255 publicly-funded (OHIP-covered) physiotherapy clinics and hospitals listed by the province, searchable by name / city / postal code. |
 | [toronto-building-permits-map/](toronto-building-permits-map/) | Toronto’s complete active building permit register, searchable by address / number / description with status, type and application-year filters. |
+| [toronto-crime-map/](toronto-crime-map/) | Toronto Police reported crimes from 2025 onward, with approximate locations, offence/date/neighbourhood filters, and separate homicide and shooting layers. |
 | [toronto-dinesafe-map/](toronto-dinesafe-map/) | Toronto's DineSafe food-safety inspection results, one pin per establishment coloured by its latest outcome (Pass / Conditional Pass / Closed), searchable by name / type / address. |
 | [toronto-vulnerable-services-map/](toronto-vulnerable-services-map/) | Toronto/Ontario services for vulnerable populations: shelters, warming & respite centres, drop-ins, harm reduction, housing supports. |
 | [trca-flood-plain-map/](trca-flood-plain-map/) | TRCA riverine flood plain polygons and attributed floodline boundaries, filterable by watershed and source. |
