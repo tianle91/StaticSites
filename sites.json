@@ -26,7 +26,7 @@
   {
     "slug": "toronto-crime-map",
     "title": "Toronto reported crime map",
-    "description": "approximate Toronto Police crime locations with offence, date and neighbourhood filters, plus homicide and shooting layers.",
+    "description": "Toronto Police reports merged by incident ID with seven type layers, text search and approximate intersection locations.",
     "output": "toronto-crime-map/output/toronto-crime-map.html"
   },
   {

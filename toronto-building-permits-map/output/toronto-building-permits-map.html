@@ -1,18 +1,944 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Toronto building permits</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<style>*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,sans-serif;color:#182d39;background:#f4f7f8}header{padding:22px 26px;background:#123d50;color:white}header p{margin:8px 0 0;color:#c9dce5;font-size:14px}h1{font-size:25px;margin:0;letter-spacing:-.6px}h2{font-size:16px}main{display:grid;grid-template-columns:350px 1fr;height:calc(100dvh - 108px);min-height:540px}aside{padding:20px;overflow:auto;border-right:1px solid #d6e0e5;background:white}#map{height:100%;min-height:380px}label{display:block;font-size:13px;font-weight:650;margin:14px 0 6px}input,select,button{font:inherit}input,select{width:100%;padding:10px;border:1px solid #b6c9d3;border-radius:7px;background:white}button{cursor:pointer;border:1px solid #b6c9d3;background:#edf5f8;border-radius:7px;padding:9px 12px;color:#123d50}button:hover{background:#dcecf3}button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #eeaa40;outline-offset:2px}.muted{font-size:12px;color:#536975;line-height:1.55}.notice{font-size:12px;background:#fff4dc;border-left:3px solid #d99b25;padding:12px;line-height:1.6}a{color:#126482}footer{font-size:12px;line-height:1.6;border-top:1px solid #dce5ea;margin-top:20px;padding-top:8px}#results button{display:block;text-align:left;width:100%;margin:8px 0;background:white}#results button small{display:block;color:#536975;margin-top:4px}.swatch{display:inline-block;width:16px;height:5px;vertical-align:middle;margin-right:5px}.leaflet-popup-content{max-height:300px;overflow:auto;line-height:1.6}#count{font-weight:650;margin:16px 0 8px}@media(max-width:720px){header{padding:17px}h1{font-size:21px}main{display:flex;flex-direction:column;height:auto}aside{max-height:48dvh;border-right:0}#map{height:55dvh;order:-1}}</style></head><body><header><h1>Toronto building permits</h1><p>Explore active applications and permits across the city.</p></header>
-<main><aside><p class="muted" id="snapshot-date"></p>
-<label for="search">Search address, permit number, or description</label><input id="search" type="search" placeholder="e.g. Willowdale, new house">
-<label for="status">Status</label><select id="status"><option value="">All statuses</option></select>
-<label for="type">Permit type</label><select id="type"><option value="">All permit types</option></select>
-<label for="year">Application year</label><select id="year"><option value="">All years</option></select>
-<p><button id="fit">Fit mapped results</button> <button id="reset">Toronto view</button></p>
-<p id="count" role="status" aria-live="polite"></p><p class="muted" id="coverage"></p>
-<p class="muted">Blue: issued / inspection · Amber: review / other · Red: violation / revoked. Pins group permits at the same address; zoom and click for details.</p>
-<div id="results"></div>
-<footer><h2>Data sources</h2><ul><li><a href="https://open.toronto.ca/dataset/building-permits-active-permits/">City of Toronto — Building Permits: Active Permits</a></li><li><a href="https://open.toronto.ca/dataset/address-points-municipal-toronto-one-address-repository/">City of Toronto — Address Points (Municipal)</a></li><li>Contains information licensed under the <a href="https://open.toronto.ca/open-data-license/">Open Government Licence – Toronto</a>.</li><li>Map: <a href="https://leafletjs.com/">Leaflet</a> / © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a></li></ul><p>Active register snapshot, not a history of all construction. An open permit does not mean work is happening today. Address points approximate the property location. Unmatched permits remain searchable and are counted above. Check current status with the <a href="https://www.toronto.ca/services-payments/building-construction/building-permit/after-you-apply-for-a-building-permit/search-the-status-of-a-building-permit-application/">City</a>.</p></footer></aside><div id="map" aria-label="Interactive building permit map"></div></main><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script id="snapshot" type="application/json">{
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Toronto building permits</title>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+    <style>
+      .leaflet-cluster-anim .leaflet-marker-icon, .leaflet-cluster-anim .leaflet-marker-shadow {
+	-webkit-transition: -webkit-transform 0.3s ease-out, opacity 0.3s ease-in;
+	-moz-transition: -moz-transform 0.3s ease-out, opacity 0.3s ease-in;
+	-o-transition: -o-transform 0.3s ease-out, opacity 0.3s ease-in;
+	transition: transform 0.3s ease-out, opacity 0.3s ease-in;
+}
+
+.leaflet-cluster-spider-leg {
+	/* stroke-dashoffset (duration and function) should match with leaflet-marker-icon transform in order to track it exactly */
+	-webkit-transition: -webkit-stroke-dashoffset 0.3s ease-out, -webkit-stroke-opacity 0.3s ease-in;
+	-moz-transition: -moz-stroke-dashoffset 0.3s ease-out, -moz-stroke-opacity 0.3s ease-in;
+	-o-transition: -o-stroke-dashoffset 0.3s ease-out, -o-stroke-opacity 0.3s ease-in;
+	transition: stroke-dashoffset 0.3s ease-out, stroke-opacity 0.3s ease-in;
+}
+
+.marker-cluster-small {
+	background-color: rgba(181, 226, 140, 0.6);
+	}
+.marker-cluster-small div {
+	background-color: rgba(110, 204, 57, 0.6);
+	}
+
+.marker-cluster-medium {
+	background-color: rgba(241, 211, 87, 0.6);
+	}
+.marker-cluster-medium div {
+	background-color: rgba(240, 194, 12, 0.6);
+	}
+
+.marker-cluster-large {
+	background-color: rgba(253, 156, 115, 0.6);
+	}
+.marker-cluster-large div {
+	background-color: rgba(241, 128, 23, 0.6);
+	}
+
+	/* IE 6-8 fallback colors */
+.leaflet-oldie .marker-cluster-small {
+	background-color: rgb(181, 226, 140);
+	}
+.leaflet-oldie .marker-cluster-small div {
+	background-color: rgb(110, 204, 57);
+	}
+
+.leaflet-oldie .marker-cluster-medium {
+	background-color: rgb(241, 211, 87);
+	}
+.leaflet-oldie .marker-cluster-medium div {
+	background-color: rgb(240, 194, 12);
+	}
+
+.leaflet-oldie .marker-cluster-large {
+	background-color: rgb(253, 156, 115);
+	}
+.leaflet-oldie .marker-cluster-large div {
+	background-color: rgb(241, 128, 23);
+}
+
+.marker-cluster {
+	background-clip: padding-box;
+	border-radius: 20px;
+	}
+.marker-cluster div {
+	width: 30px;
+	height: 30px;
+	margin-left: 5px;
+	margin-top: 5px;
+
+	text-align: center;
+	border-radius: 15px;
+	font: 12px "Helvetica Neue", Arial, Helvetica, sans-serif;
+	}
+.marker-cluster span {
+	line-height: 30px;
+	}
+
+    </style>
+    <style>
+      /* Copied project-local on purpose: independent projects share no runtime files. */
+:root {
+  color-scheme: light dark;
+  --paper: #fff;
+  --ink: #193343;
+  --muted: #526b7c;
+  --soft: #f1f5f7;
+  --line: #d7e1e7;
+  --accent: #176e8c;
+  --head: #163c4d;
+  --warning: #fff4dc;
+  font-family:
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    sans-serif;
+  color: var(--ink);
+  background: var(--soft);
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  font-size: 14px;
+}
+a {
+  color: var(--accent);
+}
+button,
+input,
+select {
+  font: inherit;
+  color: inherit;
+}
+button {
+  cursor: pointer;
+}
+button:disabled {
+  cursor: progress;
+  opacity: 0.6;
+}
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+summary:focus-visible {
+  outline: 3px solid #da9a28;
+  outline-offset: 2px;
+}
+[hidden] {
+  display: none !important;
+}
+.explorer-header {
+  background: var(--head);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 17px 22px;
+  flex-shrink: 0;
+}
+.explorer-header h1 {
+  font-size: 21px;
+  line-height: 1.2;
+  font-weight: 600;
+  margin: 0 0 5px;
+}
+.explorer-header p {
+  font-size: 12px;
+  color: #d2e1e9;
+  margin: 0;
+}
+.explorer-header #snapshot-date {
+  font-size: 12px;
+  color: #d2e1e9;
+  text-align: right;
+  max-width: 240px;
+}
+.explorer-layout {
+  position: relative;
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+.explorer-sidebar {
+  width: 310px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--paper);
+  border-right: 1px solid var(--line);
+  min-height: 0;
+  z-index: 1001;
+}
+.search-area {
+  padding: 16px 17px 10px;
+}
+.search-area > label {
+  font-size: 12px;
+  font-weight: 600;
+  display: block;
+  margin: 0 0 6px;
+}
+input[type="search"],
+select,
+input[type="date"] {
+  width: 100%;
+  min-width: 0;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 10px;
+  font-size: 14px;
+}
+#stats {
+  padding: 0 17px 14px;
+  min-height: 75px;
+  font-size: 13px;
+}
+#stats strong,
+#stats > b {
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: -0.5px;
+  font-variant-numeric: tabular-nums;
+}
+#stats .secondary {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 4px;
+  line-height: 1.5;
+}
+.explorer-tabs {
+  display: flex;
+  border-block: 1px solid var(--line);
+  padding: 0 9px;
+}
+.explorer-tabs button {
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  padding: 11px 8px;
+  font-size: 12px;
+  min-height: 40px;
+}
+.explorer-tabs button[aria-selected="true"] {
+  border-bottom-color: var(--accent);
+  color: var(--ink);
+  font-weight: 600;
+}
+.explorer-panel {
+  padding: 13px 17px;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+.explorer-panel h2 {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0 0 12px;
+}
+.explorer-panel h3 {
+  font-size: 13px;
+  margin: 18px 0 7px;
+}
+.explorer-panel p,
+.explorer-panel li {
+  font-size: 12px;
+  line-height: 1.6;
+}
+.explorer-panel ul.sources {
+  padding-left: 18px;
+}
+.explorer-panel select {
+  margin: 5px 0 10px;
+}
+.explorer-panel label.field {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  margin-top: 10px;
+}
+.layer-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+  min-height: 36px;
+  cursor: pointer;
+  font-size: 12px;
+}
+.layer-row input {
+  margin: 0;
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
+  flex-shrink: 0;
+}
+.layer-label {
+  flex: 1;
+  overflow-wrap: anywhere;
+}
+.layer-count {
+  color: var(--muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.swatch {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+.layer-actions {
+  display: flex;
+  gap: 14px;
+  margin: 12px 0;
+}
+.text-button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  font-size: 12px;
+}
+.muted,
+.hint {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+.notice {
+  background: var(--warning);
+  padding: 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  line-height: 1.6;
+  margin: 12px 0;
+}
+details {
+  font-size: 12px;
+  margin: 14px 0;
+}
+summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+#results {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.feature-result {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 12px 0;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+}
+.feature-result strong {
+  display: block;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.feature-result small {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.5;
+  margin-top: 3px;
+}
+.feature-result:hover {
+  background: var(--soft);
+}
+.explorer-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 17px;
+  border-top: 1px solid var(--line);
+  background: var(--soft);
+  font-size: 11px;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+.explorer-footer span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.map-canvas {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+#map {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background: #d2e3e8;
+}
+.map-message {
+  position: absolute;
+  left: 12px;
+  bottom: 25px;
+  z-index: 1000;
+  padding: 8px 11px;
+  background: var(--paper);
+  box-shadow: 0 1px 7px #0003;
+  border-radius: 5px;
+  max-width: calc(100% - 24px);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.map-message:empty {
+  display: none;
+}
+.explorer-control button {
+  display: block;
+  width: 34px;
+  height: 34px;
+  border: 0;
+  background: var(--paper);
+  color: var(--ink);
+  padding: 0;
+  text-align: center;
+  font-size: 20px;
+  line-height: 34px;
+}
+.explorer-control button:hover {
+  background: var(--soft);
+}
+.you-dot {
+  width: 18px;
+  height: 18px;
+  background: #258fc1;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 0 3px #258fc155;
+}
+.count-pin {
+  border: 2px solid #fff;
+  border-radius: 50%;
+  min-width: 32px;
+  height: 32px;
+  padding: 0 4px;
+  line-height: 28px;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: #fff;
+  background: #176e8c;
+  box-shadow: 0 1px 5px #0005;
+}
+.count-cluster {
+  height: 42px;
+  min-width: 42px;
+  line-height: 36px;
+  border: 3px solid #fff;
+  font-size: 12px;
+  background: #18465b;
+}
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+  background: var(--paper);
+  color: var(--ink);
+}
+.leaflet-popup-content {
+  max-height: 340px;
+  overflow: auto;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.leaflet-popup-content a {
+  color: var(--accent);
+}
+.precision-note {
+  font-weight: 600;
+}
+.leaflet-popup-content .event {
+  border-bottom: 1px solid var(--line);
+  padding: 9px 0;
+}
+.leaflet-popup-content p {
+  margin: 4px 0;
+}
+.sheet-toggle {
+  display: none;
+}
+.record-dialog {
+  background: var(--paper);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  width: 520px;
+  max-width: 92vw;
+  max-height: 85dvh;
+  padding: 20px;
+  overflow: auto;
+}
+.record-dialog::backdrop {
+  background: #0007;
+}
+.record-dialog h2 {
+  font-size: 18px;
+  margin-right: 30px;
+}
+.record-dialog .close {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  border: 0;
+  background: var(--soft);
+  border-radius: 4px;
+  padding: 5px 10px;
+}
+.record-dialog p {
+  font-size: 13px;
+  line-height: 1.6;
+}
+.inline-options {
+  font-size: 12px;
+  margin: 0 0 12px;
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.inline-options input {
+  accent-color: var(--accent);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #172732;
+    --ink: #e2ecf2;
+    --muted: #aec2ce;
+    --soft: #203541;
+    --line: #3c505b;
+    --accent: #75bfd6;
+    --head: #0a202e;
+    --warning: #3e3525;
+  }
+  .leaflet-control-zoom a {
+    background: var(--paper);
+    color: var(--ink);
+  }
+}
+@media (max-width: 760px) {
+  .explorer-header {
+    padding: 14px 16px;
+    min-height: 79px;
+  }
+  .explorer-header h1 {
+    font-size: 19px;
+  }
+  .explorer-header #snapshot-date {
+    display: none;
+  }
+  .explorer-sidebar {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: min(45dvh, 370px);
+    min-height: 285px;
+    border: 0;
+    border-radius: 15px 15px 0 0;
+    box-shadow: 0 -3px 14px #0003;
+  }
+  .explorer-sidebar.expanded {
+    height: 80%;
+  }
+  .sheet-toggle {
+    display: block;
+    height: 24px;
+    min-height: 24px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    flex-shrink: 0;
+  }
+  .sheet-toggle::before {
+    content: "";
+    display: block;
+    width: 35px;
+    height: 4px;
+    margin: auto;
+    border-radius: 3px;
+    background: var(--line);
+  }
+  .search-area {
+    padding: 0 15px 8px;
+  }
+  .search-area > label {
+    display: none;
+  }
+  input[type="search"] {
+    font-size: 16px;
+    padding: 9px;
+  }
+  #stats {
+    padding: 0 15px 8px;
+    min-height: 55px;
+  }
+  #stats strong,
+  #stats > b {
+    font-size: 24px;
+  }
+  .explorer-tabs button {
+    padding: 8px 10px;
+    min-height: 36px;
+  }
+  .explorer-panel {
+    padding: 10px 15px;
+  }
+  .explorer-footer {
+    padding: 8px 15px;
+  }
+  .map-canvas {
+    position: absolute;
+    inset: 0;
+  }
+  .leaflet-top.leaflet-left {
+    display: flex;
+    align-items: flex-start;
+    gap: 7px;
+    padding: 10px;
+  }
+  .leaflet-top.leaflet-left .leaflet-control {
+    margin: 0;
+  }
+  .leaflet-control-zoom {
+    display: flex;
+  }
+  .leaflet-control-zoom a:first-child {
+    border-bottom: 0;
+    border-right: 1px solid #ccc;
+  }
+  .leaflet-control-zoom a {
+    border-radius: 0 !important;
+  }
+  .map-message {
+    top: 60px;
+    bottom: auto;
+    left: 10px;
+    max-width: calc(100% - 20px);
+  }
+  .leaflet-control-attribution {
+    max-width: 85vw;
+    font-size: 9px !important;
+  }
+  .layer-row {
+    min-height: 40px;
+  }
+}
+@media (pointer: coarse) {
+  .explorer-control button {
+    width: 40px;
+    height: 40px;
+    line-height: 40px;
+  }
+  .explorer-tabs button,
+  .layer-row,
+  .sheet-toggle {
+    min-height: 44px;
+  }
+  .leaflet-control-zoom a {
+    width: 40px;
+    height: 40px;
+    line-height: 40px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  * {
+    scroll-behavior: auto !important;
+    transition: none !important;
+  }
+}
+
+.feature-dot {
+  width: 100%;
+  height: 100%;
+  border: 2px solid white;
+  border-radius: 50%;
+  box-shadow: 0 1px 4px #0006;
+}
+.pin,
+.cluster {
+  border-radius: 50%;
+  color: white;
+  background: #254b60;
+  border: 2px solid #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  box-shadow: 0 1px 5px #0005;
+  width: 100%;
+  height: 100%;
+}
+.cluster {
+  font-size: 12px;
+}
+.event {
+  border-top: 1px solid #ddd;
+  padding: 8px 0;
+}
+.event p {
+  margin: 4px 0;
+}
+.leaflet-popup-content {
+  max-height: 360px;
+  overflow: auto;
+}
+.itin ul {
+  padding-left: 20px;
+}
+.itin li {
+  margin: 8px 0;
+}
+
+    </style>
+    <style></style>
+  </head>
+  <body>
+    <header class="explorer-header">
+      <div>
+        <h1>Toronto building permits</h1>
+        <p>Complete active permit register</p>
+      </div>
+      <div id="snapshot-date"></div>
+    </header>
+    <main class="explorer-layout">
+      <aside
+        id="panel"
+        class="explorer-sidebar"
+        aria-label="Map exploration controls"
+      >
+        <button
+          type="button"
+          id="sheet-toggle"
+          class="sheet-toggle"
+          aria-label="Expand map controls"
+          aria-expanded="false"
+        ></button>
+        <div class="search-area">
+          <label for="search">Search features</label
+          ><input
+            id="search"
+            type="search"
+            placeholder="Address, permit number or description"
+            aria-label="Search features"
+            autocomplete="off"
+          />
+        </div>
+        <div id="stats" role="status" aria-live="polite"></div>
+        <nav class="explorer-tabs" role="tablist" aria-label="Map exploration">
+          <button
+            type="button"
+            role="tab"
+            id="layers-tab"
+            data-tab="layers"
+            aria-controls="layers-panel"
+            aria-selected="true"
+          >
+            Layers</button
+          ><button
+            type="button"
+            role="tab"
+            id="results-tab"
+            data-tab="results"
+            aria-controls="results-panel"
+            aria-selected="false"
+          >
+            Results</button
+          ><button
+            type="button"
+            role="tab"
+            id="sources-tab"
+            data-tab="sources"
+            aria-controls="sources-panel"
+            aria-selected="false"
+          >
+            Data sources
+          </button>
+        </nav>
+        <section
+          id="layers-panel"
+          class="explorer-panel"
+          role="tabpanel"
+          aria-labelledby="layers-tab"
+        >
+          <div id="layer-controls"></div>
+          <div class="layer-actions">
+            <button type="button" class="text-button" id="select-all">
+              Select all</button
+            ><button type="button" class="text-button" id="clear-all">
+              Clear all
+            </button>
+          </div>
+          <details>
+            <summary>More filters</summary>
+            <label class="field" for="status">Status</label
+            ><select id="status">
+              <option value="">All statuses</option></select
+            ><label class="field" for="type">Exact permit type</label
+            ><select id="type">
+              <option value="">All permit types</option></select
+            ><label class="field" for="year">Application year</label
+            ><select id="year">
+              <option value="">All years</option>
+            </select>
+          </details>
+          <p class="notice">
+            Permit records, not properties. An open permit does not imply work
+            is happening today.
+          </p>
+        </section>
+        <section
+          id="results-panel"
+          class="explorer-panel"
+          role="tabpanel"
+          aria-labelledby="results-tab"
+          hidden
+        >
+          <p id="result-note" class="hint"></p>
+          <div id="results"></div>
+        </section>
+        <section
+          id="sources-panel"
+          class="explorer-panel"
+          role="tabpanel"
+          aria-labelledby="sources-tab"
+          hidden
+        >
+          <p id="snapshot-provenance" class="muted"></p>
+          <h2>Data sources</h2>
+          <ul>
+            <li>
+              <a
+                href="https://open.toronto.ca/dataset/building-permits-active-permits/"
+                >City of Toronto — Building Permits: Active Permits</a
+              >
+            </li>
+            <li>
+              <a
+                href="https://open.toronto.ca/dataset/address-points-municipal-toronto-one-address-repository/"
+                >City of Toronto — Address Points (Municipal)</a
+              >
+            </li>
+            <li>
+              Contains information licensed under the
+              <a href="https://open.toronto.ca/open-data-license/"
+                >Open Government Licence – Toronto</a
+              >.
+            </li>
+            <li>
+              Map: <a href="https://leafletjs.com/">Leaflet</a> / ©
+              <a href="https://www.openstreetmap.org/copyright"
+                >OpenStreetMap contributors</a
+              >
+            </li>
+          </ul>
+          <p>
+            Active register snapshot, not a history of all construction. An open
+            permit does not mean work is happening today. Address points
+            approximate the property location. Unmatched permits remain
+            searchable and are counted above. Check current status with the
+            <a
+              href="https://www.toronto.ca/services-payments/building-construction/building-permit/after-you-apply-for-a-building-permit/search-the-status-of-a-building-permit-application/"
+              >City</a
+            >.
+          </p>
+        </section>
+        <footer class="explorer-footer">
+          <span>City of Toronto</span
+          ><button type="button" id="provenance" class="text-button">
+            Provenance
+          </button>
+        </footer>
+      </aside>
+      <div class="map-canvas">
+        <div id="map" aria-label="Toronto building permits map"></div>
+        <div
+          id="location-status"
+          class="map-message"
+          role="status"
+          aria-live="polite"
+        ></div>
+      </div>
+    </main>
+    <dialog
+      id="record-detail"
+      class="record-dialog"
+      aria-labelledby="record-title"
+    >
+      <button
+        type="button"
+        id="record-close"
+        class="close"
+        aria-label="Close details"
+      >
+        ×
+      </button>
+      <h2 id="record-title"></h2>
+      <div id="record-body"></div>
+    </dialog>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+      /*
+Copyright 2012 David Leaver
+
+Permission is hereby granted, free of charge, to any person obtaining
+a copy of this software and associated documentation files (the
+"Software"), to deal in the Software without restriction, including
+without limitation the rights to use, copy, modify, merge, publish,
+distribute, sublicense, and/or sell copies of the Software, and to
+permit persons to whom the Software is furnished to do so, subject to
+the following conditions:
+
+The above copyright notice and this permission notice shall be
+included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+*/
+!function(e,t){"object"==typeof exports&&"undefined"!=typeof module?t(exports):"function"==typeof define&&define.amd?define(["exports"],t):t(((e=e||self).Leaflet=e.Leaflet||{},e.Leaflet.markercluster={}))}(this,function(e){"use strict";var t=L.MarkerClusterGroup=L.FeatureGroup.extend({options:{maxClusterRadius:80,iconCreateFunction:null,clusterPane:L.Marker.prototype.options.pane,spiderfyOnEveryZoom:!1,spiderfyOnMaxZoom:!0,showCoverageOnHover:!0,zoomToBoundsOnClick:!0,singleMarkerMode:!1,disableClusteringAtZoom:null,removeOutsideVisibleBounds:!0,animate:!0,animateAddingMarkers:!1,spiderfyShapePositions:null,spiderfyDistanceMultiplier:1,spiderLegPolylineOptions:{weight:1.5,color:"#222",opacity:.5},chunkedLoading:!1,chunkInterval:200,chunkDelay:50,chunkProgress:null,polygonOptions:{}},initialize:function(e){L.Util.setOptions(this,e),this.options.iconCreateFunction||(this.options.iconCreateFunction=this._defaultIconCreateFunction),this._featureGroup=L.featureGroup(),this._featureGroup.addEventParent(this),this._nonPointGroup=L.featureGroup(),this._nonPointGroup.addEventParent(this),this._inZoomAnimation=0,this._needsClustering=[],this._needsRemoving=[],this._currentShownBounds=null,this._queue=[],this._childMarkerEventHandlers={dragstart:this._childMarkerDragStart,move:this._childMarkerMoved,dragend:this._childMarkerDragEnd};var t=L.DomUtil.TRANSITION&&this.options.animate;L.extend(this,t?this._withAnimation:this._noAnimation),this._markerCluster=t?L.MarkerCluster:L.MarkerClusterNonAnimated},addLayer:function(e){if(e instanceof L.LayerGroup)return this.addLayers([e]);if(!e.getLatLng)return this._nonPointGroup.addLayer(e),this.fire("layeradd",{layer:e}),this;if(!this._map)return this._needsClustering.push(e),this.fire("layeradd",{layer:e}),this;if(this.hasLayer(e))return this;this._unspiderfy&&this._unspiderfy(),this._addLayer(e,this._maxZoom),this.fire("layeradd",{layer:e}),this._topClusterLevel._recalculateBounds(),this._refreshClustersIcons();var t=e,i=this._zoom;if(e.__parent)for(;t.__parent._zoom>=i;)t=t.__parent;return this._currentShownBounds.contains(t.getLatLng())&&(this.options.animateAddingMarkers?this._animationAddLayer(e,t):this._animationAddLayerNonAnimated(e,t)),this},removeLayer:function(e){return e instanceof L.LayerGroup?this.removeLayers([e]):(e.getLatLng?this._map?e.__parent&&(this._unspiderfy&&(this._unspiderfy(),this._unspiderfyLayer(e)),this._removeLayer(e,!0),this.fire("layerremove",{layer:e}),this._topClusterLevel._recalculateBounds(),this._refreshClustersIcons(),e.off(this._childMarkerEventHandlers,this),this._featureGroup.hasLayer(e)&&(this._featureGroup.removeLayer(e),e.clusterShow&&e.clusterShow())):(!this._arraySplice(this._needsClustering,e)&&this.hasLayer(e)&&this._needsRemoving.push({layer:e,latlng:e._latlng}),this.fire("layerremove",{layer:e})):(this._nonPointGroup.removeLayer(e),this.fire("layerremove",{layer:e})),this)},addLayers:function(n,s){if(!L.Util.isArray(n))return this.addLayer(n);var o,a=this._featureGroup,h=this._nonPointGroup,l=this.options.chunkedLoading,u=this.options.chunkInterval,_=this.options.chunkProgress,d=n.length,p=0,c=!0;if(this._map){var f=(new Date).getTime(),m=L.bind(function(){var e=(new Date).getTime();for(this._map&&this._unspiderfy&&this._unspiderfy();p<d;p++){if(l&&p%200==0){var t=(new Date).getTime()-e;if(u<t)break}if((o=n[p])instanceof L.LayerGroup)c&&(n=n.slice(),c=!1),this._extractNonGroupLayers(o,n),d=n.length;else if(o.getLatLng){if(!this.hasLayer(o)&&(this._addLayer(o,this._maxZoom),s||this.fire("layeradd",{layer:o}),o.__parent&&2===o.__parent.getChildCount())){var i=o.__parent.getAllChildMarkers(),r=i[0]===o?i[1]:i[0];a.removeLayer(r)}}else h.addLayer(o),s||this.fire("layeradd",{layer:o})}_&&_(p,d,(new Date).getTime()-f),p===d?(this._topClusterLevel._recalculateBounds(),this._refreshClustersIcons(),this._topClusterLevel._recursivelyAddChildrenToMap(null,this._zoom,this._currentShownBounds)):setTimeout(m,this.options.chunkDelay)},this);m()}else for(var e=this._needsClustering;p<d;p++)(o=n[p])instanceof L.LayerGroup?(c&&(n=n.slice(),c=!1),this._extractNonGroupLayers(o,n),d=n.length):o.getLatLng?this.hasLayer(o)||e.push(o):h.addLayer(o);return this},removeLayers:function(e){var t,i,r=e.length,n=this._featureGroup,s=this._nonPointGroup,o=!0;if(!this._map){for(t=0;t<r;t++)(i=e[t])instanceof L.LayerGroup?(o&&(e=e.slice(),o=!1),this._extractNonGroupLayers(i,e),r=e.length):(this._arraySplice(this._needsClustering,i),s.removeLayer(i),this.hasLayer(i)&&this._needsRemoving.push({layer:i,latlng:i._latlng}),this.fire("layerremove",{layer:i}));return this}if(this._unspiderfy){this._unspiderfy();var a=e.slice(),h=r;for(t=0;t<h;t++)(i=a[t])instanceof L.LayerGroup?(this._extractNonGroupLayers(i,a),h=a.length):this._unspiderfyLayer(i)}for(t=0;t<r;t++)(i=e[t])instanceof L.LayerGroup?(o&&(e=e.slice(),o=!1),this._extractNonGroupLayers(i,e),r=e.length):i.__parent?(this._removeLayer(i,!0,!0),this.fire("layerremove",{layer:i}),n.hasLayer(i)&&(n.removeLayer(i),i.clusterShow&&i.clusterShow())):(s.removeLayer(i),this.fire("layerremove",{layer:i}));return this._topClusterLevel._recalculateBounds(),this._refreshClustersIcons(),this._topClusterLevel._recursivelyAddChildrenToMap(null,this._zoom,this._currentShownBounds),this},clearLayers:function(){return this._map||(this._needsClustering=[],this._needsRemoving=[],delete this._gridClusters,delete this._gridUnclustered),this._noanimationUnspiderfy&&this._noanimationUnspiderfy(),this._featureGroup.clearLayers(),this._nonPointGroup.clearLayers(),this.eachLayer(function(e){e.off(this._childMarkerEventHandlers,this),delete e.__parent},this),this._map&&this._generateInitialClusters(),this},getBounds:function(){var e=new L.LatLngBounds;this._topClusterLevel&&e.extend(this._topClusterLevel._bounds);for(var t=this._needsClustering.length-1;0<=t;t--)e.extend(this._needsClustering[t].getLatLng());return e.extend(this._nonPointGroup.getBounds()),e},eachLayer:function(e,t){var i,r,n,s=this._needsClustering.slice(),o=this._needsRemoving;for(this._topClusterLevel&&this._topClusterLevel.getAllChildMarkers(s),r=s.length-1;0<=r;r--){for(i=!0,n=o.length-1;0<=n;n--)if(o[n].layer===s[r]){i=!1;break}i&&e.call(t,s[r])}this._nonPointGroup.eachLayer(e,t)},getLayers:function(){var t=[];return this.eachLayer(function(e){t.push(e)}),t},getLayer:function(t){var i=null;return t=parseInt(t,10),this.eachLayer(function(e){L.stamp(e)===t&&(i=e)}),i},hasLayer:function(e){if(!e)return!1;var t,i=this._needsClustering;for(t=i.length-1;0<=t;t--)if(i[t]===e)return!0;for(t=(i=this._needsRemoving).length-1;0<=t;t--)if(i[t].layer===e)return!1;return!(!e.__parent||e.__parent._group!==this)||this._nonPointGroup.hasLayer(e)},zoomToShowLayer:function(e,t){var i=this._map;"function"!=typeof t&&(t=function(){});var r=function(){!i.hasLayer(e)&&!i.hasLayer(e.__parent)||this._inZoomAnimation||(this._map.off("moveend",r,this),this.off("animationend",r,this),i.hasLayer(e)?t():e.__parent._icon&&(this.once("spiderfied",t,this),e.__parent.spiderfy()))};e._icon&&this._map.getBounds().contains(e.getLatLng())?t():e.__parent._zoom<Math.round(this._map._zoom)?(this._map.on("moveend",r,this),this._map.panTo(e.getLatLng())):(this._map.on("moveend",r,this),this.on("animationend",r,this),e.__parent.zoomToBounds())},onAdd:function(e){var t,i,r;if(this._map=e,!isFinite(this._map.getMaxZoom()))throw"Map has no maxZoom specified";for(this._featureGroup.addTo(e),this._nonPointGroup.addTo(e),this._gridClusters||this._generateInitialClusters(),this._maxLat=e.options.crs.projection.MAX_LATITUDE,t=0,i=this._needsRemoving.length;t<i;t++)(r=this._needsRemoving[t]).newlatlng=r.layer._latlng,r.layer._latlng=r.latlng;for(t=0,i=this._needsRemoving.length;t<i;t++)r=this._needsRemoving[t],this._removeLayer(r.layer,!0),r.layer._latlng=r.newlatlng;this._needsRemoving=[],this._zoom=Math.round(this._map._zoom),this._currentShownBounds=this._getExpandedVisibleBounds(),this._map.on("zoomend",this._zoomEnd,this),this._map.on("moveend",this._moveEnd,this),this._spiderfierOnAdd&&this._spiderfierOnAdd(),this._bindEvents(),i=this._needsClustering,this._needsClustering=[],this.addLayers(i,!0)},onRemove:function(e){e.off("zoomend",this._zoomEnd,this),e.off("moveend",this._moveEnd,this),this._unbindEvents(),this._map._mapPane.className=this._map._mapPane.className.replace(" leaflet-cluster-anim",""),this._spiderfierOnRemove&&this._spiderfierOnRemove(),delete this._maxLat,this._hideCoverage(),this._featureGroup.remove(),this._nonPointGroup.remove(),this._featureGroup.clearLayers(),this._map=null},getVisibleParent:function(e){for(var t=e;t&&!t._icon;)t=t.__parent;return t||null},_arraySplice:function(e,t){for(var i=e.length-1;0<=i;i--)if(e[i]===t)return e.splice(i,1),!0},_removeFromGridUnclustered:function(e,t){for(var i=this._map,r=this._gridUnclustered,n=Math.floor(this._map.getMinZoom());n<=t&&r[t].removeObject(e,i.project(e.getLatLng(),t));t--);},_childMarkerDragStart:function(e){e.target.__dragStart=e.target._latlng},_childMarkerMoved:function(e){if(!this._ignoreMove&&!e.target.__dragStart){var t=e.target._popup&&e.target._popup.isOpen();this._moveChild(e.target,e.oldLatLng,e.latlng),t&&e.target.openPopup()}},_moveChild:function(e,t,i){e._latlng=t,this.removeLayer(e),e._latlng=i,this.addLayer(e)},_childMarkerDragEnd:function(e){var t=e.target.__dragStart;delete e.target.__dragStart,t&&this._moveChild(e.target,t,e.target._latlng)},_removeLayer:function(e,t,i){var r=this._gridClusters,n=this._gridUnclustered,s=this._featureGroup,o=this._map,a=Math.floor(this._map.getMinZoom());t&&this._removeFromGridUnclustered(e,this._maxZoom);var h,l=e.__parent,u=l._markers;for(this._arraySplice(u,e);l&&(l._childCount--,l._boundsNeedUpdate=!0,!(l._zoom<a));)t&&l._childCount<=1?(h=l._markers[0]===e?l._markers[1]:l._markers[0],r[l._zoom].removeObject(l,o.project(l._cLatLng,l._zoom)),n[l._zoom].addObject(h,o.project(h.getLatLng(),l._zoom)),this._arraySplice(l.__parent._childClusters,l),l.__parent._markers.push(h),h.__parent=l.__parent,l._icon&&(s.removeLayer(l),i||s.addLayer(h))):l._iconNeedsUpdate=!0,l=l.__parent;delete e.__parent},_isOrIsParent:function(e,t){for(;t;){if(e===t)return!0;t=t.parentNode}return!1},fire:function(e,t,i){if(t&&t.layer instanceof L.MarkerCluster){if(t.originalEvent&&this._isOrIsParent(t.layer._icon,t.originalEvent.relatedTarget))return;e="cluster"+e}L.FeatureGroup.prototype.fire.call(this,e,t,i)},listens:function(e,t){return L.FeatureGroup.prototype.listens.call(this,e,t)||L.FeatureGroup.prototype.listens.call(this,"cluster"+e,t)},_defaultIconCreateFunction:function(e){var t=e.getChildCount(),i=" marker-cluster-";return i+=t<10?"small":t<100?"medium":"large",new L.DivIcon({html:"<div><span>"+t+"</span></div>",className:"marker-cluster"+i,iconSize:new L.Point(40,40)})},_bindEvents:function(){var e=this._map,t=this.options.spiderfyOnMaxZoom,i=this.options.showCoverageOnHover,r=this.options.zoomToBoundsOnClick,n=this.options.spiderfyOnEveryZoom;(t||r||n)&&this.on("clusterclick clusterkeypress",this._zoomOrSpiderfy,this),i&&(this.on("clustermouseover",this._showCoverage,this),this.on("clustermouseout",this._hideCoverage,this),e.on("zoomend",this._hideCoverage,this))},_zoomOrSpiderfy:function(e){var t=e.layer,i=t;if("clusterkeypress"!==e.type||!e.originalEvent||13===e.originalEvent.keyCode){for(;1===i._childClusters.length;)i=i._childClusters[0];i._zoom===this._maxZoom&&i._childCount===t._childCount&&this.options.spiderfyOnMaxZoom?t.spiderfy():this.options.zoomToBoundsOnClick&&t.zoomToBounds(),this.options.spiderfyOnEveryZoom&&t.spiderfy(),e.originalEvent&&13===e.originalEvent.keyCode&&this._map._container.focus()}},_showCoverage:function(e){var t=this._map;this._inZoomAnimation||(this._shownPolygon&&t.removeLayer(this._shownPolygon),2<e.layer.getChildCount()&&e.layer!==this._spiderfied&&(this._shownPolygon=new L.Polygon(e.layer.getConvexHull(),this.options.polygonOptions),t.addLayer(this._shownPolygon)))},_hideCoverage:function(){this._shownPolygon&&(this._map.removeLayer(this._shownPolygon),this._shownPolygon=null)},_unbindEvents:function(){var e=this.options.spiderfyOnMaxZoom,t=this.options.showCoverageOnHover,i=this.options.zoomToBoundsOnClick,r=this.options.spiderfyOnEveryZoom,n=this._map;(e||i||r)&&this.off("clusterclick clusterkeypress",this._zoomOrSpiderfy,this),t&&(this.off("clustermouseover",this._showCoverage,this),this.off("clustermouseout",this._hideCoverage,this),n.off("zoomend",this._hideCoverage,this))},_zoomEnd:function(){this._map&&(this._mergeSplitClusters(),this._zoom=Math.round(this._map._zoom),this._currentShownBounds=this._getExpandedVisibleBounds())},_moveEnd:function(){if(!this._inZoomAnimation){var e=this._getExpandedVisibleBounds();this._topClusterLevel._recursivelyRemoveChildrenFromMap(this._currentShownBounds,Math.floor(this._map.getMinZoom()),this._zoom,e),this._topClusterLevel._recursivelyAddChildrenToMap(null,Math.round(this._map._zoom),e),this._currentShownBounds=e}},_generateInitialClusters:function(){var e=Math.ceil(this._map.getMaxZoom()),t=Math.floor(this._map.getMinZoom()),i=this.options.maxClusterRadius,r=i;"function"!=typeof i&&(r=function(){return i}),null!==this.options.disableClusteringAtZoom&&(e=this.options.disableClusteringAtZoom-1),this._maxZoom=e,this._gridClusters={},this._gridUnclustered={};for(var n=e;t<=n;n--)this._gridClusters[n]=new L.DistanceGrid(r(n)),this._gridUnclustered[n]=new L.DistanceGrid(r(n));this._topClusterLevel=new this._markerCluster(this,t-1)},_addLayer:function(e,t){var i,r,n=this._gridClusters,s=this._gridUnclustered,o=Math.floor(this._map.getMinZoom());for(this.options.singleMarkerMode&&this._overrideMarkerIcon(e),e.on(this._childMarkerEventHandlers,this);o<=t;t--){i=this._map.project(e.getLatLng(),t);var a=n[t].getNearObject(i);if(a)return a._addChild(e),void(e.__parent=a);if(a=s[t].getNearObject(i)){var h=a.__parent;h&&this._removeLayer(a,!1);var l=new this._markerCluster(this,t,a,e);n[t].addObject(l,this._map.project(l._cLatLng,t)),a.__parent=l;var u=e.__parent=l;for(r=t-1;r>h._zoom;r--)u=new this._markerCluster(this,r,u),n[r].addObject(u,this._map.project(a.getLatLng(),r));return h._addChild(u),void this._removeFromGridUnclustered(a,t)}s[t].addObject(e,i)}this._topClusterLevel._addChild(e),e.__parent=this._topClusterLevel},_refreshClustersIcons:function(){this._featureGroup.eachLayer(function(e){e instanceof L.MarkerCluster&&e._iconNeedsUpdate&&e._updateIcon()})},_enqueue:function(e){this._queue.push(e),this._queueTimeout||(this._queueTimeout=setTimeout(L.bind(this._processQueue,this),300))},_processQueue:function(){for(var e=0;e<this._queue.length;e++)this._queue[e].call(this);this._queue.length=0,clearTimeout(this._queueTimeout),this._queueTimeout=null},_mergeSplitClusters:function(){var e=Math.round(this._map._zoom);this._processQueue(),this._zoom<e&&this._currentShownBounds.intersects(this._getExpandedVisibleBounds())?(this._animationStart(),this._topClusterLevel._recursivelyRemoveChildrenFromMap(this._currentShownBounds,Math.floor(this._map.getMinZoom()),this._zoom,this._getExpandedVisibleBounds()),this._animationZoomIn(this._zoom,e)):this._zoom>e?(this._animationStart(),this._animationZoomOut(this._zoom,e)):this._moveEnd()},_getExpandedVisibleBounds:function(){return this.options.removeOutsideVisibleBounds?L.Browser.mobile?this._checkBoundsMaxLat(this._map.getBounds()):this._checkBoundsMaxLat(this._map.getBounds().pad(1)):this._mapBoundsInfinite},_checkBoundsMaxLat:function(e){var t=this._maxLat;return void 0!==t&&(e.getNorth()>=t&&(e._northEast.lat=1/0),e.getSouth()<=-t&&(e._southWest.lat=-1/0)),e},_animationAddLayerNonAnimated:function(e,t){if(t===e)this._featureGroup.addLayer(e);else if(2===t._childCount){t._addToMap();var i=t.getAllChildMarkers();this._featureGroup.removeLayer(i[0]),this._featureGroup.removeLayer(i[1])}else t._updateIcon()},_extractNonGroupLayers:function(e,t){var i,r=e.getLayers(),n=0;for(t=t||[];n<r.length;n++)(i=r[n])instanceof L.LayerGroup?this._extractNonGroupLayers(i,t):t.push(i);return t},_overrideMarkerIcon:function(e){return e.options.icon=this.options.iconCreateFunction({getChildCount:function(){return 1},getAllChildMarkers:function(){return[e]}})}});L.MarkerClusterGroup.include({_mapBoundsInfinite:new L.LatLngBounds(new L.LatLng(-1/0,-1/0),new L.LatLng(1/0,1/0))}),L.MarkerClusterGroup.include({_noAnimation:{_animationStart:function(){},_animationZoomIn:function(e,t){this._topClusterLevel._recursivelyRemoveChildrenFromMap(this._currentShownBounds,Math.floor(this._map.getMinZoom()),e),this._topClusterLevel._recursivelyAddChildrenToMap(null,t,this._getExpandedVisibleBounds()),this.fire("animationend")},_animationZoomOut:function(e,t){this._topClusterLevel._recursivelyRemoveChildrenFromMap(this._currentShownBounds,Math.floor(this._map.getMinZoom()),e),this._topClusterLevel._recursivelyAddChildrenToMap(null,t,this._getExpandedVisibleBounds()),this.fire("animationend")},_animationAddLayer:function(e,t){this._animationAddLayerNonAnimated(e,t)}},_withAnimation:{_animationStart:function(){this._map._mapPane.className+=" leaflet-cluster-anim",this._inZoomAnimation++},_animationZoomIn:function(n,s){var o,a=this._getExpandedVisibleBounds(),h=this._featureGroup,e=Math.floor(this._map.getMinZoom());this._ignoreMove=!0,this._topClusterLevel._recursively(a,n,e,function(e){var t,i=e._latlng,r=e._markers;for(a.contains(i)||(i=null),e._isSingleParent()&&n+1===s?(h.removeLayer(e),e._recursivelyAddChildrenToMap(null,s,a)):(e.clusterHide(),e._recursivelyAddChildrenToMap(i,s,a)),o=r.length-1;0<=o;o--)t=r[o],a.contains(t._latlng)||h.removeLayer(t)}),this._forceLayout(),this._topClusterLevel._recursivelyBecomeVisible(a,s),h.eachLayer(function(e){e instanceof L.MarkerCluster||!e._icon||e.clusterShow()}),this._topClusterLevel._recursively(a,n,s,function(e){e._recursivelyRestoreChildPositions(s)}),this._ignoreMove=!1,this._enqueue(function(){this._topClusterLevel._recursively(a,n,e,function(e){h.removeLayer(e),e.clusterShow()}),this._animationEnd()})},_animationZoomOut:function(e,t){this._animationZoomOutSingle(this._topClusterLevel,e-1,t),this._topClusterLevel._recursivelyAddChildrenToMap(null,t,this._getExpandedVisibleBounds()),this._topClusterLevel._recursivelyRemoveChildrenFromMap(this._currentShownBounds,Math.floor(this._map.getMinZoom()),e,this._getExpandedVisibleBounds())},_animationAddLayer:function(e,t){var i=this,r=this._featureGroup;r.addLayer(e),t!==e&&(2<t._childCount?(t._updateIcon(),this._forceLayout(),this._animationStart(),e._setPos(this._map.latLngToLayerPoint(t.getLatLng())),e.clusterHide(),this._enqueue(function(){r.removeLayer(e),e.clusterShow(),i._animationEnd()})):(this._forceLayout(),i._animationStart(),i._animationZoomOutSingle(t,this._map.getMaxZoom(),this._zoom)))}},_animationZoomOutSingle:function(t,i,r){var n=this._getExpandedVisibleBounds(),s=Math.floor(this._map.getMinZoom());t._recursivelyAnimateChildrenInAndAddSelfToMap(n,s,i+1,r);var o=this;this._forceLayout(),t._recursivelyBecomeVisible(n,r),this._enqueue(function(){if(1===t._childCount){var e=t._markers[0];this._ignoreMove=!0,e.setLatLng(e.getLatLng()),this._ignoreMove=!1,e.clusterShow&&e.clusterShow()}else t._recursively(n,r,s,function(e){e._recursivelyRemoveChildrenFromMap(n,s,i+1)});o._animationEnd()})},_animationEnd:function(){this._map&&(this._map._mapPane.className=this._map._mapPane.className.replace(" leaflet-cluster-anim","")),this._inZoomAnimation--,this.fire("animationend")},_forceLayout:function(){L.Util.falseFn(document.body.offsetWidth)}}),L.markerClusterGroup=function(e){return new L.MarkerClusterGroup(e)};var i=L.MarkerCluster=L.Marker.extend({options:L.Icon.prototype.options,initialize:function(e,t,i,r){L.Marker.prototype.initialize.call(this,i?i._cLatLng||i.getLatLng():new L.LatLng(0,0),{icon:this,pane:e.options.clusterPane}),this._group=e,this._zoom=t,this._markers=[],this._childClusters=[],this._childCount=0,this._iconNeedsUpdate=!0,this._boundsNeedUpdate=!0,this._bounds=new L.LatLngBounds,i&&this._addChild(i),r&&this._addChild(r)},getAllChildMarkers:function(e,t){e=e||[];for(var i=this._childClusters.length-1;0<=i;i--)this._childClusters[i].getAllChildMarkers(e,t);for(var r=this._markers.length-1;0<=r;r--)t&&this._markers[r].__dragStart||e.push(this._markers[r]);return e},getChildCount:function(){return this._childCount},zoomToBounds:function(e){for(var t,i=this._childClusters.slice(),r=this._group._map,n=r.getBoundsZoom(this._bounds),s=this._zoom+1,o=r.getZoom();0<i.length&&s<n;){s++;var a=[];for(t=0;t<i.length;t++)a=a.concat(i[t]._childClusters);i=a}s<n?this._group._map.setView(this._latlng,s):n<=o?this._group._map.setView(this._latlng,o+1):this._group._map.fitBounds(this._bounds,e)},getBounds:function(){var e=new L.LatLngBounds;return e.extend(this._bounds),e},_updateIcon:function(){this._iconNeedsUpdate=!0,this._icon&&this.setIcon(this)},createIcon:function(){return this._iconNeedsUpdate&&(this._iconObj=this._group.options.iconCreateFunction(this),this._iconNeedsUpdate=!1),this._iconObj.createIcon()},createShadow:function(){return this._iconObj.createShadow()},_addChild:function(e,t){this._iconNeedsUpdate=!0,this._boundsNeedUpdate=!0,this._setClusterCenter(e),e instanceof L.MarkerCluster?(t||(this._childClusters.push(e),e.__parent=this),this._childCount+=e._childCount):(t||this._markers.push(e),this._childCount++),this.__parent&&this.__parent._addChild(e,!0)},_setClusterCenter:function(e){this._cLatLng||(this._cLatLng=e._cLatLng||e._latlng)},_resetBounds:function(){var e=this._bounds;e._southWest&&(e._southWest.lat=1/0,e._southWest.lng=1/0),e._northEast&&(e._northEast.lat=-1/0,e._northEast.lng=-1/0)},_recalculateBounds:function(){var e,t,i,r,n=this._markers,s=this._childClusters,o=0,a=0,h=this._childCount;if(0!==h){for(this._resetBounds(),e=0;e<n.length;e++)i=n[e]._latlng,this._bounds.extend(i),o+=i.lat,a+=i.lng;for(e=0;e<s.length;e++)(t=s[e])._boundsNeedUpdate&&t._recalculateBounds(),this._bounds.extend(t._bounds),i=t._wLatLng,r=t._childCount,o+=i.lat*r,a+=i.lng*r;this._latlng=this._wLatLng=new L.LatLng(o/h,a/h),this._boundsNeedUpdate=!1}},_addToMap:function(e){e&&(this._backupLatlng=this._latlng,this.setLatLng(e)),this._group._featureGroup.addLayer(this)},_recursivelyAnimateChildrenIn:function(e,n,t){this._recursively(e,this._group._map.getMinZoom(),t-1,function(e){var t,i,r=e._markers;for(t=r.length-1;0<=t;t--)(i=r[t])._icon&&(i._setPos(n),i.clusterHide())},function(e){var t,i,r=e._childClusters;for(t=r.length-1;0<=t;t--)(i=r[t])._icon&&(i._setPos(n),i.clusterHide())})},_recursivelyAnimateChildrenInAndAddSelfToMap:function(t,i,r,n){this._recursively(t,n,i,function(e){e._recursivelyAnimateChildrenIn(t,e._group._map.latLngToLayerPoint(e.getLatLng()).round(),r),e._isSingleParent()&&r-1===n?(e.clusterShow(),e._recursivelyRemoveChildrenFromMap(t,i,r)):e.clusterHide(),e._addToMap()})},_recursivelyBecomeVisible:function(e,t){this._recursively(e,this._group._map.getMinZoom(),t,null,function(e){e.clusterShow()})},_recursivelyAddChildrenToMap:function(r,n,s){this._recursively(s,this._group._map.getMinZoom()-1,n,function(e){if(n!==e._zoom)for(var t=e._markers.length-1;0<=t;t--){var i=e._markers[t];s.contains(i._latlng)&&(r&&(i._backupLatlng=i.getLatLng(),i.setLatLng(r),i.clusterHide&&i.clusterHide()),e._group._featureGroup.addLayer(i))}},function(e){e._addToMap(r)})},_recursivelyRestoreChildPositions:function(e){for(var t=this._markers.length-1;0<=t;t--){var i=this._markers[t];i._backupLatlng&&(i.setLatLng(i._backupLatlng),delete i._backupLatlng)}if(e-1===this._zoom)for(var r=this._childClusters.length-1;0<=r;r--)this._childClusters[r]._restorePosition();else for(var n=this._childClusters.length-1;0<=n;n--)this._childClusters[n]._recursivelyRestoreChildPositions(e)},_restorePosition:function(){this._backupLatlng&&(this.setLatLng(this._backupLatlng),delete this._backupLatlng)},_recursivelyRemoveChildrenFromMap:function(e,t,i,r){var n,s;this._recursively(e,t-1,i-1,function(e){for(s=e._markers.length-1;0<=s;s--)n=e._markers[s],r&&r.contains(n._latlng)||(e._group._featureGroup.removeLayer(n),n.clusterShow&&n.clusterShow())},function(e){for(s=e._childClusters.length-1;0<=s;s--)n=e._childClusters[s],r&&r.contains(n._latlng)||(e._group._featureGroup.removeLayer(n),n.clusterShow&&n.clusterShow())})},_recursively:function(e,t,i,r,n){var s,o,a=this._childClusters,h=this._zoom;if(t<=h&&(r&&r(this),n&&h===i&&n(this)),h<t||h<i)for(s=a.length-1;0<=s;s--)(o=a[s])._boundsNeedUpdate&&o._recalculateBounds(),e.intersects(o._bounds)&&o._recursively(e,t,i,r,n)},_isSingleParent:function(){return 0<this._childClusters.length&&this._childClusters[0]._childCount===this._childCount}});L.Marker.include({clusterHide:function(){var e=this.options.opacity;return this.setOpacity(0),this.options.opacity=e,this},clusterShow:function(){return this.setOpacity(this.options.opacity)}}),L.DistanceGrid=function(e){this._cellSize=e,this._sqCellSize=e*e,this._grid={},this._objectPoint={}},L.DistanceGrid.prototype={addObject:function(e,t){var i=this._getCoord(t.x),r=this._getCoord(t.y),n=this._grid,s=n[r]=n[r]||{},o=s[i]=s[i]||[],a=L.Util.stamp(e);this._objectPoint[a]=t,o.push(e)},updateObject:function(e,t){this.removeObject(e),this.addObject(e,t)},removeObject:function(e,t){var i,r,n=this._getCoord(t.x),s=this._getCoord(t.y),o=this._grid,a=o[s]=o[s]||{},h=a[n]=a[n]||[];for(delete this._objectPoint[L.Util.stamp(e)],i=0,r=h.length;i<r;i++)if(h[i]===e)return h.splice(i,1),1===r&&delete a[n],!0},eachObject:function(e,t){var i,r,n,s,o,a,h=this._grid;for(i in h)for(r in o=h[i])for(n=0,s=(a=o[r]).length;n<s;n++)e.call(t,a[n])&&(n--,s--)},getNearObject:function(e){var t,i,r,n,s,o,a,h,l=this._getCoord(e.x),u=this._getCoord(e.y),_=this._objectPoint,d=this._sqCellSize,p=null;for(t=u-1;t<=u+1;t++)if(n=this._grid[t])for(i=l-1;i<=l+1;i++)if(s=n[i])for(r=0,o=s.length;r<o;r++)a=s[r],((h=this._sqDist(_[L.Util.stamp(a)],e))<d||h<=d&&null===p)&&(d=h,p=a);return p},_getCoord:function(e){var t=Math.floor(e/this._cellSize);return isFinite(t)?t:e},_sqDist:function(e,t){var i=t.x-e.x,r=t.y-e.y;return i*i+r*r}},L.QuickHull={getDistant:function(e,t){var i=t[1].lat-t[0].lat;return(t[0].lng-t[1].lng)*(e.lat-t[0].lat)+i*(e.lng-t[0].lng)},findMostDistantPointFromBaseLine:function(e,t){var i,r,n,s=0,o=null,a=[];for(i=t.length-1;0<=i;i--)r=t[i],0<(n=this.getDistant(r,e))&&(a.push(r),s<n&&(s=n,o=r));return{maxPoint:o,newPoints:a}},buildConvexHull:function(e,t){var i=[],r=this.findMostDistantPointFromBaseLine(e,t);return r.maxPoint?i=(i=i.concat(this.buildConvexHull([e[0],r.maxPoint],r.newPoints))).concat(this.buildConvexHull([r.maxPoint,e[1]],r.newPoints)):[e[0]]},getConvexHull:function(e){var t,i=!1,r=!1,n=!1,s=!1,o=null,a=null,h=null,l=null,u=null,_=null;for(t=e.length-1;0<=t;t--){var d=e[t];(!1===i||d.lat>i)&&(i=(o=d).lat),(!1===r||d.lat<r)&&(r=(a=d).lat),(!1===n||d.lng>n)&&(n=(h=d).lng),(!1===s||d.lng<s)&&(s=(l=d).lng)}return u=r!==i?(_=a,o):(_=l,h),[].concat(this.buildConvexHull([_,u],e),this.buildConvexHull([u,_],e))}},L.MarkerCluster.include({getConvexHull:function(){var e,t,i=this.getAllChildMarkers(),r=[];for(t=i.length-1;0<=t;t--)e=i[t].getLatLng(),r.push(e);return L.QuickHull.getConvexHull(r)}}),L.MarkerCluster.include({_2PI:2*Math.PI,_circleFootSeparation:25,_circleStartAngle:0,_spiralFootSeparation:28,_spiralLengthStart:11,_spiralLengthFactor:5,_circleSpiralSwitchover:9,spiderfy:function(){if(this._group._spiderfied!==this&&!this._group._inZoomAnimation){var e,t=this.getAllChildMarkers(null,!0),i=this._group._map.latLngToLayerPoint(this._latlng);this._group._unspiderfy(),e=(this._group._spiderfied=this)._group.options.spiderfyShapePositions?this._group.options.spiderfyShapePositions(t.length,i):t.length>=this._circleSpiralSwitchover?this._generatePointsSpiral(t.length,i):(i.y+=10,this._generatePointsCircle(t.length,i)),this._animationSpiderfy(t,e)}},unspiderfy:function(e){this._group._inZoomAnimation||(this._animationUnspiderfy(e),this._group._spiderfied=null)},_generatePointsCircle:function(e,t){var i,r,n=this._group.options.spiderfyDistanceMultiplier*this._circleFootSeparation*(2+e)/this._2PI,s=this._2PI/e,o=[];for(n=Math.max(n,35),o.length=e,i=0;i<e;i++)r=this._circleStartAngle+i*s,o[i]=new L.Point(t.x+n*Math.cos(r),t.y+n*Math.sin(r))._round();return o},_generatePointsSpiral:function(e,t){var i,r=this._group.options.spiderfyDistanceMultiplier,n=r*this._spiralLengthStart,s=r*this._spiralFootSeparation,o=r*this._spiralLengthFactor*this._2PI,a=0,h=[];for(i=h.length=e;0<=i;i--)i<e&&(h[i]=new L.Point(t.x+n*Math.cos(a),t.y+n*Math.sin(a))._round()),n+=o/(a+=s/n+5e-4*i);return h},_noanimationUnspiderfy:function(){var e,t,i=this._group,r=i._map,n=i._featureGroup,s=this.getAllChildMarkers(null,!0);for(i._ignoreMove=!0,this.setOpacity(1),t=s.length-1;0<=t;t--)e=s[t],n.removeLayer(e),e._preSpiderfyLatlng&&(e.setLatLng(e._preSpiderfyLatlng),delete e._preSpiderfyLatlng),e.setZIndexOffset&&e.setZIndexOffset(0),e._spiderLeg&&(r.removeLayer(e._spiderLeg),delete e._spiderLeg);i.fire("unspiderfied",{cluster:this,markers:s}),i._ignoreMove=!1,i._spiderfied=null}}),L.MarkerClusterNonAnimated=L.MarkerCluster.extend({_animationSpiderfy:function(e,t){var i,r,n,s,o=this._group,a=o._map,h=o._featureGroup,l=this._group.options.spiderLegPolylineOptions;for(o._ignoreMove=!0,i=0;i<e.length;i++)s=a.layerPointToLatLng(t[i]),r=e[i],n=new L.Polyline([this._latlng,s],l),a.addLayer(n),r._spiderLeg=n,r._preSpiderfyLatlng=r._latlng,r.setLatLng(s),r.setZIndexOffset&&r.setZIndexOffset(1e6),h.addLayer(r);this.setOpacity(.3),o._ignoreMove=!1,o.fire("spiderfied",{cluster:this,markers:e})},_animationUnspiderfy:function(){this._noanimationUnspiderfy()}}),L.MarkerCluster.include({_animationSpiderfy:function(e,t){var i,r,n,s,o,a,h=this,l=this._group,u=l._map,_=l._featureGroup,d=this._latlng,p=u.latLngToLayerPoint(d),c=L.Path.SVG,f=L.extend({},this._group.options.spiderLegPolylineOptions),m=f.opacity;for(void 0===m&&(m=L.MarkerClusterGroup.prototype.options.spiderLegPolylineOptions.opacity),c?(f.opacity=0,f.className=(f.className||"")+" leaflet-cluster-spider-leg"):f.opacity=m,l._ignoreMove=!0,i=0;i<e.length;i++)r=e[i],a=u.layerPointToLatLng(t[i]),n=new L.Polyline([d,a],f),u.addLayer(n),r._spiderLeg=n,c&&(o=(s=n._path).getTotalLength()+.1,s.style.strokeDasharray=o,s.style.strokeDashoffset=o),r.setZIndexOffset&&r.setZIndexOffset(1e6),r.clusterHide&&r.clusterHide(),_.addLayer(r),r._setPos&&r._setPos(p);for(l._forceLayout(),l._animationStart(),i=e.length-1;0<=i;i--)a=u.layerPointToLatLng(t[i]),(r=e[i])._preSpiderfyLatlng=r._latlng,r.setLatLng(a),r.clusterShow&&r.clusterShow(),c&&((s=(n=r._spiderLeg)._path).style.strokeDashoffset=0,n.setStyle({opacity:m}));this.setOpacity(.3),l._ignoreMove=!1,setTimeout(function(){l._animationEnd(),l.fire("spiderfied",{cluster:h,markers:e})},200)},_animationUnspiderfy:function(e){var t,i,r,n,s,o,a=this,h=this._group,l=h._map,u=h._featureGroup,_=e?l._latLngToNewLayerPoint(this._latlng,e.zoom,e.center):l.latLngToLayerPoint(this._latlng),d=this.getAllChildMarkers(null,!0),p=L.Path.SVG;for(h._ignoreMove=!0,h._animationStart(),this.setOpacity(1),i=d.length-1;0<=i;i--)(t=d[i])._preSpiderfyLatlng&&(t.closePopup(),t.setLatLng(t._preSpiderfyLatlng),delete t._preSpiderfyLatlng,o=!0,t._setPos&&(t._setPos(_),o=!1),t.clusterHide&&(t.clusterHide(),o=!1),o&&u.removeLayer(t),p&&(s=(n=(r=t._spiderLeg)._path).getTotalLength()+.1,n.style.strokeDashoffset=s,r.setStyle({opacity:0})));h._ignoreMove=!1,setTimeout(function(){var e=0;for(i=d.length-1;0<=i;i--)(t=d[i])._spiderLeg&&e++;for(i=d.length-1;0<=i;i--)(t=d[i])._spiderLeg&&(t.clusterShow&&t.clusterShow(),t.setZIndexOffset&&t.setZIndexOffset(0),1<e&&u.removeLayer(t),l.removeLayer(t._spiderLeg),delete t._spiderLeg);h._animationEnd(),h.fire("unspiderfied",{cluster:a,markers:d})},200)}}),L.MarkerClusterGroup.include({_spiderfied:null,unspiderfy:function(){this._unspiderfy.apply(this,arguments)},_spiderfierOnAdd:function(){this._map.on("click",this._unspiderfyWrapper,this),this._map.options.zoomAnimation&&this._map.on("zoomstart",this._unspiderfyZoomStart,this),this._map.on("zoomend",this._noanimationUnspiderfy,this),L.Browser.touch||this._map.getRenderer(this)},_spiderfierOnRemove:function(){this._map.off("click",this._unspiderfyWrapper,this),this._map.off("zoomstart",this._unspiderfyZoomStart,this),this._map.off("zoomanim",this._unspiderfyZoomAnim,this),this._map.off("zoomend",this._noanimationUnspiderfy,this),this._noanimationUnspiderfy()},_unspiderfyZoomStart:function(){this._map&&this._map.on("zoomanim",this._unspiderfyZoomAnim,this)},_unspiderfyZoomAnim:function(e){L.DomUtil.hasClass(this._map._mapPane,"leaflet-touching")||(this._map.off("zoomanim",this._unspiderfyZoomAnim,this),this._unspiderfy(e))},_unspiderfyWrapper:function(){this._unspiderfy()},_unspiderfy:function(e){this._spiderfied&&this._spiderfied.unspiderfy(e)},_noanimationUnspiderfy:function(){this._spiderfied&&this._spiderfied._noanimationUnspiderfy()},_unspiderfyLayer:function(e){e._spiderLeg&&(this._featureGroup.removeLayer(e),e.clusterShow&&e.clusterShow(),e.setZIndexOffset&&e.setZIndexOffset(0),this._map.removeLayer(e._spiderLeg),delete e._spiderLeg)}}),L.MarkerClusterGroup.include({refreshClusters:function(e){return e?e instanceof L.MarkerClusterGroup?e=e._topClusterLevel.getAllChildMarkers():e instanceof L.LayerGroup?e=e._layers:e instanceof L.MarkerCluster?e=e.getAllChildMarkers():e instanceof L.Marker&&(e=[e]):e=this._topClusterLevel.getAllChildMarkers(),this._flagParentsIconsNeedUpdate(e),this._refreshClustersIcons(),this.options.singleMarkerMode&&this._refreshSingleMarkerModeMarkers(e),this},_flagParentsIconsNeedUpdate:function(e){var t,i;for(t in e)for(i=e[t].__parent;i;)i._iconNeedsUpdate=!0,i=i.__parent},_refreshSingleMarkerModeMarkers:function(e){var t,i;for(t in e)i=e[t],this.hasLayer(i)&&i.setIcon(this._overrideMarkerIcon(i))}}),L.Marker.include({refreshIconOptions:function(e,t){var i=this.options.icon;return L.setOptions(i,e),this.setIcon(i),t&&this.__parent&&this.__parent._group.refreshClusters(this),this}}),e.MarkerClusterGroup=t,e.MarkerCluster=i,Object.defineProperty(e,"__esModule",{value:!0})});
+//# sourceMappingURL=leaflet.markercluster.js.map
+;
+    </script>
+    <script>
+      const DATA = {
   "retrieved_at": "2026-10-25T14:40:58+00:00",
   "columns": [
     "number",
@@ -3014796,39 +3015722,551 @@
       -79.409399
     ]
   ]
-}</script>
-<script>
-const DATA=JSON.parse(document.getElementById('snapshot').textContent);
-const $=id=>document.getElementById(id);
-const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-if(typeof L==='undefined'){$('count').textContent='Map library could not load. Internet access is required for Leaflet and base-map tiles.';throw new Error('Leaflet unavailable');}
-const map=L.map('map',{preferCanvas:true}).setView([43.74,-79.43],11);
-L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'}).addTo(map);
-$('snapshot-date').textContent='Snapshot retrieved '+DATA.retrieved_at.slice(0,10)+' (UTC)';
-$('reset').onclick=()=>map.setView([43.74,-79.43],11);
-// Columnar rows keep the complete register small without minifying its JSON.
-const fields=Object.fromEntries(DATA.columns.map((name,i)=>[name,i]));
-const get=(r,k)=>r[fields[k]],rows=DATA.permits;
-for(const [id,key] of [['status','status'],['type','type'],['year','applied']]){
- const values=[...new Set(rows.map(r=>id==='year'?get(r,key).slice(0,4):get(r,key)).filter(Boolean))].sort();if(id==='year')values.reverse();
- for(const v of values){const o=document.createElement('option');o.value=v;o.textContent=v;$(id).append(o);}
+};
+    </script>
+    <script>
+      /* Project-local explorer UI. No source is loaded from another project. */
+const Explorer = (() => {
+  const byId = (id) => document.getElementById(id);
+  const esc = (value) =>
+    String(value ?? "").replace(
+      /[&<>"']/g,
+      (c) =>
+        ({
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          '"': "&quot;",
+          "'": "&#39;",
+        })[c],
+    );
+  const choices = new Map();
+  const mobile = () => matchMedia("(max-width:760px)").matches;
+  function collapse() {
+    byId("panel").classList.remove("expanded");
+    byId("sheet-toggle").setAttribute("aria-expanded", "false");
+    byId("sheet-toggle").setAttribute("aria-label", "Expand map controls");
+  }
+  function sheetHeight() {
+    return mobile() ? byId("panel").getBoundingClientRect().height : 0;
+  }
+  function tab(name) {
+    document.querySelectorAll(".explorer-tabs [role=tab]").forEach((button) => {
+      button.setAttribute("aria-selected", String(button.dataset.tab === name));
+      button.tabIndex = button.dataset.tab === name ? 0 : -1;
+    });
+    document
+      .querySelectorAll(".explorer-panel")
+      .forEach((panel) => (panel.hidden = panel.id !== name + "-panel"));
+  }
+  document.querySelectorAll(".explorer-tabs [role=tab]").forEach((button) => {
+    button.onclick = () => tab(button.dataset.tab);
+    button.onkeydown = (event) => {
+      if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key))
+        return;
+      event.preventDefault();
+      const buttons = [
+        ...document.querySelectorAll(".explorer-tabs [role=tab]"),
+      ];
+      const index = buttons.indexOf(button);
+      const next =
+        event.key === "Home"
+          ? 0
+          : event.key === "End"
+            ? buttons.length - 1
+            : (index + (event.key === "ArrowRight" ? 1 : buttons.length - 1)) %
+              buttons.length;
+      buttons[next].focus();
+      tab(buttons[next].dataset.tab);
+    };
+  });
+  tab("layers");
+  byId("provenance").onclick = () => tab("sources");
+  byId("sheet-toggle").onclick = () => {
+    const expanded = byId("panel").classList.toggle("expanded");
+    byId("sheet-toggle").setAttribute("aria-expanded", String(expanded));
+    byId("sheet-toggle").setAttribute(
+      "aria-label",
+      expanded ? "Collapse map controls" : "Expand map controls",
+    );
+  };
+  byId("search").addEventListener("input", () =>
+    tab(byId("search").value.trim() ? "results" : "layers"),
+  );
+  const status = (message) => {
+    byId("location-status").textContent = message;
+  };
+  function count(
+    total,
+    unit,
+    mapped,
+    note = "",
+    missingLabel = "without a pin",
+  ) {
+    const stats = byId("stats");
+    stats.replaceChildren();
+    const number = document.createElement("strong");
+    number.textContent = total.toLocaleString();
+    stats.append(number, document.createTextNode(" " + unit));
+    const secondary = document.createElement("div");
+    secondary.className = "secondary";
+    secondary.textContent =
+      mapped == null
+        ? note
+        : mapped.toLocaleString() +
+          " mapped · " +
+          (total - mapped).toLocaleString() +
+          " " +
+          missingLabel +
+          (note ? " · " + note : "");
+    stats.append(secondary);
+  }
+  function layers(items, onChange) {
+    const target = byId("layer-controls");
+    target.replaceChildren();
+    choices.clear();
+    for (const item of items) {
+      const label = document.createElement("label");
+      label.className = "layer-row";
+      const input = document.createElement("input");
+      input.type = "checkbox";
+      input.checked = item.checked !== false;
+      input.dataset.layer = item.id;
+      const name = document.createElement("span");
+      name.className = "layer-label";
+      const dot = document.createElement("span");
+      dot.className = "swatch";
+      dot.style.background = item.color;
+      name.append(dot, document.createTextNode(item.label));
+      const n = document.createElement("span");
+      n.className = "layer-count";
+      n.textContent =
+        typeof item.count === "number"
+          ? item.count.toLocaleString()
+          : (item.count ?? "");
+      label.append(input, name, n);
+      target.append(label);
+      choices.set(item.id, { input, n, item });
+      input.onchange = () => {
+        if (item.layer) {
+          if (input.checked) item.layer.addTo(item.map);
+          else item.map.removeLayer(item.layer);
+        }
+        onChange();
+      };
+    }
+    for (const [id, value] of [
+      ["select-all", true],
+      ["clear-all", false],
+    ])
+      byId(id).onclick = () => {
+        for (const { input, item } of choices.values()) {
+          input.checked = value;
+          if (item.layer) {
+            if (value) item.layer.addTo(item.map);
+            else item.map.removeLayer(item.layer);
+          }
+        }
+        onChange();
+      };
+  }
+  const enabled = (id) => choices.get(id)?.input.checked ?? false;
+  function layerCounts(counts) {
+    for (const [id, n] of Object.entries(counts)) {
+      const choice = choices.get(id);
+      if (choice) choice.n.textContent = Number(n).toLocaleString();
+    }
+  }
+  function results(items, label, summary, onSelect, limit = 50) {
+    const target = byId("results");
+    target.replaceChildren();
+    for (const item of items.slice(0, limit)) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "feature-result";
+      const title = document.createElement("strong");
+      title.textContent = label(item);
+      const sub = document.createElement("small");
+      sub.textContent = summary(item);
+      button.append(title, sub);
+      button.onclick = () => onSelect(item);
+      target.append(button);
+    }
+    byId("result-note").textContent = !items.length
+      ? "No features match the selected layers and search."
+      : items.length > limit
+        ? "First " +
+          limit +
+          " of " +
+          items.length.toLocaleString() +
+          " matches listed. Narrow the search to find a specific feature."
+        : items.length.toLocaleString() + " matching features.";
+  }
+  function stamp(value) {
+    byId("snapshot-date").textContent = value
+      ? "Snapshot " + String(value).slice(0, 10)
+      : "Committed snapshot";
+    byId("snapshot-provenance").textContent = byId("snapshot-date").textContent;
+  }
+  function fit(map, bounds, maxZoom = 16) {
+    collapse();
+    if (bounds?.isValid()) {
+      map.fitBounds(bounds, {
+        paddingTopLeft: [30, 30],
+        paddingBottomRight: [30, sheetHeight() + 30],
+        maxZoom,
+      });
+      status("");
+    } else status("No mapped features match the selected layers and search.");
+  }
+  function focus(map, ll, zoom = 16) {
+    collapse();
+    map.setView(ll, zoom, { animate: false });
+    if (mobile()) map.panBy([0, sheetHeight() / 2], { animate: false });
+  }
+  function detail(title, html) {
+    const dialog = byId("record-detail");
+    byId("record-title").textContent = title;
+    byId("record-body").innerHTML = html;
+    if (!dialog.open) dialog.showModal();
+  }
+  byId("record-close").onclick = () => byId("record-detail").close();
+  function connect(map, config) {
+    if (mobile()) map.panBy([0, sheetHeight() / 2], { animate: false });
+    let userMarker = null,
+      accuracyCircle = null;
+    const Control = L.Control.extend({
+      options: { position: "topleft" },
+      onAdd() {
+        const container = L.DomUtil.create(
+          "div",
+          "leaflet-bar explorer-control",
+        );
+        const button = L.DomUtil.create("button", "", container);
+        button.type = "button";
+        button.id = "locate";
+        button.title = "Center on my location";
+        button.setAttribute("aria-label", "Center on my location");
+        button.textContent = "◎";
+        L.DomEvent.disableClickPropagation(container);
+        L.DomEvent.disableScrollPropagation(container);
+        button.onclick = () => {
+          if (!navigator.geolocation) {
+            status(
+              "Location is unavailable. Use a browser with location support on HTTPS or localhost.",
+            );
+            return;
+          }
+          button.disabled = true;
+          button.setAttribute("aria-busy", "true");
+          status("Finding your location…");
+          const finish = (message) => {
+            button.disabled = false;
+            button.removeAttribute("aria-busy");
+            status(message);
+          };
+          navigator.geolocation.getCurrentPosition(
+            (pos) => {
+              const ll = [pos.coords.latitude, pos.coords.longitude],
+                accuracy = pos.coords.accuracy;
+              if (userMarker) userMarker.setLatLng(ll);
+              else
+                userMarker = L.marker(ll, {
+                  icon: L.divIcon({
+                    className: "",
+                    html: '<div class="you-dot"></div>',
+                    iconSize: [18, 18],
+                    iconAnchor: [9, 9],
+                  }),
+                  zIndexOffset: 2000,
+                  title: "You are here",
+                })
+                  .addTo(map)
+                  .bindPopup("You are here");
+              if (Number.isFinite(accuracy) && accuracy > 0) {
+                if (accuracyCircle)
+                  accuracyCircle.setLatLng(ll).setRadius(accuracy);
+                else
+                  accuracyCircle = L.circle(ll, {
+                    radius: accuracy,
+                    color: "#258fc1",
+                    weight: 1,
+                    fillOpacity: 0.08,
+                    interactive: false,
+                  }).addTo(map);
+              } else if (accuracyCircle) {
+                map.removeLayer(accuracyCircle);
+                accuracyCircle = null;
+              }
+              focus(map, ll, 14);
+              finish(
+                "Centered on your location." +
+                  (Number.isFinite(accuracy) && accuracy > 0
+                    ? " Browser accuracy: about " +
+                      Math.max(1, Math.round(accuracy)).toLocaleString() +
+                      " m."
+                    : ""),
+              );
+              if (config.located) config.located(pos);
+            },
+            (error) =>
+              finish(
+                {
+                  1: "Location access was denied. Enable location for this site in your browser, then try again.",
+                  2: "Your location could not be determined. Please try again.",
+                  3: "Finding your location timed out. Please try again.",
+                }[error.code] ||
+                  "Your location could not be determined. Please try again.",
+              ),
+            { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 },
+          );
+        };
+        return container;
+      },
+    });
+    map.addControl(new Control());
+    const Fit = L.Control.extend({
+      options: { position: "topleft" },
+      onAdd() {
+        const container = L.DomUtil.create(
+            "div",
+            "leaflet-bar explorer-control",
+          ),
+          button = L.DomUtil.create("button", "", container);
+        button.type = "button";
+        button.id = "fit";
+        button.title = "Fit matching features";
+        button.setAttribute("aria-label", "Fit matching features");
+        button.textContent = "⛶";
+        L.DomEvent.disableClickPropagation(container);
+        button.onclick = () => {
+          fit(map, config.bounds(), config.maxZoom || 16);
+        };
+        return container;
+      },
+    });
+    map.addControl(new Fit());
+    // Location stays in memory only and is requested solely by the locate button.
+  }
+  return {
+    esc,
+    tab,
+    count,
+    layers,
+    enabled,
+    layerCounts,
+    results,
+    stamp,
+    fit,
+    focus,
+    detail,
+    connect,
+    collapse,
+    status,
+  };
+})();
+;
+    </script>
+    <script>
+      const $ = (id) => document.getElementById(id),
+  esc = Explorer.esc;
+const map = L.map("map", { preferCanvas: true }).setView([43.74, -79.43], 11);
+L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+  maxZoom: 19,
+  attribution: "&copy; OpenStreetMap contributors",
+}).addTo(map);
+const fields = Object.fromEntries(DATA.columns.map((name, i) => [name, i])),
+  get = (r, k) => r[fields[k]],
+  rows = DATA.permits;
+const types = [
+  "Small Residential Projects",
+  "Plumbing(PS)",
+  "Mechanical(MS)",
+  "Building Additions/Alterations",
+  "Drain and Site Service",
+  "New Houses",
+];
+const palette = [
+  "#267ba0",
+  "#458474",
+  "#8364a6",
+  "#bd8740",
+  "#ba5e40",
+  "#9c3651",
+  "#647580",
+];
+const category = (r) =>
+  types.includes(get(r, "type")) ? get(r, "type") : "Other";
+for (const [id, key] of [
+  ["status", "status"],
+  ["type", "type"],
+  ["year", "applied"],
+]) {
+  const values = [
+    ...new Set(
+      rows
+        .map((r) => (id === "year" ? get(r, key).slice(0, 4) : get(r, key)))
+        .filter(Boolean),
+    ),
+  ].sort();
+  if (id === "year") values.reverse();
+  for (const v of values) {
+    const o = document.createElement("option");
+    o.value = v;
+    o.textContent = v;
+    $(id).append(o);
+  }
 }
-const markers=L.layerGroup().addTo(map);let filtered=[],locations=[];
-const color=r=>/violation|revoked/i.test(get(r,'status'))?'#c44536':/inspection|issued/i.test(get(r,'status'))?'#147dab':'#b97d1b';
-function details(r){return '<strong>'+esc(get(r,'address'))+'</strong><br>'+esc(get(r,'number'))+' · revision '+esc(get(r,'revision'))+'<br>'+esc(get(r,'status'))+'<br>'+esc(get(r,'type'))+' · '+esc(get(r,'work'))+'<br>Structure: '+esc(get(r,'structure'))+'<br>Applied: '+esc(get(r,'applied')||'Unknown')+' · Issued: '+esc(get(r,'issued')||'Not recorded')+'<br>Estimated cost: '+(get(r,'cost')===null?'Not disclosed':new Intl.NumberFormat('en-CA',{style:'currency',currency:'CAD',maximumFractionDigits:0}).format(get(r,'cost')))+'<p>'+esc(get(r,'description'))+'</p>';}
-function show(r){if(get(r,'lat')!==null){map.setView([get(r,'lat'),get(r,'lon')],17);L.popup().setLatLng([get(r,'lat'),get(r,'lon')]).setContent(details(r)).openOn(map);}else{const d=document.createElement('div');d.innerHTML=details(r)+'<p>No matching City address point; this record has no pin.</p>';$('results').prepend(d);}}
-function draw(){markers.clearLayers();const bounds=map.getBounds();let drawn=0;
- for(const entry of locations){if(!bounds.contains(entry.point))continue;if(drawn>=6000)break;
-  const marker=L.circleMarker(entry.point,{radius:Math.min(8,3+Math.log2(entry.rows.length)),color:color(entry.rows[0]),weight:1,fillOpacity:.7});
-  marker.bindPopup(()=>{const div=document.createElement('div');div.innerHTML='<b>'+entry.rows.length+' permit(s) at this address</b>'+entry.rows.slice(0,30).map(details).join('<hr>');if(entry.rows.length>30)div.append(document.createTextNode('First 30 shown; narrow the filters to see more.'));return div;});markers.addLayer(marker);drawn++;
- }
- $('coverage').textContent=DATA.stats.unmatched.toLocaleString()+' records in the full snapshot have no address match. '+drawn.toLocaleString()+' locations drawn in this view'+(drawn>=6000?'; zoom in to see more.':'.');
+// Cluster every matched address; the number is permit records, not addresses.
+const clusters = L.markerClusterGroup({
+  maxClusterRadius: 45,
+  iconCreateFunction: (c) =>
+    L.divIcon({
+      className: "",
+      iconSize: [42, 42],
+      html:
+        '<div class="cluster">' +
+        c
+          .getAllChildMarkers()
+          .reduce((n, m) => n + m.options.recordCount, 0)
+          .toLocaleString() +
+        "</div>",
+    }),
+}).addTo(map);
+let locations = [];
+function details(r) {
+  return (
+    "<strong>" +
+    esc(get(r, "address")) +
+    "</strong><br>" +
+    esc(get(r, "number")) +
+    " · revision " +
+    esc(get(r, "revision")) +
+    "<br>" +
+    esc(get(r, "status")) +
+    "<br>" +
+    esc(get(r, "type")) +
+    " · " +
+    esc(get(r, "work")) +
+    "<br>Structure: " +
+    esc(get(r, "structure")) +
+    "<br>Applied: " +
+    esc(get(r, "applied") || "Unknown") +
+    " · Issued: " +
+    esc(get(r, "issued") || "Not recorded") +
+    "<br>Estimated cost: " +
+    (get(r, "cost") === null
+      ? "Not disclosed"
+      : new Intl.NumberFormat("en-CA", {
+          style: "currency",
+          currency: "CAD",
+          maximumFractionDigits: 0,
+        }).format(get(r, "cost"))) +
+    "<p>" +
+    esc(get(r, "description")) +
+    "</p>"
+  );
 }
-function update(){const query=$('search').value.toLowerCase().trim();filtered=rows.filter(r=>(!$('status').value||get(r,'status')===$('status').value)&&(!$('type').value||get(r,'type')===$('type').value)&&(!$('year').value||get(r,'applied').startsWith($('year').value))&&(!query||[get(r,'address'),get(r,'number'),get(r,'description')].join(' ').toLowerCase().includes(query)));
- const grouped=new Map();let mapped=0;for(const r of filtered){if(get(r,'lat')===null)continue;mapped++;const key=get(r,'lat')+','+get(r,'lon');if(!grouped.has(key))grouped.set(key,{point:[get(r,'lat'),get(r,'lon')],rows:[]});grouped.get(key).rows.push(r);}locations=[...grouped.values()];
- $('count').textContent=filtered.length.toLocaleString()+' permits · '+mapped.toLocaleString()+' mapped';$('results').replaceChildren();
- for(const r of filtered.slice(0,50)){const b=document.createElement('button');const title=document.createElement('strong');title.textContent=get(r,'address')||get(r,'number');const small=document.createElement('small');small.textContent=get(r,'number')+' · '+get(r,'status')+(get(r,'lat')===null?' · No pin':'');b.append(title,small);b.onclick=()=>show(r);$('results').append(b);}
- if(filtered.length>50){const p=document.createElement('p');p.className='muted';p.textContent='First 50 matches listed. Narrow your search for more specific results.';$('results').append(p);}draw();}
-let pending;$('search').oninput=()=>{clearTimeout(pending);pending=setTimeout(update,200);};for(const id of ['status','type','year'])$(id).onchange=update;
-$('fit').onclick=()=>{if(locations.length)map.fitBounds(L.latLngBounds(locations.map(x=>x.point)),{padding:[25,25],maxZoom:17});};map.on('moveend',draw);update();
-</script></body></html>
+function show(r) {
+  if (Number.isFinite(get(r, "lat")) && Number.isFinite(get(r, "lon"))) {
+    const ll = [get(r, "lat"), get(r, "lon")];
+    Explorer.focus(map, ll, 17);
+    L.popup().setLatLng(ll).setContent(details(r)).openOn(map);
+  } else
+    Explorer.detail(
+      get(r, "number"),
+      details(r) +
+        "<p>No matching City address point; this record has no pin.</p>",
+    );
+}
+function update() {
+  const q = $("search").value.toLowerCase().trim(),
+    counts = Object.fromEntries([...types, "Other"].map((k) => [k, 0])),
+    filtered = [],
+    grouped = new Map();
+  let mapped = 0;
+  for (const r of rows) {
+    if (
+      ($("status").value && get(r, "status") !== $("status").value) ||
+      ($("type").value && get(r, "type") !== $("type").value) ||
+      ($("year").value && !get(r, "applied").startsWith($("year").value)) ||
+      (q &&
+        ![get(r, "address"), get(r, "number"), get(r, "description")]
+          .join(" ")
+          .toLowerCase()
+          .includes(q))
+    )
+      continue;
+    const cat = category(r);
+    counts[cat]++;
+    if (!Explorer.enabled(cat)) continue;
+    filtered.push(r);
+    if (!Number.isFinite(get(r, "lat")) || !Number.isFinite(get(r, "lon")))
+      continue;
+    mapped++;
+    const key = get(r, "lat") + "," + get(r, "lon");
+    if (!grouped.has(key))
+      grouped.set(key, { point: [get(r, "lat"), get(r, "lon")], rows: [] });
+    grouped.get(key).rows.push(r);
+  }
+  locations = [...grouped.values()];
+  clusters.clearLayers();
+  clusters.addLayers(
+    locations.map((g) =>
+      L.marker(g.point, {
+        recordCount: g.rows.length,
+        title: g.rows.length + " permits at this address",
+        icon: L.divIcon({
+          className: "",
+          iconSize: [32, 32],
+          html:
+            '<div class="pin" style="background:' +
+            palette[[...types, "Other"].indexOf(category(g.rows[0]))] +
+            '">' +
+            g.rows.length +
+            "</div>",
+        }),
+      }).bindPopup(
+        () =>
+          "<b>" +
+          g.rows.length +
+          " permits at this address</b>" +
+          g.rows.slice(0, 30).map(details).join("<hr>") +
+          (g.rows.length > 30
+            ? "<p>First 30 shown; search a permit number for its details.</p>"
+            : ""),
+      ),
+    ),
+  );
+  Explorer.layerCounts(counts);
+  Explorer.count(filtered.length, "permits", mapped);
+  Explorer.results(
+    filtered,
+    (r) => get(r, "address") || get(r, "number"),
+    (r) =>
+      get(r, "number") +
+      " · " +
+      get(r, "status") +
+      (get(r, "lat") === null ? " · No pin" : ""),
+    show,
+  );
+}
+Explorer.layers(
+  [...types, "Other"].map((id, i) => ({ id, label: id, color: palette[i] })),
+  update,
+);
+let pending;
+$("search").addEventListener("input", () => {
+  clearTimeout(pending);
+  pending = setTimeout(update, 200);
+});
+for (const id of ["status", "type", "year"]) $(id).onchange = update;
+Explorer.stamp(DATA.retrieved_at);
+Explorer.connect(map, {
+  bounds: () => L.latLngBounds(locations.map((g) => g.point)),
+});
+update();
+;
+    </script>
+  </body>
+</html>

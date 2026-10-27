@@ -2,5 +2,5 @@ PROJECT := toronto-crime-map
 
 include ../python-project.mk
 
-$(OUT): src/build_site.py src/map.html src/map.js $(wildcard data/*)
+$(OUT): $(wildcard src/*.html src/*.js src/*.css src/vendor/*) src/build_site.py $(wildcard data/*)
 	$(PY) src/build_site.py

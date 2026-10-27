@@ -20,7 +20,7 @@ def test_snapshot_is_content_aware_and_restores_missing_file(tmp_path):
 
 def test_script_payload_cannot_end_its_html_element():
     rendered = build_site.render({"description": "</script><script>alert(1)</script>"})
-    payload = rendered.split('<script id="snapshot" type="application/json">', 1)[1].split('</script>', 1)[0]
+    payload = rendered.split("const DATA = ", 1)[1].split(";\n", 1)[0]
     assert json.loads(payload)["description"] == "</script><script>alert(1)</script>"
     assert "<script>" not in payload
     assert "__PAYLOAD__" not in rendered

@@ -19,7 +19,7 @@ PROJECT = "toronto-dinesafe-map"
 def built(tmp_path):
     for sub in ("src", "data", "output"):
         (tmp_path / sub).mkdir()
-    shutil.copy(ROOT / "src" / "build_map.py", tmp_path / "src" / "build_map.py")
+    shutil.copytree(ROOT / "src", tmp_path / "src", dirs_exist_ok=True)
     shutil.copy(ROOT / "data" / "dinesafe.json", tmp_path / "data" / "dinesafe.json")
     subprocess.run([sys.executable, "src/build_map.py"], cwd=tmp_path, check=True)
     return (tmp_path / "output" / (PROJECT + ".html")).read_text()
@@ -74,14 +74,14 @@ def test_nearest_first_toggle_default_on(built):
     assert 'id="near-toggle"' in built
     assert 'type="checkbox" checked' in built   # default-enabled
     assert "map.distance(userLoc" in built      # distance-based ranking
-    assert "Nearest first" in built
+    assert "Nearest first" in " ".join(built.split())
 
 
 def _build_in(tmp_path, data):
     """Run the builder against a custom data/dinesafe.json and return the page."""
     for sub in ("src", "data", "output"):
         (tmp_path / sub).mkdir(exist_ok=True)
-    shutil.copy(ROOT / "src" / "build_map.py", tmp_path / "src" / "build_map.py")
+    shutil.copytree(ROOT / "src", tmp_path / "src", dirs_exist_ok=True)
     (tmp_path / "data" / "dinesafe.json").write_text(json.dumps(data), encoding="utf-8")
     subprocess.run([sys.executable, "src/build_map.py"], cwd=tmp_path, check=True)
     return (tmp_path / "output" / (PROJECT + ".html")).read_text()
@@ -136,3 +136,12 @@ def test_summary_only_data_still_builds(tmp_path):
     est = _payload(built)["establishments"][0]
     assert est["name"] == "Legacy Grill"
     assert "inspections" not in est          # synthesised at display time, not embedded
+
+
+def test_template_tokens_in_source_text_are_preserved(tmp_path):
+    name = "__APP_JS__ __EXPLORER_CSS__ </script>"
+    built = _build_in(tmp_path, {"establishments": [{
+        "name": name, "lat": 43.65, "lon": -79.38, "status": "Pass",
+    }]})
+    assert _payload(built)["establishments"][0]["name"] == name
+    assert "__APP_JS__ __EXPLORER_CSS__ </script>" not in built

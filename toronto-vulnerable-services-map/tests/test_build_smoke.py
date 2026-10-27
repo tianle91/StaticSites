@@ -20,7 +20,7 @@ INPUTS = ("services.json", "shelters.json", "geocode_cache.json")
 def built(tmp_path):
     for sub in ("src", "data", "output"):
         (tmp_path / sub).mkdir()
-    shutil.copy(ROOT / "src" / "build_map.py", tmp_path / "src" / "build_map.py")
+    shutil.copytree(ROOT / "src", tmp_path / "src", dirs_exist_ok=True)
     for name in INPUTS:
         shutil.copy(ROOT / "data" / name, tmp_path / "data" / name)
     subprocess.run([sys.executable, "src/build_map.py"], cwd=tmp_path, check=True)

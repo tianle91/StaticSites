@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Toronto DineSafe inspections</title>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+    <style>
+      __EXPLORER_CSS__
+    </style>
+    <style>
+      /* Detail sidebar uses the explorer surface/text pairs in both themes. */
+      #sidebar {
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 1200;
+        width: 360px;
+        max-width: 88%;
+        background: var(--paper);
+        box-shadow: 2px 0 12px rgba(0, 0, 0, 0.28);
+        transform: translateX(105%);
+        transition: transform 0.2s ease;
+        overflow: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+      #sidebar.open {
+        transform: none;
+      }
+      .sb-head {
+        position: sticky;
+        top: 0;
+        background: var(--paper);
+        padding: 14px 16px 10px;
+        border-bottom: 1px solid var(--line);
+      }
+      .sb-close {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        border: none;
+        background: var(--soft);
+        border-radius: 50%;
+        width: 28px;
+        height: 28px;
+        font-size: 16px;
+        line-height: 1;
+        cursor: pointer;
+        color: var(--muted);
+      }
+      .sb-close:hover {
+        background: var(--line);
+      }
+      .sb-head h2 {
+        font-size: 17px;
+        margin: 0 30px 6px 0;
+      }
+      .sb-body {
+        padding: 12px 16px 24px;
+      }
+      .badge {
+        display: inline-block;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        color: #fff;
+        padding: 2px 8px;
+        border-radius: 10px;
+      }
+      .sb-sub {
+        font-size: 12.5px;
+        color: var(--muted);
+        margin: 6px 0 0;
+      }
+      .facts {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        margin: 14px 0;
+      }
+      .fact {
+        background: var(--soft);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 8px 10px;
+      }
+      .fact .k {
+        font-size: 10.5px;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        color: var(--muted);
+      }
+      .fact .v {
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--ink);
+        margin-top: 2px;
+      }
+      .sb-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin: 6px 0 4px;
+      }
+      .sb-actions a {
+        flex: 1;
+        min-width: 120px;
+        text-align: center;
+        font-size: 12.5px;
+        font-weight: 600;
+        text-decoration: none;
+        padding: 8px 10px;
+        border-radius: 8px;
+        background: #1f78b4;
+        color: #fff;
+      }
+      .sb-actions a.secondary {
+        background: var(--soft);
+        color: var(--accent);
+      }
+      .sb-actions a:hover {
+        filter: brightness(0.95);
+      }
+      .sb-body h3 {
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        color: var(--muted);
+        margin: 20px 0 8px;
+      }
+      .timeline {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+      .insp {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 10px 12px;
+        margin-bottom: 10px;
+      }
+      .insp-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+      }
+      .insp-date {
+        font-weight: 600;
+        font-size: 13px;
+        color: var(--ink);
+      }
+      .infractions {
+        list-style: none;
+        margin: 9px 0 0;
+        padding: 0;
+      }
+      .infractions li {
+        font-size: 12.5px;
+        color: var(--ink);
+        padding: 7px 0;
+        border-top: 1px dashed var(--line);
+      }
+      .infractions li:first-child {
+        border-top: none;
+      }
+      .sev {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        border-radius: 8px;
+        margin-right: 6px;
+        vertical-align: 1px;
+      }
+      .sev-crucial {
+        background: #fdecea;
+        color: #b71c1c;
+      }
+      .sev-significant {
+        background: #fff3e0;
+        color: #9c4f00;
+      }
+      .sev-minor {
+        background: #f1f8e9;
+        color: #4b7a19;
+      }
+      .sev-other {
+        background: #eceff1;
+        color: #546e7a;
+      }
+      .action {
+        color: var(--muted);
+        font-size: 11.5px;
+        margin-top: 3px;
+      }
+      .muted {
+        color: var(--muted);
+        font-size: 12.5px;
+        margin: 8px 0 0;
+      }
+      .no-infr {
+        color: var(--ink);
+        font-size: 12.5px;
+        margin: 8px 0 0;
+      }
+
+      #sidebar[aria-hidden="true"] {
+        visibility: hidden;
+      }
+      #sidebar {
+        max-height: 100%;
+      }
+      #sidebar .sb-close {
+        min-width: 36px;
+        min-height: 36px;
+      }
+      @media (max-width: 760px) {
+        #sidebar {
+          width: 100%;
+          max-width: 100%;
+          z-index: 1200;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="explorer-header">
+      <div>
+        <h1>Toronto DineSafe inspections</h1>
+        <p>Latest food-safety outcomes and inspection histories</p>
+      </div>
+      <div id="snapshot-date"></div>
+    </header>
+    <main class="explorer-layout">
+      <aside
+        id="panel"
+        class="explorer-sidebar"
+        aria-label="Map exploration controls"
+      >
+        <button
+          type="button"
+          id="sheet-toggle"
+          class="sheet-toggle"
+          aria-label="Expand map controls"
+          aria-expanded="false"
+        ></button>
+        <div class="search-area">
+          <label for="search">Search features</label
+          ><input
+            id="search"
+            type="search"
+            placeholder="Name, establishment type or address"
+            aria-label="Search features"
+            autocomplete="off"
+          />
+        </div>
+        <div id="stats" role="status" aria-live="polite"></div>
+        <nav class="explorer-tabs" role="tablist" aria-label="Map exploration">
+          <button
+            type="button"
+            role="tab"
+            id="layers-tab"
+            data-tab="layers"
+            aria-controls="layers-panel"
+            aria-selected="true"
+          >
+            Layers</button
+          ><button
+            type="button"
+            role="tab"
+            id="results-tab"
+            data-tab="results"
+            aria-controls="results-panel"
+            aria-selected="false"
+          >
+            Results</button
+          ><button
+            type="button"
+            role="tab"
+            id="sources-tab"
+            data-tab="sources"
+            aria-controls="sources-panel"
+            aria-selected="false"
+          >
+            Data sources
+          </button>
+        </nav>
+        <section
+          id="layers-panel"
+          class="explorer-panel"
+          role="tabpanel"
+          aria-labelledby="layers-tab"
+        >
+          <div id="layer-controls"></div>
+          <div class="layer-actions">
+            <button type="button" class="text-button" id="select-all">
+              Select all</button
+            ><button type="button" class="text-button" id="clear-all">
+              Clear all
+            </button>
+          </div>
+          <p class="notice">
+            Statuses are a snapshot. Confirm current conditions with Toronto
+            Public Health.
+          </p>
+        </section>
+        <section
+          id="results-panel"
+          class="explorer-panel"
+          role="tabpanel"
+          aria-labelledby="results-tab"
+          hidden
+        >
+          <div id="sample-banner" class="notice" hidden></div>
+          <label id="near-toggle-label" class="inline-options"
+            ><input id="near-toggle" type="checkbox" checked /> Nearest
+            first<span id="near-hint"></span
+          ></label>
+          <p id="result-note" class="hint"></p>
+          <div id="results"></div>
+        </section>
+        <section
+          id="sources-panel"
+          class="explorer-panel"
+          role="tabpanel"
+          aria-labelledby="sources-tab"
+          hidden
+        >
+          <p id="snapshot-provenance" class="muted"></p>
+          <h2>Data sources</h2>
+          <ul class="sources">
+            <li>
+              Inspection results &mdash;
+              <a
+                id="source"
+                href="https://open.toronto.ca/dataset/dinesafe/"
+                target="_blank"
+                rel="noopener"
+                >DineSafe, Toronto Open Data</a
+              >
+              (Toronto Public Health)
+            </li>
+            <li>
+              Program details &mdash;
+              <a
+                href="https://www.toronto.ca/community-people/health-wellness-care/health-programs-advice/food-safety/dinesafe/"
+                target="_blank"
+                rel="noopener"
+                >City of Toronto &mdash; DineSafe</a
+              >
+            </li>
+            <li>
+              Geocoding &amp; map tiles &mdash; &copy;
+              <a
+                href="https://www.openstreetmap.org/copyright"
+                target="_blank"
+                rel="noopener"
+                >OpenStreetMap</a
+              >
+              contributors (via Nominatim)
+            </li>
+          </ul>
+          <p id="generated" class="muted"></p>
+
+          <details>
+            <summary>Notes &amp; caveats</summary>
+            <p>
+              Each pin shows an establishment's <b>most recent</b> inspection
+              outcome on record; statuses change as re-inspections happen, so
+              confirm current status on the
+              <a
+                href="https://www.toronto.ca/community-people/health-wellness-care/health-programs-advice/food-safety/dinesafe/"
+                target="_blank"
+                rel="noopener"
+                >official DineSafe site</a
+              >
+              before relying on a pin. <b>Closed</b> means the establishment was
+              ordered closed at the time of inspection; it may have since
+              reopened. Read the inspection history for recorded infractions and
+              follow the official source for current details. Locations come
+              from the dataset's own coordinates where present, otherwise
+              geocoded from the address, so some pins are approximate.
+            </p>
+          </details>
+        </section>
+        <footer class="explorer-footer">
+          <span>Toronto Public Health</span
+          ><button type="button" id="provenance" class="text-button">
+            Provenance
+          </button>
+        </footer>
+      </aside>
+      <div class="map-canvas">
+        <div id="map" aria-label="Toronto DineSafe inspections map"></div>
+        <div
+          id="location-status"
+          class="map-message"
+          role="status"
+          aria-live="polite"
+        ></div>
+        <aside id="sidebar" aria-hidden="true">
+          <div class="sb-head">
+            <button
+              class="sb-close"
+              id="sb-close"
+              title="Close"
+              aria-label="Close"
+            >
+              &times;
+            </button>
+            <h2 id="sb-title"></h2>
+            <div id="sb-badge"></div>
+            <p class="sb-sub" id="sb-sub"></p>
+          </div>
+          <div class="sb-body" id="sb-body"></div>
+        </aside>
+      </div>
+    </main>
+    <dialog
+      id="record-detail"
+      class="record-dialog"
+      aria-labelledby="record-title"
+    >
+      <button
+        type="button"
+        id="record-close"
+        class="close"
+        aria-label="Close details"
+      >
+        ×
+      </button>
+      <h2 id="record-title"></h2>
+      <div id="record-body"></div>
+    </dialog>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+      const DATA = __PAYLOAD__;
+    </script>
+    <script>
+      __EXPLORER_JS__;
+    </script>
+    <script>
+      __APP_JS__;
+    </script>
+  </body>
+</html>

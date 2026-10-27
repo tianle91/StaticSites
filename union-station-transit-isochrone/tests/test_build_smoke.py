@@ -21,8 +21,7 @@ def built(tmp_path):
     """Run both builders in a temp project tree; return its output/ directory."""
     for sub in ("src", "data", "output"):
         (tmp_path / sub).mkdir()
-    for name in ("build_isochrones.py", "build_map.py"):
-        shutil.copy(ROOT / "src" / name, tmp_path / "src" / name)
+    shutil.copytree(ROOT / "src", tmp_path / "src", dirs_exist_ok=True)
     shutil.copy(ROOT / "data" / "transit_model.json", tmp_path / "data" / "transit_model.json")
     for script in ("build_isochrones.py", "build_map.py"):
         subprocess.run([sys.executable, f"src/{script}"], cwd=tmp_path, check=True)

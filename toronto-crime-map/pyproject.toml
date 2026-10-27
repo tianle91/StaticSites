@@ -1,7 +1,7 @@
 [project]
 name = "toronto-crime-map"
 version = "0.0.0"
-description = "Toronto reported crime map — approximate Toronto Police crime locations with offence, date and neighbourhood filters, plus homicide and shooting layers."
+description = "Toronto reported crime map — Toronto Police reports merged by incident ID with seven type layers, text search and approximate intersection locations."
 requires-python = ">=3.11"
 
 # Runtime dependencies. Say why each one is here.

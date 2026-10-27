@@ -2,5 +2,5 @@
 PROJECT := toronto-building-permits-map
 include ../python-project.mk
 
-$(OUT): src/build_site.py src/page.html data/permits.json
+$(OUT): $(wildcard src/*.html src/*.js src/*.css src/vendor/*) src/build_site.py src/page.html data/permits.json
 	$(PY) src/build_site.py

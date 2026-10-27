@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Toronto & Ontario services</title>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+    <style>
+      __EXPLORER_CSS__
+    </style>
+    <style></style>
+  </head>
+  <body>
+    <header class="explorer-header">
+      <div>
+        <h1>Toronto & Ontario services</h1>
+        <p>Shelters, warming centres, food and community support</p>
+      </div>
+      <div id="snapshot-date"></div>
+    </header>
+    <main class="explorer-layout">
+      <aside
+        id="panel"
+        class="explorer-sidebar"
+        aria-label="Map exploration controls"
+      >
+        <button
+          type="button"
+          id="sheet-toggle"
+          class="sheet-toggle"
+          aria-label="Expand map controls"
+          aria-expanded="false"
+        ></button>
+        <div class="search-area">
+          <label for="search">Search features</label
+          ><input
+            id="search"
+            type="search"
+            placeholder="Service name, address or category"
+            aria-label="Search features"
+            autocomplete="off"
+          />
+        </div>
+        <div id="stats" role="status" aria-live="polite"></div>
+        <nav class="explorer-tabs" role="tablist" aria-label="Map exploration">
+          <button
+            type="button"
+            role="tab"
+            id="layers-tab"
+            data-tab="layers"
+            aria-controls="layers-panel"
+            aria-selected="true"
+          >
+            Layers</button
+          ><button
+            type="button"
+            role="tab"
+            id="results-tab"
+            data-tab="results"
+            aria-controls="results-panel"
+            aria-selected="false"
+          >
+            Results</button
+          ><button
+            type="button"
+            role="tab"
+            id="sources-tab"
+            data-tab="sources"
+            aria-controls="sources-panel"
+            aria-selected="false"
+          >
+            Data sources
+          </button>
+        </nav>
+        <section
+          id="layers-panel"
+          class="explorer-panel"
+          role="tabpanel"
+          aria-labelledby="layers-tab"
+        >
+          <div id="layer-controls"></div>
+          <div class="layer-actions">
+            <button type="button" class="text-button" id="select-all">
+              Select all</button
+            ><button type="button" class="text-button" id="clear-all">
+              Clear all
+            </button>
+          </div>
+          <p class="notice">
+            Seasonal services change. Confirm availability with the provider.
+          </p>
+        </section>
+        <section
+          id="results-panel"
+          class="explorer-panel"
+          role="tabpanel"
+          aria-labelledby="results-tab"
+          hidden
+        >
+          <details>
+            <summary>Live shelter occupancy</summary>
+            <div id="live-stats" class="hint">Loading live shelter data…</div>
+          </details>
+          <p id="result-note" class="hint"></p>
+          <div id="results"></div>
+        </section>
+        <section
+          id="sources-panel"
+          class="explorer-panel"
+          role="tabpanel"
+          aria-labelledby="sources-tab"
+          hidden
+        >
+          <p id="snapshot-provenance" class="muted"></p>
+          <h3>Directories & data</h3>
+          <div id="directories"></div>
+          <p id="shelter-meta"></p>
+          <h2>Data sources</h2>
+          <ul class="sources">
+            <li>
+              Curated service locations &mdash; compiled from the City/Province
+              pages linked above; see the
+              <a
+                href="https://github.com/tianle91/StaticSites/blob/main/toronto-vulnerable-services-map/data/SOURCES.md"
+                target="_blank"
+                rel="noopener"
+                >Sources document</a
+              >
+            </li>
+            <li>
+              Live shelter occupancy &mdash;
+              <a
+                href="https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+                target="_blank"
+                rel="noopener"
+                >Toronto Open Data</a
+              >
+              (Daily Shelter &amp; Overnight Service Occupancy)
+            </li>
+            <li>
+              Geocoding &amp; map tiles &mdash; &copy;
+              <a
+                href="https://www.openstreetmap.org/copyright"
+                target="_blank"
+                rel="noopener"
+                >OpenStreetMap</a
+              >
+              contributors (via Nominatim)
+            </li>
+          </ul>
+
+          <details>
+            <summary>Notes &amp; caveats</summary>
+            <p>
+              Warming and respite sites are <b>seasonal</b> - confirm open/close
+              status on the live City pages. Harm-reduction sites are volatile
+              (several Ontario sites closed/relocated in 2025). Marker
+              coordinates are approximate (from street addresses). For emergency
+              shelter, call Central Intake <b>416-338-4766</b> or <b>311</b>.
+            </p>
+          </details>
+        </section>
+        <footer class="explorer-footer">
+          <span>City of Toronto & service providers</span
+          ><button type="button" id="provenance" class="text-button">
+            Provenance
+          </button>
+        </footer>
+      </aside>
+      <div class="map-canvas">
+        <div id="map" aria-label="Toronto & Ontario services map"></div>
+        <div
+          id="location-status"
+          class="map-message"
+          role="status"
+          aria-live="polite"
+        ></div>
+      </div>
+    </main>
+    <dialog
+      id="record-detail"
+      class="record-dialog"
+      aria-labelledby="record-title"
+    >
+      <button
+        type="button"
+        id="record-close"
+        class="close"
+        aria-label="Close details"
+      >
+        ×
+      </button>
+      <h2 id="record-title"></h2>
+      <div id="record-body"></div>
+    </dialog>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+      const DATA = __PAYLOAD__;
+    </script>
+    <script>
+      __EXPLORER_JS__;
+    </script>
+    <script>
+      __APP_JS__;
+    </script>
+  </body>
+</html>

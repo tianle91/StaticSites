@@ -18,7 +18,7 @@ PROJECT = "ontario-physiotherapy-clinics-map"
 def built(tmp_path):
     for sub in ("src", "data", "output"):
         (tmp_path / sub).mkdir()
-    shutil.copy(ROOT / "src" / "build_map.py", tmp_path / "src" / "build_map.py")
+    shutil.copytree(ROOT / "src", tmp_path / "src", dirs_exist_ok=True)
     shutil.copy(ROOT / "data" / "clinics.json", tmp_path / "data" / "clinics.json")
     subprocess.run([sys.executable, "src/build_map.py"], cwd=tmp_path, check=True)
     return (tmp_path / "output" / f"{PROJECT}.html").read_text()

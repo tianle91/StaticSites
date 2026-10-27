@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Toronto reported crime</title>
+    <style>
+      __CSS__
+    </style>
+    <style>
+      __EXPLORER_CSS__
+    </style>
+    <style></style>
+  </head>
+  <body>
+    <header class="explorer-header">
+      <div>
+        <h1>Toronto reported crime</h1>
+        <p id="scope">Police-reported incidents</p>
+      </div>
+      <div id="snapshot-date"></div>
+    </header>
+    <main class="explorer-layout">
+      <aside
+        id="panel"
+        class="explorer-sidebar"
+        aria-label="Map exploration controls"
+      >
+        <button
+          type="button"
+          id="sheet-toggle"
+          class="sheet-toggle"
+          aria-label="Expand map controls"
+          aria-expanded="false"
+        ></button>
+        <div class="search-area">
+          <label for="search">Search features</label
+          ><input
+            id="search"
+            type="search"
+            placeholder="Incident ID, offence or neighbourhood"
+            aria-label="Search features"
+            autocomplete="off"
+          />
+        </div>
+        <div id="stats" role="status" aria-live="polite"></div>
+        <nav class="explorer-tabs" role="tablist" aria-label="Map exploration">
+          <button
+            type="button"
+            role="tab"
+            id="layers-tab"
+            data-tab="layers"
+            aria-controls="layers-panel"
+            aria-selected="true"
+          >
+            Layers</button
+          ><button
+            type="button"
+            role="tab"
+            id="results-tab"
+            data-tab="results"
+            aria-controls="results-panel"
+            aria-selected="false"
+          >
+            Results</button
+          ><button
+            type="button"
+            role="tab"
+            id="sources-tab"
+            data-tab="sources"
+            aria-controls="sources-panel"
+            aria-selected="false"
+          >
+            Data sources
+          </button>
+        </nav>
+        <section
+          id="layers-panel"
+          class="explorer-panel"
+          role="tabpanel"
+          aria-labelledby="layers-tab"
+        >
+          <div id="layer-controls"></div>
+          <div class="layer-actions">
+            <button type="button" class="text-button" id="select-all">
+              Select all</button
+            ><button type="button" class="text-button" id="clear-all">
+              Clear all
+            </button>
+          </div>
+          <p class="notice">
+            Approximate intersection locations. A pin does not identify an
+            address or person. One incident can have several types.
+          </p>
+        </section>
+        <section
+          id="results-panel"
+          class="explorer-panel"
+          role="tabpanel"
+          aria-labelledby="results-tab"
+          hidden
+        >
+          <p id="result-note" class="hint"></p>
+          <div id="results"></div>
+        </section>
+        <section
+          id="sources-panel"
+          class="explorer-panel"
+          role="tabpanel"
+          aria-labelledby="sources-tab"
+          hidden
+        >
+          <p id="snapshot-provenance" class="muted"></p>
+          <h2>Data sources</h2>
+          <ul class="sources">
+            <li>
+              <a
+                href="https://services.arcgis.com/S9th0jAJ7bqgIRjw/arcgis/rest/services/Major_Crime_Indicators_Open_Data/FeatureServer/0"
+                >TPS Community Safety Indicators</a
+              >
+              (formerly Major Crime Indicators)
+            </li>
+            <li>
+              <a
+                href="https://services.arcgis.com/S9th0jAJ7bqgIRjw/arcgis/rest/services/Homicides_Open_Data_ASR_RC_TBL_002/FeatureServer/0"
+                >TPS Homicides</a
+              >
+            </li>
+            <li>
+              <a
+                href="https://services.arcgis.com/S9th0jAJ7bqgIRjw/arcgis/rest/services/Shooting_and_Firearm_Discharges_Open_Data/FeatureServer/0"
+                >TPS Shootings & firearm discharges</a
+              >
+            </li>
+            <li>
+              ©
+              <a href="https://www.openstreetmap.org/copyright"
+                >OpenStreetMap contributors</a
+              >
+            </li>
+          </ul>
+          <p>
+            Contains information licensed under the
+            <a
+              href="https://www.ontario.ca/page/open-government-licence-ontario"
+              >Open Government Licence – Ontario</a
+            >. This independent project is not endorsed by TPS.
+          </p>
+          <div id="source-coverage"></div>
+          <h3>Counting and location</h3>
+          <p>
+            The total counts distinct EVENT_UNIQUE_ID values across all selected
+            types. Source offence/victim rows and type memberships are
+            preserved, so type counts overlap and must not be added. Main-feed
+            inclusion uses report year; homicide and shooting inclusion uses
+            occurrence year. Dates use Toronto time.
+          </p>
+          <p>
+            TPS deliberately shifts points to the nearest road intersection for
+            privacy. Published positions are approximate; displacement can
+            affect neighbourhood counts. An incident with differing published
+            positions retains all those points. Each cluster counts distinct
+            IDs; one incident can appear in separate clusters. Missing
+            coordinates remain searchable without a pin.
+          </p>
+          <p>
+            These preliminary police-reported records can be revised. They do
+            not represent all crime or personal risk. Sexual violations are
+            excluded from the main feed.
+          </p>
+        </section>
+        <footer class="explorer-footer">
+          <span>Toronto Police Service</span
+          ><button type="button" id="provenance" class="text-button">
+            Provenance
+          </button>
+        </footer>
+      </aside>
+      <div class="map-canvas">
+        <div id="map" aria-label="Toronto reported crime map"></div>
+        <div
+          id="location-status"
+          class="map-message"
+          role="status"
+          aria-live="polite"
+        ></div>
+      </div>
+    </main>
+    <dialog
+      id="record-detail"
+      class="record-dialog"
+      aria-labelledby="record-title"
+    >
+      <button
+        type="button"
+        id="record-close"
+        class="close"
+        aria-label="Close details"
+      >
+        ×
+      </button>
+      <h2 id="record-title"></h2>
+      <div id="record-body"></div>
+    </dialog>
+    <script>
+      __JS__;
+    </script>
+    <script>
+      const DATA = __PAYLOAD__;
+    </script>
+    <script>
+      __EXPLORER_JS__;
+    </script>
+    <script>
+      __APP_JS__;
+    </script>
+  </body>
+</html>

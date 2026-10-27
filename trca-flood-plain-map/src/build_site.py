@@ -11,7 +11,10 @@ OUT_DIR = ROOT / "output"
 def render(data):
     # Escape HTML script terminators even when they appear in upstream text.
     payload = json.dumps(data, indent=2, ensure_ascii=False, allow_nan=False).replace("<", "\\u003c").replace("\u2028", "\\u2028").replace("\u2029", "\\u2029")
-    return (ROOT / "src/page.html").read_text(encoding="utf-8").replace("__PAYLOAD__", payload)
+    template = (ROOT / "src/page.html").read_text(encoding="utf-8")
+    for token, filename in [("__EXPLORER_CSS__", "explorer.css"), ("__EXPLORER_JS__", "explorer.js"), ("__APP_JS__", "app.js")]:
+        template = template.replace(token, (ROOT / "src" / filename).read_text(encoding="utf-8"))
+    return template.replace("__PAYLOAD__", payload)
 
 
 def main():

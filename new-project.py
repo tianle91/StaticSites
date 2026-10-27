@@ -350,6 +350,14 @@ __TITLE__.
 
 TODO: one paragraph on what this shows and why it is interesting.
 
+For a map project, follow the repo README's map interface convention: search and
+matching counts above Layers / Results / Data sources tabs, toggleable feature
+layers, clickable search results, linked provenance, and adjacent zoom / locate /
+fit controls. Use a desktop sidebar and an expandable mobile bottom panel.
+Copy browser helpers into this project's src/; do not import another project.
+Request location only after a click, show browser accuracy and retry messages,
+and explain what the counts and published coordinates represent.
+
 ## Usage
 
 ```sh

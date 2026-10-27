@@ -1,167 +1,1083 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Toronto DineSafe Food-Safety Inspections</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-  integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
-<style>
-  html, body { margin: 0; height: 100%; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
-  #map { position: absolute; inset: 0; }
-  .panel {
-    position: absolute; top: 10px; right: 10px; z-index: 1000; width: 320px;
-    max-height: calc(100% - 20px); overflow: auto; background: #fff;
-    border-radius: 8px; box-shadow: 0 1px 6px rgba(0,0,0,.3); padding: 12px 14px;
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Toronto DineSafe inspections</title>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+    <style>
+      /* Copied project-local on purpose: independent projects share no runtime files. */
+:root {
+  color-scheme: light dark;
+  --paper: #fff;
+  --ink: #193343;
+  --muted: #526b7c;
+  --soft: #f1f5f7;
+  --line: #d7e1e7;
+  --accent: #176e8c;
+  --head: #163c4d;
+  --warning: #fff4dc;
+  font-family:
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    sans-serif;
+  color: var(--ink);
+  background: var(--soft);
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  font-size: 14px;
+}
+a {
+  color: var(--accent);
+}
+button,
+input,
+select {
+  font: inherit;
+  color: inherit;
+}
+button {
+  cursor: pointer;
+}
+button:disabled {
+  cursor: progress;
+  opacity: 0.6;
+}
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+summary:focus-visible {
+  outline: 3px solid #da9a28;
+  outline-offset: 2px;
+}
+[hidden] {
+  display: none !important;
+}
+.explorer-header {
+  background: var(--head);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 17px 22px;
+  flex-shrink: 0;
+}
+.explorer-header h1 {
+  font-size: 21px;
+  line-height: 1.2;
+  font-weight: 600;
+  margin: 0 0 5px;
+}
+.explorer-header p {
+  font-size: 12px;
+  color: #d2e1e9;
+  margin: 0;
+}
+.explorer-header #snapshot-date {
+  font-size: 12px;
+  color: #d2e1e9;
+  text-align: right;
+  max-width: 240px;
+}
+.explorer-layout {
+  position: relative;
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+.explorer-sidebar {
+  width: 310px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--paper);
+  border-right: 1px solid var(--line);
+  min-height: 0;
+  z-index: 1001;
+}
+.search-area {
+  padding: 16px 17px 10px;
+}
+.search-area > label {
+  font-size: 12px;
+  font-weight: 600;
+  display: block;
+  margin: 0 0 6px;
+}
+input[type="search"],
+select,
+input[type="date"] {
+  width: 100%;
+  min-width: 0;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 10px;
+  font-size: 14px;
+}
+#stats {
+  padding: 0 17px 14px;
+  min-height: 75px;
+  font-size: 13px;
+}
+#stats strong,
+#stats > b {
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: -0.5px;
+  font-variant-numeric: tabular-nums;
+}
+#stats .secondary {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 4px;
+  line-height: 1.5;
+}
+.explorer-tabs {
+  display: flex;
+  border-block: 1px solid var(--line);
+  padding: 0 9px;
+}
+.explorer-tabs button {
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  padding: 11px 8px;
+  font-size: 12px;
+  min-height: 40px;
+}
+.explorer-tabs button[aria-selected="true"] {
+  border-bottom-color: var(--accent);
+  color: var(--ink);
+  font-weight: 600;
+}
+.explorer-panel {
+  padding: 13px 17px;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+.explorer-panel h2 {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0 0 12px;
+}
+.explorer-panel h3 {
+  font-size: 13px;
+  margin: 18px 0 7px;
+}
+.explorer-panel p,
+.explorer-panel li {
+  font-size: 12px;
+  line-height: 1.6;
+}
+.explorer-panel ul.sources {
+  padding-left: 18px;
+}
+.explorer-panel select {
+  margin: 5px 0 10px;
+}
+.explorer-panel label.field {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  margin-top: 10px;
+}
+.layer-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+  min-height: 36px;
+  cursor: pointer;
+  font-size: 12px;
+}
+.layer-row input {
+  margin: 0;
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
+  flex-shrink: 0;
+}
+.layer-label {
+  flex: 1;
+  overflow-wrap: anywhere;
+}
+.layer-count {
+  color: var(--muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.swatch {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+.layer-actions {
+  display: flex;
+  gap: 14px;
+  margin: 12px 0;
+}
+.text-button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  font-size: 12px;
+}
+.muted,
+.hint {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+.notice {
+  background: var(--warning);
+  padding: 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  line-height: 1.6;
+  margin: 12px 0;
+}
+details {
+  font-size: 12px;
+  margin: 14px 0;
+}
+summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+#results {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.feature-result {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 12px 0;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+}
+.feature-result strong {
+  display: block;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.feature-result small {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.5;
+  margin-top: 3px;
+}
+.feature-result:hover {
+  background: var(--soft);
+}
+.explorer-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 17px;
+  border-top: 1px solid var(--line);
+  background: var(--soft);
+  font-size: 11px;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+.explorer-footer span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.map-canvas {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+#map {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background: #d2e3e8;
+}
+.map-message {
+  position: absolute;
+  left: 12px;
+  bottom: 25px;
+  z-index: 1000;
+  padding: 8px 11px;
+  background: var(--paper);
+  box-shadow: 0 1px 7px #0003;
+  border-radius: 5px;
+  max-width: calc(100% - 24px);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.map-message:empty {
+  display: none;
+}
+.explorer-control button {
+  display: block;
+  width: 34px;
+  height: 34px;
+  border: 0;
+  background: var(--paper);
+  color: var(--ink);
+  padding: 0;
+  text-align: center;
+  font-size: 20px;
+  line-height: 34px;
+}
+.explorer-control button:hover {
+  background: var(--soft);
+}
+.you-dot {
+  width: 18px;
+  height: 18px;
+  background: #258fc1;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 0 3px #258fc155;
+}
+.count-pin {
+  border: 2px solid #fff;
+  border-radius: 50%;
+  min-width: 32px;
+  height: 32px;
+  padding: 0 4px;
+  line-height: 28px;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: #fff;
+  background: #176e8c;
+  box-shadow: 0 1px 5px #0005;
+}
+.count-cluster {
+  height: 42px;
+  min-width: 42px;
+  line-height: 36px;
+  border: 3px solid #fff;
+  font-size: 12px;
+  background: #18465b;
+}
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+  background: var(--paper);
+  color: var(--ink);
+}
+.leaflet-popup-content {
+  max-height: 340px;
+  overflow: auto;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.leaflet-popup-content a {
+  color: var(--accent);
+}
+.precision-note {
+  font-weight: 600;
+}
+.leaflet-popup-content .event {
+  border-bottom: 1px solid var(--line);
+  padding: 9px 0;
+}
+.leaflet-popup-content p {
+  margin: 4px 0;
+}
+.sheet-toggle {
+  display: none;
+}
+.record-dialog {
+  background: var(--paper);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  width: 520px;
+  max-width: 92vw;
+  max-height: 85dvh;
+  padding: 20px;
+  overflow: auto;
+}
+.record-dialog::backdrop {
+  background: #0007;
+}
+.record-dialog h2 {
+  font-size: 18px;
+  margin-right: 30px;
+}
+.record-dialog .close {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  border: 0;
+  background: var(--soft);
+  border-radius: 4px;
+  padding: 5px 10px;
+}
+.record-dialog p {
+  font-size: 13px;
+  line-height: 1.6;
+}
+.inline-options {
+  font-size: 12px;
+  margin: 0 0 12px;
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.inline-options input {
+  accent-color: var(--accent);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #172732;
+    --ink: #e2ecf2;
+    --muted: #aec2ce;
+    --soft: #203541;
+    --line: #3c505b;
+    --accent: #75bfd6;
+    --head: #0a202e;
+    --warning: #3e3525;
   }
-  .panel h1 { font-size: 16px; margin: 0 0 4px; }
-  .panel h2 { font-size: 13px; margin: 14px 0 6px; text-transform: uppercase; letter-spacing: .03em; color: #555; }
-  .panel p { font-size: 12px; color: #444; margin: 4px 0; }
-  .panel a { color: #1f78b4; text-decoration: none; }
-  .panel a:hover { text-decoration: underline; }
-  .sources { font-size: 12px; color: #444; margin: 4px 0; padding-left: 18px; }
-  .sources li { margin: 3px 0; }
-  #stats { font-size: 12px; background: #f3f7fb; border: 1px solid #d6e4f0; border-radius: 6px; padding: 8px; }
-  #stats b { font-size: 16px; color: #1f78b4; }
-  #search { width: 100%; box-sizing: border-box; margin-top: 10px; padding: 6px 8px;
-    font-size: 13px; border: 1px solid #ccc; border-radius: 6px; }
-  .near-toggle { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #555;
-    margin-top: 7px; cursor: pointer; user-select: none; }
-  .near-toggle input { margin: 0; cursor: pointer; }
-  .near-toggle.disabled { color: #9aa3ab; }
-  #near-hint { color: #9aa3ab; font-size: 11px; }
-  #results { list-style: none; margin: 6px 0 0; padding: 0; max-height: 210px; overflow: auto; }
-  #results:empty { margin: 0; }
-  #results li { padding: 6px 8px; border-radius: 6px; cursor: pointer; font-size: 12px;
-    display: flex; align-items: center; gap: 7px; }
-  #results li:hover, #results li.active { background: #eef4fb; }
-  #results .r-name { font-weight: 600; color: #222; }
-  #results .r-addr { color: #777; display: block; font-weight: 400; }
-  #results .r-dist { margin-left: auto; color: #888; font-size: 11px; white-space: nowrap; padding-left: 6px; }
-  #results .r-more { color: #888; text-align: center; cursor: default; }
-  #results .r-more:hover { background: none; }
-  .legend-row { display: flex; align-items: center; font-size: 12px; margin: 3px 0; }
-  .dot { width: 12px; height: 12px; border-radius: 50%; margin-right: 7px; border: 1px solid rgba(0,0,0,.3); }
-  .sample-banner { background: #fff6e5; border: 1px solid #f0c976; color: #7a5200;
-    font-size: 12px; border-radius: 6px; padding: 8px; margin-bottom: 8px; }
-  .leaflet-popup-content { font-size: 13px; }
-  .leaflet-popup-content .cat { font-size: 11px; text-transform: uppercase; letter-spacing: .03em; font-weight: 600; }
-  details > summary { cursor: pointer; font-weight: 600; font-size: 13px; margin-top: 10px; }
-  .toggle { position: absolute; top: 10px; right: 10px; z-index: 1001; display: none;
-    background: #fff; border: none; border-radius: 6px; padding: 8px 10px; box-shadow: 0 1px 6px rgba(0,0,0,.3); cursor: pointer; }
-
-  /* Detail sidebar: slides in from the left when a business is clicked. */
-  #sidebar { position: absolute; top: 0; left: 0; bottom: 0; z-index: 1200; width: 360px;
-    max-width: 88%; background: #fff; box-shadow: 2px 0 12px rgba(0,0,0,.28);
-    transform: translateX(-105%); transition: transform .2s ease; overflow: auto;
-    -webkit-overflow-scrolling: touch; }
-  #sidebar.open { transform: none; }
-  .sb-head { position: sticky; top: 0; background: #fff; padding: 14px 16px 10px;
-    border-bottom: 1px solid #eee; }
-  .sb-close { position: absolute; top: 10px; right: 10px; border: none; background: #f2f2f2;
-    border-radius: 50%; width: 28px; height: 28px; font-size: 16px; line-height: 1; cursor: pointer; color: #555; }
-  .sb-close:hover { background: #e4e4e4; }
-  .sb-head h2 { font-size: 17px; margin: 0 30px 6px 0; }
-  .sb-body { padding: 12px 16px 24px; }
-  .badge { display: inline-block; font-size: 11px; font-weight: 700; text-transform: uppercase;
-    letter-spacing: .03em; color: #fff; padding: 2px 8px; border-radius: 10px; }
-  .sb-sub { font-size: 12.5px; color: #555; margin: 6px 0 0; }
-  .facts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 14px 0; }
-  .fact { background: #f6f8fa; border: 1px solid #e6ebf0; border-radius: 8px; padding: 8px 10px; }
-  .fact .k { font-size: 10.5px; text-transform: uppercase; letter-spacing: .03em; color: #7a8794; }
-  .fact .v { font-size: 15px; font-weight: 600; color: #222; margin-top: 2px; }
-  .sb-actions { display: flex; gap: 8px; flex-wrap: wrap; margin: 6px 0 4px; }
-  .sb-actions a { flex: 1; min-width: 120px; text-align: center; font-size: 12.5px; font-weight: 600;
-    text-decoration: none; padding: 8px 10px; border-radius: 8px; background: #1f78b4; color: #fff; }
-  .sb-actions a.secondary { background: #eef2f6; color: #1f78b4; }
-  .sb-actions a:hover { filter: brightness(.95); }
-  .sb-body h3 { font-size: 12px; text-transform: uppercase; letter-spacing: .03em; color: #555;
-    margin: 20px 0 8px; }
-  .timeline { list-style: none; margin: 0; padding: 0; }
-  .insp { border: 1px solid #e6ebf0; border-radius: 8px; padding: 10px 12px; margin-bottom: 10px; }
-  .insp-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-  .insp-date { font-weight: 600; font-size: 13px; color: #222; }
-  .infractions { list-style: none; margin: 9px 0 0; padding: 0; }
-  .infractions li { font-size: 12.5px; color: #333; padding: 7px 0; border-top: 1px dashed #e6ebf0; }
-  .infractions li:first-child { border-top: none; }
-  .sev { display: inline-block; font-size: 10px; font-weight: 700; text-transform: uppercase;
-    letter-spacing: .02em; padding: 1px 6px; border-radius: 8px; margin-right: 6px; vertical-align: 1px; }
-  .sev-crucial { background: #fdecea; color: #b71c1c; }
-  .sev-significant { background: #fff3e0; color: #b25b00; }
-  .sev-minor { background: #f1f8e9; color: #4b7a19; }
-  .sev-other { background: #eceff1; color: #546e7a; }
-  .action { color: #667; font-size: 11.5px; margin-top: 3px; }
-  .muted { color: #888; font-size: 12.5px; margin: 8px 0 0; }
-  .no-infr { color: #2e7d32; font-size: 12.5px; margin: 8px 0 0; }
-
-  @media (max-width: 620px) {
-    .panel { width: auto; left: 10px; right: 10px; max-height: 55%; display: none; }
-    .toggle { display: block; }
-    #sidebar { width: 100%; max-width: 100%; }
+  .leaflet-control-zoom a {
+    background: var(--paper);
+    color: var(--ink);
   }
-</style>
-</head>
-<body>
-<div id="map"></div>
-<button class="toggle" id="toggle">Info</button>
+}
+@media (max-width: 760px) {
+  .explorer-header {
+    padding: 14px 16px;
+    min-height: 79px;
+  }
+  .explorer-header h1 {
+    font-size: 19px;
+  }
+  .explorer-header #snapshot-date {
+    display: none;
+  }
+  .explorer-sidebar {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: min(45dvh, 370px);
+    min-height: 285px;
+    border: 0;
+    border-radius: 15px 15px 0 0;
+    box-shadow: 0 -3px 14px #0003;
+  }
+  .explorer-sidebar.expanded {
+    height: 80%;
+  }
+  .sheet-toggle {
+    display: block;
+    height: 24px;
+    min-height: 24px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    flex-shrink: 0;
+  }
+  .sheet-toggle::before {
+    content: "";
+    display: block;
+    width: 35px;
+    height: 4px;
+    margin: auto;
+    border-radius: 3px;
+    background: var(--line);
+  }
+  .search-area {
+    padding: 0 15px 8px;
+  }
+  .search-area > label {
+    display: none;
+  }
+  input[type="search"] {
+    font-size: 16px;
+    padding: 9px;
+  }
+  #stats {
+    padding: 0 15px 8px;
+    min-height: 55px;
+  }
+  #stats strong,
+  #stats > b {
+    font-size: 24px;
+  }
+  .explorer-tabs button {
+    padding: 8px 10px;
+    min-height: 36px;
+  }
+  .explorer-panel {
+    padding: 10px 15px;
+  }
+  .explorer-footer {
+    padding: 8px 15px;
+  }
+  .map-canvas {
+    position: absolute;
+    inset: 0;
+  }
+  .leaflet-top.leaflet-left {
+    display: flex;
+    align-items: flex-start;
+    gap: 7px;
+    padding: 10px;
+  }
+  .leaflet-top.leaflet-left .leaflet-control {
+    margin: 0;
+  }
+  .leaflet-control-zoom {
+    display: flex;
+  }
+  .leaflet-control-zoom a:first-child {
+    border-bottom: 0;
+    border-right: 1px solid #ccc;
+  }
+  .leaflet-control-zoom a {
+    border-radius: 0 !important;
+  }
+  .map-message {
+    top: 60px;
+    bottom: auto;
+    left: 10px;
+    max-width: calc(100% - 20px);
+  }
+  .leaflet-control-attribution {
+    max-width: 85vw;
+    font-size: 9px !important;
+  }
+  .layer-row {
+    min-height: 40px;
+  }
+}
+@media (pointer: coarse) {
+  .explorer-control button {
+    width: 40px;
+    height: 40px;
+    line-height: 40px;
+  }
+  .explorer-tabs button,
+  .layer-row,
+  .sheet-toggle {
+    min-height: 44px;
+  }
+  .leaflet-control-zoom a {
+    width: 40px;
+    height: 40px;
+    line-height: 40px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  * {
+    scroll-behavior: auto !important;
+    transition: none !important;
+  }
+}
 
-<aside id="sidebar" aria-hidden="true">
-  <div class="sb-head">
-    <button class="sb-close" id="sb-close" title="Close" aria-label="Close">&times;</button>
-    <h2 id="sb-title"></h2>
-    <div id="sb-badge"></div>
-    <p class="sb-sub" id="sb-sub"></p>
-  </div>
-  <div class="sb-body" id="sb-body"></div>
-</aside>
+.feature-dot {
+  width: 100%;
+  height: 100%;
+  border: 2px solid white;
+  border-radius: 50%;
+  box-shadow: 0 1px 4px #0006;
+}
+.pin,
+.cluster {
+  border-radius: 50%;
+  color: white;
+  background: #254b60;
+  border: 2px solid #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  box-shadow: 0 1px 5px #0005;
+  width: 100%;
+  height: 100%;
+}
+.cluster {
+  font-size: 12px;
+}
+.event {
+  border-top: 1px solid #ddd;
+  padding: 8px 0;
+}
+.event p {
+  margin: 4px 0;
+}
+.leaflet-popup-content {
+  max-height: 360px;
+  overflow: auto;
+}
+.itin ul {
+  padding-left: 20px;
+}
+.itin li {
+  margin: 8px 0;
+}
 
-<div class="panel" id="panel">
-  <h1>Toronto DineSafe Inspections</h1>
-  <p>Food-safety inspection results for Toronto restaurants, food stores and other
-     establishments, coloured by the outcome of the most recent inspection.
-     <b>Search below or click a pin</b> to see inspection details and past inspections.</p>
+    </style>
+    <style>
+      /* Detail sidebar uses the explorer surface/text pairs in both themes. */
+      #sidebar {
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 1200;
+        width: 360px;
+        max-width: 88%;
+        background: var(--paper);
+        box-shadow: 2px 0 12px rgba(0, 0, 0, 0.28);
+        transform: translateX(105%);
+        transition: transform 0.2s ease;
+        overflow: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+      #sidebar.open {
+        transform: none;
+      }
+      .sb-head {
+        position: sticky;
+        top: 0;
+        background: var(--paper);
+        padding: 14px 16px 10px;
+        border-bottom: 1px solid var(--line);
+      }
+      .sb-close {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        border: none;
+        background: var(--soft);
+        border-radius: 50%;
+        width: 28px;
+        height: 28px;
+        font-size: 16px;
+        line-height: 1;
+        cursor: pointer;
+        color: var(--muted);
+      }
+      .sb-close:hover {
+        background: var(--line);
+      }
+      .sb-head h2 {
+        font-size: 17px;
+        margin: 0 30px 6px 0;
+      }
+      .sb-body {
+        padding: 12px 16px 24px;
+      }
+      .badge {
+        display: inline-block;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        color: #fff;
+        padding: 2px 8px;
+        border-radius: 10px;
+      }
+      .sb-sub {
+        font-size: 12.5px;
+        color: var(--muted);
+        margin: 6px 0 0;
+      }
+      .facts {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        margin: 14px 0;
+      }
+      .fact {
+        background: var(--soft);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 8px 10px;
+      }
+      .fact .k {
+        font-size: 10.5px;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        color: var(--muted);
+      }
+      .fact .v {
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--ink);
+        margin-top: 2px;
+      }
+      .sb-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin: 6px 0 4px;
+      }
+      .sb-actions a {
+        flex: 1;
+        min-width: 120px;
+        text-align: center;
+        font-size: 12.5px;
+        font-weight: 600;
+        text-decoration: none;
+        padding: 8px 10px;
+        border-radius: 8px;
+        background: #1f78b4;
+        color: #fff;
+      }
+      .sb-actions a.secondary {
+        background: var(--soft);
+        color: var(--accent);
+      }
+      .sb-actions a:hover {
+        filter: brightness(0.95);
+      }
+      .sb-body h3 {
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        color: var(--muted);
+        margin: 20px 0 8px;
+      }
+      .timeline {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+      .insp {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 10px 12px;
+        margin-bottom: 10px;
+      }
+      .insp-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+      }
+      .insp-date {
+        font-weight: 600;
+        font-size: 13px;
+        color: var(--ink);
+      }
+      .infractions {
+        list-style: none;
+        margin: 9px 0 0;
+        padding: 0;
+      }
+      .infractions li {
+        font-size: 12.5px;
+        color: var(--ink);
+        padding: 7px 0;
+        border-top: 1px dashed var(--line);
+      }
+      .infractions li:first-child {
+        border-top: none;
+      }
+      .sev {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        border-radius: 8px;
+        margin-right: 6px;
+        vertical-align: 1px;
+      }
+      .sev-crucial {
+        background: #fdecea;
+        color: #b71c1c;
+      }
+      .sev-significant {
+        background: #fff3e0;
+        color: #9c4f00;
+      }
+      .sev-minor {
+        background: #f1f8e9;
+        color: #4b7a19;
+      }
+      .sev-other {
+        background: #eceff1;
+        color: #546e7a;
+      }
+      .action {
+        color: var(--muted);
+        font-size: 11.5px;
+        margin-top: 3px;
+      }
+      .muted {
+        color: var(--muted);
+        font-size: 12.5px;
+        margin: 8px 0 0;
+      }
+      .no-infr {
+        color: var(--ink);
+        font-size: 12.5px;
+        margin: 8px 0 0;
+      }
 
-  <div id="sample-banner" class="sample-banner" style="display:none"></div>
-  <div id="stats"></div>
-  <input id="search" type="search" placeholder="Search by name, type or address&hellip;" autocomplete="off" />
-  <label id="near-toggle-label" class="near-toggle">
-    <input id="near-toggle" type="checkbox" checked /> Nearest first<span id="near-hint"></span>
-  </label>
-  <ul id="results"></ul>
+      #sidebar[aria-hidden="true"] {
+        visibility: hidden;
+      }
+      #sidebar {
+        max-height: 100%;
+      }
+      #sidebar .sb-close {
+        min-width: 36px;
+        min-height: 36px;
+      }
+      @media (max-width: 760px) {
+        #sidebar {
+          width: 100%;
+          max-width: 100%;
+          z-index: 1200;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="explorer-header">
+      <div>
+        <h1>Toronto DineSafe inspections</h1>
+        <p>Latest food-safety outcomes and inspection histories</p>
+      </div>
+      <div id="snapshot-date"></div>
+    </header>
+    <main class="explorer-layout">
+      <aside
+        id="panel"
+        class="explorer-sidebar"
+        aria-label="Map exploration controls"
+      >
+        <button
+          type="button"
+          id="sheet-toggle"
+          class="sheet-toggle"
+          aria-label="Expand map controls"
+          aria-expanded="false"
+        ></button>
+        <div class="search-area">
+          <label for="search">Search features</label
+          ><input
+            id="search"
+            type="search"
+            placeholder="Name, establishment type or address"
+            aria-label="Search features"
+            autocomplete="off"
+          />
+        </div>
+        <div id="stats" role="status" aria-live="polite"></div>
+        <nav class="explorer-tabs" role="tablist" aria-label="Map exploration">
+          <button
+            type="button"
+            role="tab"
+            id="layers-tab"
+            data-tab="layers"
+            aria-controls="layers-panel"
+            aria-selected="true"
+          >
+            Layers</button
+          ><button
+            type="button"
+            role="tab"
+            id="results-tab"
+            data-tab="results"
+            aria-controls="results-panel"
+            aria-selected="false"
+          >
+            Results</button
+          ><button
+            type="button"
+            role="tab"
+            id="sources-tab"
+            data-tab="sources"
+            aria-controls="sources-panel"
+            aria-selected="false"
+          >
+            Data sources
+          </button>
+        </nav>
+        <section
+          id="layers-panel"
+          class="explorer-panel"
+          role="tabpanel"
+          aria-labelledby="layers-tab"
+        >
+          <div id="layer-controls"></div>
+          <div class="layer-actions">
+            <button type="button" class="text-button" id="select-all">
+              Select all</button
+            ><button type="button" class="text-button" id="clear-all">
+              Clear all
+            </button>
+          </div>
+          <p class="notice">
+            Statuses are a snapshot. Confirm current conditions with Toronto
+            Public Health.
+          </p>
+        </section>
+        <section
+          id="results-panel"
+          class="explorer-panel"
+          role="tabpanel"
+          aria-labelledby="results-tab"
+          hidden
+        >
+          <div id="sample-banner" class="notice" hidden></div>
+          <label id="near-toggle-label" class="inline-options"
+            ><input id="near-toggle" type="checkbox" checked /> Nearest
+            first<span id="near-hint"></span
+          ></label>
+          <p id="result-note" class="hint"></p>
+          <div id="results"></div>
+        </section>
+        <section
+          id="sources-panel"
+          class="explorer-panel"
+          role="tabpanel"
+          aria-labelledby="sources-tab"
+          hidden
+        >
+          <p id="snapshot-provenance" class="muted"></p>
+          <h2>Data sources</h2>
+          <ul class="sources">
+            <li>
+              Inspection results &mdash;
+              <a
+                id="source"
+                href="https://open.toronto.ca/dataset/dinesafe/"
+                target="_blank"
+                rel="noopener"
+                >DineSafe, Toronto Open Data</a
+              >
+              (Toronto Public Health)
+            </li>
+            <li>
+              Program details &mdash;
+              <a
+                href="https://www.toronto.ca/community-people/health-wellness-care/health-programs-advice/food-safety/dinesafe/"
+                target="_blank"
+                rel="noopener"
+                >City of Toronto &mdash; DineSafe</a
+              >
+            </li>
+            <li>
+              Geocoding &amp; map tiles &mdash; &copy;
+              <a
+                href="https://www.openstreetmap.org/copyright"
+                target="_blank"
+                rel="noopener"
+                >OpenStreetMap</a
+              >
+              contributors (via Nominatim)
+            </li>
+          </ul>
+          <p id="generated" class="muted"></p>
 
-  <h2>Legend</h2>
-  <div id="legend"></div>
-
-  <h2>Data sources</h2>
-  <ul class="sources">
-    <li>Inspection results &mdash;
-      <a id="source" href="https://open.toronto.ca/dataset/dinesafe/" target="_blank" rel="noopener">DineSafe, Toronto Open Data</a>
-      (Toronto Public Health)</li>
-    <li>Program details &mdash;
-      <a href="https://www.toronto.ca/community-people/health-wellness-care/health-programs-advice/food-safety/dinesafe/" target="_blank" rel="noopener">City of Toronto &mdash; DineSafe</a></li>
-    <li>Geocoding &amp; map tiles &mdash; &copy;
-      <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors
-      (via Nominatim)</li>
-  </ul>
-  <p id="generated" style="color:#666"></p>
-
-  <details>
-    <summary>Notes &amp; caveats</summary>
-    <p>Each pin shows an establishment's <b>most recent</b> inspection outcome on
-       record; statuses change as re-inspections happen, so confirm current status
-       on the <a href="https://www.toronto.ca/community-people/health-wellness-care/health-programs-advice/food-safety/dinesafe/" target="_blank" rel="noopener">official DineSafe site</a>
-       before relying on a pin. A <b>Conditional Pass</b> means minor infractions
-       were found and must be corrected; <b>Closed</b> means the establishment was
-       ordered closed at the time of inspection (it may have since reopened).
-       Locations come from the dataset's own coordinates where present, otherwise
-       geocoded from the address, so some pins are approximate.</p>
-  </details>
-</div>
-
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-  integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-<script>
-const DATA = {
+          <details>
+            <summary>Notes &amp; caveats</summary>
+            <p>
+              Each pin shows an establishment's <b>most recent</b> inspection
+              outcome on record; statuses change as re-inspections happen, so
+              confirm current status on the
+              <a
+                href="https://www.toronto.ca/community-people/health-wellness-care/health-programs-advice/food-safety/dinesafe/"
+                target="_blank"
+                rel="noopener"
+                >official DineSafe site</a
+              >
+              before relying on a pin. <b>Closed</b> means the establishment was
+              ordered closed at the time of inspection; it may have since
+              reopened. Read the inspection history for recorded infractions and
+              follow the official source for current details. Locations come
+              from the dataset's own coordinates where present, otherwise
+              geocoded from the address, so some pins are approximate.
+            </p>
+          </details>
+        </section>
+        <footer class="explorer-footer">
+          <span>Toronto Public Health</span
+          ><button type="button" id="provenance" class="text-button">
+            Provenance
+          </button>
+        </footer>
+      </aside>
+      <div class="map-canvas">
+        <div id="map" aria-label="Toronto DineSafe inspections map"></div>
+        <div
+          id="location-status"
+          class="map-message"
+          role="status"
+          aria-live="polite"
+        ></div>
+        <aside id="sidebar" aria-hidden="true">
+          <div class="sb-head">
+            <button
+              class="sb-close"
+              id="sb-close"
+              title="Close"
+              aria-label="Close"
+            >
+              &times;
+            </button>
+            <h2 id="sb-title"></h2>
+            <div id="sb-badge"></div>
+            <p class="sb-sub" id="sb-sub"></p>
+          </div>
+          <div class="sb-body" id="sb-body"></div>
+        </aside>
+      </div>
+    </main>
+    <dialog
+      id="record-detail"
+      class="record-dialog"
+      aria-labelledby="record-title"
+    >
+      <button
+        type="button"
+        id="record-close"
+        class="close"
+        aria-label="Close details"
+      >
+        ×
+      </button>
+      <h2 id="record-title"></h2>
+      <div id="record-body"></div>
+    </dialog>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+      const DATA = {
   "categories": {
     "pass": {
       "label": "Pass",
@@ -1201618,11 +1202534,359 @@ const DATA = {
     "sample": false
   }
 };
-
-// preferCanvas: the full DineSafe set is ~16k points; canvas keeps it smooth.
-const map = L.map('map', { preferCanvas: true }).setView(DATA.center, DATA.zoom);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  maxZoom: 19, attribution: '&copy; OpenStreetMap contributors'
+    </script>
+    <script>
+      /* Project-local explorer UI. No source is loaded from another project. */
+const Explorer = (() => {
+  const byId = (id) => document.getElementById(id);
+  const esc = (value) =>
+    String(value ?? "").replace(
+      /[&<>"']/g,
+      (c) =>
+        ({
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          '"': "&quot;",
+          "'": "&#39;",
+        })[c],
+    );
+  const choices = new Map();
+  const mobile = () => matchMedia("(max-width:760px)").matches;
+  function collapse() {
+    byId("panel").classList.remove("expanded");
+    byId("sheet-toggle").setAttribute("aria-expanded", "false");
+    byId("sheet-toggle").setAttribute("aria-label", "Expand map controls");
+  }
+  function sheetHeight() {
+    return mobile() ? byId("panel").getBoundingClientRect().height : 0;
+  }
+  function tab(name) {
+    document.querySelectorAll(".explorer-tabs [role=tab]").forEach((button) => {
+      button.setAttribute("aria-selected", String(button.dataset.tab === name));
+      button.tabIndex = button.dataset.tab === name ? 0 : -1;
+    });
+    document
+      .querySelectorAll(".explorer-panel")
+      .forEach((panel) => (panel.hidden = panel.id !== name + "-panel"));
+  }
+  document.querySelectorAll(".explorer-tabs [role=tab]").forEach((button) => {
+    button.onclick = () => tab(button.dataset.tab);
+    button.onkeydown = (event) => {
+      if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key))
+        return;
+      event.preventDefault();
+      const buttons = [
+        ...document.querySelectorAll(".explorer-tabs [role=tab]"),
+      ];
+      const index = buttons.indexOf(button);
+      const next =
+        event.key === "Home"
+          ? 0
+          : event.key === "End"
+            ? buttons.length - 1
+            : (index + (event.key === "ArrowRight" ? 1 : buttons.length - 1)) %
+              buttons.length;
+      buttons[next].focus();
+      tab(buttons[next].dataset.tab);
+    };
+  });
+  tab("layers");
+  byId("provenance").onclick = () => tab("sources");
+  byId("sheet-toggle").onclick = () => {
+    const expanded = byId("panel").classList.toggle("expanded");
+    byId("sheet-toggle").setAttribute("aria-expanded", String(expanded));
+    byId("sheet-toggle").setAttribute(
+      "aria-label",
+      expanded ? "Collapse map controls" : "Expand map controls",
+    );
+  };
+  byId("search").addEventListener("input", () =>
+    tab(byId("search").value.trim() ? "results" : "layers"),
+  );
+  const status = (message) => {
+    byId("location-status").textContent = message;
+  };
+  function count(
+    total,
+    unit,
+    mapped,
+    note = "",
+    missingLabel = "without a pin",
+  ) {
+    const stats = byId("stats");
+    stats.replaceChildren();
+    const number = document.createElement("strong");
+    number.textContent = total.toLocaleString();
+    stats.append(number, document.createTextNode(" " + unit));
+    const secondary = document.createElement("div");
+    secondary.className = "secondary";
+    secondary.textContent =
+      mapped == null
+        ? note
+        : mapped.toLocaleString() +
+          " mapped · " +
+          (total - mapped).toLocaleString() +
+          " " +
+          missingLabel +
+          (note ? " · " + note : "");
+    stats.append(secondary);
+  }
+  function layers(items, onChange) {
+    const target = byId("layer-controls");
+    target.replaceChildren();
+    choices.clear();
+    for (const item of items) {
+      const label = document.createElement("label");
+      label.className = "layer-row";
+      const input = document.createElement("input");
+      input.type = "checkbox";
+      input.checked = item.checked !== false;
+      input.dataset.layer = item.id;
+      const name = document.createElement("span");
+      name.className = "layer-label";
+      const dot = document.createElement("span");
+      dot.className = "swatch";
+      dot.style.background = item.color;
+      name.append(dot, document.createTextNode(item.label));
+      const n = document.createElement("span");
+      n.className = "layer-count";
+      n.textContent =
+        typeof item.count === "number"
+          ? item.count.toLocaleString()
+          : (item.count ?? "");
+      label.append(input, name, n);
+      target.append(label);
+      choices.set(item.id, { input, n, item });
+      input.onchange = () => {
+        if (item.layer) {
+          if (input.checked) item.layer.addTo(item.map);
+          else item.map.removeLayer(item.layer);
+        }
+        onChange();
+      };
+    }
+    for (const [id, value] of [
+      ["select-all", true],
+      ["clear-all", false],
+    ])
+      byId(id).onclick = () => {
+        for (const { input, item } of choices.values()) {
+          input.checked = value;
+          if (item.layer) {
+            if (value) item.layer.addTo(item.map);
+            else item.map.removeLayer(item.layer);
+          }
+        }
+        onChange();
+      };
+  }
+  const enabled = (id) => choices.get(id)?.input.checked ?? false;
+  function layerCounts(counts) {
+    for (const [id, n] of Object.entries(counts)) {
+      const choice = choices.get(id);
+      if (choice) choice.n.textContent = Number(n).toLocaleString();
+    }
+  }
+  function results(items, label, summary, onSelect, limit = 50) {
+    const target = byId("results");
+    target.replaceChildren();
+    for (const item of items.slice(0, limit)) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "feature-result";
+      const title = document.createElement("strong");
+      title.textContent = label(item);
+      const sub = document.createElement("small");
+      sub.textContent = summary(item);
+      button.append(title, sub);
+      button.onclick = () => onSelect(item);
+      target.append(button);
+    }
+    byId("result-note").textContent = !items.length
+      ? "No features match the selected layers and search."
+      : items.length > limit
+        ? "First " +
+          limit +
+          " of " +
+          items.length.toLocaleString() +
+          " matches listed. Narrow the search to find a specific feature."
+        : items.length.toLocaleString() + " matching features.";
+  }
+  function stamp(value) {
+    byId("snapshot-date").textContent = value
+      ? "Snapshot " + String(value).slice(0, 10)
+      : "Committed snapshot";
+    byId("snapshot-provenance").textContent = byId("snapshot-date").textContent;
+  }
+  function fit(map, bounds, maxZoom = 16) {
+    collapse();
+    if (bounds?.isValid()) {
+      map.fitBounds(bounds, {
+        paddingTopLeft: [30, 30],
+        paddingBottomRight: [30, sheetHeight() + 30],
+        maxZoom,
+      });
+      status("");
+    } else status("No mapped features match the selected layers and search.");
+  }
+  function focus(map, ll, zoom = 16) {
+    collapse();
+    map.setView(ll, zoom, { animate: false });
+    if (mobile()) map.panBy([0, sheetHeight() / 2], { animate: false });
+  }
+  function detail(title, html) {
+    const dialog = byId("record-detail");
+    byId("record-title").textContent = title;
+    byId("record-body").innerHTML = html;
+    if (!dialog.open) dialog.showModal();
+  }
+  byId("record-close").onclick = () => byId("record-detail").close();
+  function connect(map, config) {
+    if (mobile()) map.panBy([0, sheetHeight() / 2], { animate: false });
+    let userMarker = null,
+      accuracyCircle = null;
+    const Control = L.Control.extend({
+      options: { position: "topleft" },
+      onAdd() {
+        const container = L.DomUtil.create(
+          "div",
+          "leaflet-bar explorer-control",
+        );
+        const button = L.DomUtil.create("button", "", container);
+        button.type = "button";
+        button.id = "locate";
+        button.title = "Center on my location";
+        button.setAttribute("aria-label", "Center on my location");
+        button.textContent = "◎";
+        L.DomEvent.disableClickPropagation(container);
+        L.DomEvent.disableScrollPropagation(container);
+        button.onclick = () => {
+          if (!navigator.geolocation) {
+            status(
+              "Location is unavailable. Use a browser with location support on HTTPS or localhost.",
+            );
+            return;
+          }
+          button.disabled = true;
+          button.setAttribute("aria-busy", "true");
+          status("Finding your location…");
+          const finish = (message) => {
+            button.disabled = false;
+            button.removeAttribute("aria-busy");
+            status(message);
+          };
+          navigator.geolocation.getCurrentPosition(
+            (pos) => {
+              const ll = [pos.coords.latitude, pos.coords.longitude],
+                accuracy = pos.coords.accuracy;
+              if (userMarker) userMarker.setLatLng(ll);
+              else
+                userMarker = L.marker(ll, {
+                  icon: L.divIcon({
+                    className: "",
+                    html: '<div class="you-dot"></div>',
+                    iconSize: [18, 18],
+                    iconAnchor: [9, 9],
+                  }),
+                  zIndexOffset: 2000,
+                  title: "You are here",
+                })
+                  .addTo(map)
+                  .bindPopup("You are here");
+              if (Number.isFinite(accuracy) && accuracy > 0) {
+                if (accuracyCircle)
+                  accuracyCircle.setLatLng(ll).setRadius(accuracy);
+                else
+                  accuracyCircle = L.circle(ll, {
+                    radius: accuracy,
+                    color: "#258fc1",
+                    weight: 1,
+                    fillOpacity: 0.08,
+                    interactive: false,
+                  }).addTo(map);
+              } else if (accuracyCircle) {
+                map.removeLayer(accuracyCircle);
+                accuracyCircle = null;
+              }
+              focus(map, ll, 14);
+              finish(
+                "Centered on your location." +
+                  (Number.isFinite(accuracy) && accuracy > 0
+                    ? " Browser accuracy: about " +
+                      Math.max(1, Math.round(accuracy)).toLocaleString() +
+                      " m."
+                    : ""),
+              );
+              if (config.located) config.located(pos);
+            },
+            (error) =>
+              finish(
+                {
+                  1: "Location access was denied. Enable location for this site in your browser, then try again.",
+                  2: "Your location could not be determined. Please try again.",
+                  3: "Finding your location timed out. Please try again.",
+                }[error.code] ||
+                  "Your location could not be determined. Please try again.",
+              ),
+            { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 },
+          );
+        };
+        return container;
+      },
+    });
+    map.addControl(new Control());
+    const Fit = L.Control.extend({
+      options: { position: "topleft" },
+      onAdd() {
+        const container = L.DomUtil.create(
+            "div",
+            "leaflet-bar explorer-control",
+          ),
+          button = L.DomUtil.create("button", "", container);
+        button.type = "button";
+        button.id = "fit";
+        button.title = "Fit matching features";
+        button.setAttribute("aria-label", "Fit matching features");
+        button.textContent = "⛶";
+        L.DomEvent.disableClickPropagation(container);
+        button.onclick = () => {
+          fit(map, config.bounds(), config.maxZoom || 16);
+        };
+        return container;
+      },
+    });
+    map.addControl(new Fit());
+    // Location stays in memory only and is requested solely by the locate button.
+  }
+  return {
+    esc,
+    tab,
+    count,
+    layers,
+    enabled,
+    layerCounts,
+    results,
+    stamp,
+    fit,
+    focus,
+    detail,
+    connect,
+    collapse,
+    status,
+  };
+})();
+;
+    </script>
+    <script>
+      // preferCanvas: the full DineSafe set is ~16k points; canvas keeps it smooth.
+const map = L.map("map", { preferCanvas: true }).setView(
+  DATA.center,
+  DATA.zoom,
+);
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+  maxZoom: 19,
+  attribution: "&copy; OpenStreetMap contributors",
 }).addTo(map);
 
 // One toggleable layer per status category.
@@ -1201630,17 +1202894,21 @@ const layers = {};
 for (const key in DATA.categories) layers[key] = L.layerGroup().addTo(map);
 
 function esc(s) {
-  return String(s == null ? '' : s).replace(/[&<>"]/g, c =>
-    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  return String(s == null ? "" : s).replace(
+    /[&<>"]/g,
+    (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c],
+  );
 }
-function catFor(key) { return DATA.categories[key] || { label: 'Other / Unknown', color: '#777' }; }
+function catFor(key) {
+  return DATA.categories[key] || { label: "Other / Unknown", color: "#777" };
+}
 // Map DineSafe's severity wording to a colour band (crucial > significant > minor).
 function sevClass(sev) {
-  const s = String(sev || '').toLowerCase();
-  if (s.includes('crucial')) return 'crucial';
-  if (s.includes('significant')) return 'significant';
-  if (s.includes('minor')) return 'minor';
-  return 'other';
+  const s = String(sev || "").toLowerCase();
+  if (s.includes("crucial")) return "crucial";
+  if (s.includes("significant")) return "significant";
+  if (s.includes("minor")) return "minor";
+  return "other";
 }
 
 // Keep marker + record together so the search box can filter without rebuilding.
@@ -1201648,50 +1202916,108 @@ const entries = [];
 for (const e of DATA.establishments) {
   const cat = catFor(e.cat);
   const marker = L.circleMarker([e.lat, e.lon], {
-    radius: 6, color: '#fff', weight: 1, fillColor: cat.color, fillOpacity: 0.9
+    radius: 6,
+    color: "#fff",
+    weight: 1,
+    fillColor: cat.color,
+    fillOpacity: 0.9,
   });
-  marker.on('click', () => openSidebar(e));
+  marker.on("click", () => openSidebar(e));
   marker.addTo(layers[e.cat]);
-  entries.push({ marker, rec: e, cat: e.cat,
-    haystack: [e.name, e.type, e.address].join(' ').toLowerCase() });
+  entries.push({
+    marker,
+    rec: e,
+    cat: e.cat,
+    haystack: [e.name, e.type, e.address].join(" ").toLowerCase(),
+  });
 }
 
 // ---- Detail sidebar -------------------------------------------------------
 // Opens on a marker or search-result click; shows the current status, key
 // facts, and the full inspection history (each visit's infractions).
-const DINESAFE_URL = 'https://www.toronto.ca/community-people/health-wellness-care/health-programs-advice/food-safety/dinesafe/';
-const sidebar = document.getElementById('sidebar');
+const DINESAFE_URL =
+  "https://www.toronto.ca/community-people/health-wellness-care/health-programs-advice/food-safety/dinesafe/";
+const sidebar = document.getElementById("sidebar");
+let detailOpener = null;
 
 function fact(k, v) {
-  return '<div class="fact"><div class="k">' + esc(k) + '</div><div class="v">' + esc(v) + '</div></div>';
+  return (
+    '<div class="fact"><div class="k">' +
+    esc(k) +
+    '</div><div class="v">' +
+    esc(v) +
+    "</div></div>"
+  );
 }
 
 function renderInspection(ins) {
   const c = catFor(ins.cat);
-  const n = ins.infraction_count != null ? ins.infraction_count : (ins.infractions || []).length;
+  const n =
+    ins.infraction_count != null
+      ? ins.infraction_count
+      : (ins.infractions || []).length;
   let body;
   if (ins.infractions && ins.infractions.length) {
-    body = '<ul class="infractions">' + ins.infractions.map(f => {
-      const sev = f.severity
-        ? '<span class="sev sev-' + sevClass(f.severity) + '">' + esc(f.severity) + '</span>' : '';
-      return '<li>' + sev + esc(f.detail || 'Infraction recorded') +
-        (f.action ? '<div class="action">Action &mdash; ' + esc(f.action) + '</div>' : '') +
-        (f.outcome ? '<div class="action">Outcome &mdash; ' + esc(f.outcome) + '</div>' : '') +
-        '</li>';
-    }).join('') + '</ul>';
+    body =
+      '<ul class="infractions">' +
+      ins.infractions
+        .map((f) => {
+          const sev = f.severity
+            ? '<span class="sev sev-' +
+              sevClass(f.severity) +
+              '">' +
+              esc(f.severity) +
+              "</span>"
+            : "";
+          return (
+            "<li>" +
+            sev +
+            esc(f.detail || "Infraction recorded") +
+            (f.action
+              ? '<div class="action">Action &mdash; ' + esc(f.action) + "</div>"
+              : "") +
+            (f.outcome
+              ? '<div class="action">Outcome &mdash; ' +
+                esc(f.outcome) +
+                "</div>"
+              : "") +
+            "</li>"
+          );
+        })
+        .join("") +
+      "</ul>";
   } else if (n > 0 && ins.details_available === false) {
     // Summary-only data/dinesafe.json: we know the count but not the detail.
-    body = '<p class="muted">' + n + ' infraction' + (n === 1 ? '' : 's') +
-      ' recorded &mdash; run <code>make data</code> to load the specifics.</p>';
+    body =
+      '<p class="muted">' +
+      n +
+      " infraction" +
+      (n === 1 ? "" : "s") +
+      " recorded. Detailed descriptions are unavailable in this snapshot.</p>";
   } else if (n > 0) {
-    body = '<p class="muted">' + n + ' infraction' + (n === 1 ? '' : 's') + ' recorded.</p>';
+    body =
+      '<p class="muted">' +
+      n +
+      " infraction" +
+      (n === 1 ? "" : "s") +
+      " recorded.</p>";
   } else {
     body = '<p class="no-infr">&#10003; No infractions recorded.</p>';
   }
-  return '<li class="insp"><div class="insp-top">' +
-    '<span class="insp-date">' + esc(ins.date || 'Date unknown') + '</span>' +
-    '<span class="badge" style="background:' + c.color + '">' + esc(c.label) + '</span>' +
-    '</div>' + body + '</li>';
+  return (
+    '<li class="insp"><div class="insp-top">' +
+    '<span class="insp-date">' +
+    esc(ins.date || "Date unknown") +
+    "</span>" +
+    '<span class="badge" style="background:' +
+    c.color +
+    '">' +
+    esc(c.label) +
+    "</span>" +
+    "</div>" +
+    body +
+    "</li>"
+  );
 }
 
 // The timeline the sidebar shows: the establishment's own `inspections` when the
@@ -1201700,210 +1203026,158 @@ function renderInspection(ins) {
 function timelineFor(e) {
   if (e.inspections && e.inspections.length) return e.inspections;
   if (e.last_inspection || e.status) {
-    return [{
-      date: e.last_inspection || '', status: e.status || '', cat: e.cat,
-      infractions: [], infraction_count: e.infractions || 0, details_available: false,
-    }];
+    return [
+      {
+        date: e.last_inspection || "",
+        status: e.status || "",
+        cat: e.cat,
+        infractions: [],
+        infraction_count: e.infractions || 0,
+        details_available: false,
+      },
+    ];
   }
   return [];
 }
 
 function openSidebar(e) {
+  if (!sidebar.classList.contains("open"))
+    detailOpener = document.activeElement;
   const cat = catFor(e.cat);
-  document.getElementById('sb-title').textContent = e.name || 'Establishment';
-  document.getElementById('sb-badge').innerHTML =
-    '<span class="badge" style="background:' + cat.color + '">' + esc(cat.label) + '</span>';
-  document.getElementById('sb-sub').innerHTML =
-    (e.type ? esc(e.type) : '') + (e.type && e.address ? ' &middot; ' : '') + (e.address ? esc(e.address) : '');
+  document.getElementById("sb-title").textContent = e.name || "Establishment";
+  document.getElementById("sb-badge").innerHTML =
+    '<span class="badge" style="background:' +
+    cat.color +
+    '">' +
+    esc(cat.label) +
+    "</span>";
+  document.getElementById("sb-sub").innerHTML =
+    (e.type ? esc(e.type) : "") +
+    (e.type && e.address ? " &middot; " : "") +
+    (e.address ? esc(e.address) : "");
 
   const inspections = timelineFor(e);
   const latestN = e.infractions || 0;
-  let facts = fact('Last inspected', e.last_inspection || '\u2014');
-  facts += fact('Infractions (latest)', latestN);
-  facts += fact('Inspections on record', inspections.length || '\u2014');
-  if (e.min_per_year) facts += fact('Min. inspections/yr', e.min_per_year);
+  let facts = fact("Last inspected", e.last_inspection || "\u2014");
+  facts += fact("Infractions (latest)", latestN);
+  facts += fact("Inspections on record", inspections.length || "\u2014");
+  if (e.min_per_year) facts += fact("Min. inspections/yr", e.min_per_year);
 
-  const dest = encodeURIComponent(e.address ? e.address + ', Toronto, ON' : (e.lat + ',' + e.lon));
-  const actions = '<div class="sb-actions">' +
-    '<a href="https://www.google.com/maps/dir/?api=1&destination=' + dest + '" target="_blank" rel="noopener">Directions &rarr;</a>' +
-    '<a class="secondary" href="' + DINESAFE_URL + '" target="_blank" rel="noopener">DineSafe program</a></div>';
+  const dest = encodeURIComponent(
+    e.address ? e.address + ", Toronto, ON" : e.lat + "," + e.lon,
+  );
+  const actions =
+    '<div class="sb-actions">' +
+    '<a href="https://www.google.com/maps/dir/?api=1&destination=' +
+    dest +
+    '" target="_blank" rel="noopener">Directions &rarr;</a>' +
+    '<a class="secondary" href="' +
+    DINESAFE_URL +
+    '" target="_blank" rel="noopener">DineSafe program</a></div>';
 
   const history = inspections.length
-    ? '<h3>Inspection history</h3><ul class="timeline">' + inspections.map(renderInspection).join('') + '</ul>'
+    ? '<h3>Inspection history</h3><ul class="timeline">' +
+      inspections.map(renderInspection).join("") +
+      "</ul>"
     : '<p class="muted">No inspection records on file.</p>';
 
-  document.getElementById('sb-body').innerHTML =
-    '<div class="facts">' + facts + '</div>' + actions + history;
-  sidebar.classList.add('open');
-  sidebar.setAttribute('aria-hidden', 'false');
+  document.getElementById("sb-body").innerHTML =
+    '<div class="facts">' + facts + "</div>" + actions + history;
+  sidebar.classList.add("open");
+  sidebar.setAttribute("aria-hidden", "false");
+  sidebar.inert = false;
   sidebar.scrollTop = 0;
+  document.getElementById("sb-close").focus();
 }
 
 function closeSidebar() {
-  sidebar.classList.remove('open');
-  sidebar.setAttribute('aria-hidden', 'true');
+  sidebar.classList.remove("open");
+  sidebar.setAttribute("aria-hidden", "true");
+  sidebar.inert = true;
+  if (detailOpener) {
+    detailOpener.focus();
+    detailOpener = null;
+  }
 }
-document.getElementById('sb-close').addEventListener('click', closeSidebar);
-document.addEventListener('keydown', ev => { if (ev.key === 'Escape') closeSidebar(); });
+document.getElementById("sb-close").addEventListener("click", closeSidebar);
+document.addEventListener("keydown", (ev) => {
+  if (ev.key === "Escape") closeSidebar();
+});
 // Open at the default downtown view (ZOOM above) rather than fitting all ~18k
 // city-wide pins, which would zoom right back out; a search still fits its matches.
 
-// Layer toggle control + legend (with per-status counts).
-const overlays = {};
-const legend = document.getElementById('legend');
-for (const key in DATA.categories) {
-  const c = DATA.categories[key];
-  const n = DATA.meta.counts[key] || 0;
-  if (!n) continue;  // hide empty categories
-  overlays[c.label + ' (' + n + ')'] = layers[key];
-  const row = document.createElement('div');
-  row.className = 'legend-row';
-  row.innerHTML = '<span class="dot" style="background:' + c.color + '"></span>' +
-                  c.label + ' <span style="color:#888">&middot; ' + n + '</span>';
-  legend.appendChild(row);
+let visible = [],
+  userLoc = null;
+const nearToggle = document.getElementById("near-toggle"),
+  nearHint = document.getElementById("near-hint");
+function fmtDist(m) {
+  return m < 950
+    ? Math.round(m / 10) * 10 + " m"
+    : (m / 1000).toFixed(1) + " km";
 }
-L.control.layers(null, overlays, { collapsed: false }).addTo(map);
-
-// Header stats + provenance.
-const stats = document.getElementById('stats');
-function renderStats(shown) {
-  stats.innerHTML = '<b>' + shown.toLocaleString() + '</b> of ' +
-    DATA.meta.total.toLocaleString() + ' establishment' + (DATA.meta.total === 1 ? '' : 's') + ' shown';
-}
-renderStats(entries.length);
-document.getElementById('source').href = DATA.meta.source_page;
-document.getElementById('generated').textContent = DATA.meta.generated_at
-  ? 'Data pulled ' + DATA.meta.generated_at : '';
-if (DATA.meta.sample) {
-  const b = document.getElementById('sample-banner');
-  b.style.display = 'block';
-  b.innerHTML = '<b>Sample data.</b> This is a small placeholder set with fictional ' +
-    'establishments. Run <code>make data</code> to load the live DineSafe dataset.';
-}
-
-// Fly to an establishment and open its detail sidebar (from a search result).
-function focusEntry(rec) {
-  map.flyTo([rec.lat, rec.lon], Math.max(map.getZoom(), 16), { duration: 0.6 });
-  openSidebar(rec);
-}
-
-// Search box: filter the pins in place (layer toggles still apply) AND list the
-// matches so a business can be found and opened without hunting for its pin.
-const search = document.getElementById('search');
-const results = document.getElementById('results');
-const nearToggle = document.getElementById('near-toggle');
-const nearHint = document.getElementById('near-hint');
-const RESULT_LIMIT = 40;
-
-// The user's location, once the browser shares it (see locate()); null until then.
-let userLoc = null;
-
-function fmtDist(m) {  // metres -> a short "120 m" / "1.4 km" label
-  return m < 950 ? Math.round(m / 10) * 10 + ' m' : (m / 1000).toFixed(1) + ' km';
-}
-
-function renderResults(matches, q, showDist) {
-  results.innerHTML = '';
-  if (!q) return;
-  for (const en of matches.slice(0, RESULT_LIMIT)) {
-    const cat = catFor(en.cat);
-    const li = document.createElement('li');
-    const dist = (showDist && en._dist != null)
-      ? '<span class="r-dist">' + fmtDist(en._dist) + '</span>' : '';
-    li.innerHTML = '<span class="dot" style="background:' + cat.color + '"></span>' +
-      '<span><span class="r-name">' + esc(en.rec.name) + '</span>' +
-      (en.rec.address ? '<span class="r-addr">' + esc(en.rec.address) + '</span>' : '') + '</span>' + dist;
-    li.addEventListener('click', () => focusEntry(en.rec));
-    results.appendChild(li);
+function update() {
+  const q = document.getElementById("search").value.trim().toLowerCase(),
+    counts = Object.fromEntries(
+      Object.keys(DATA.categories).map((k) => [k, 0]),
+    );
+  visible = [];
+  for (const e of entries) {
+    const match = !q || e.haystack.includes(q);
+    if (match) counts[e.cat]++;
+    const show = match && Explorer.enabled(e.cat);
+    if (show) {
+      layers[e.cat].addLayer(e.marker);
+      visible.push(e);
+    } else layers[e.cat].removeLayer(e.marker);
   }
-  if (matches.length > RESULT_LIMIT) {
-    const li = document.createElement('li');
-    li.className = 'r-more';
-    li.textContent = '+ ' + (matches.length - RESULT_LIMIT) + ' more\u2026 keep typing to narrow';
-    results.appendChild(li);
-  }
-}
-
-function runSearch() {
-  const q = search.value.trim().toLowerCase();
-  let shown = 0;
-  const visible = [];
-  const matches = [];
-  for (const en of entries) {
-    const match = !q || en.haystack.includes(q);
-    const layer = layers[en.cat];
-    if (match) {
-      if (!layer.hasLayer(en.marker)) layer.addLayer(en.marker);
-      shown++;
-      if (q) { matches.push(en); visible.push([en.rec.lat, en.rec.lon]); }
-    } else if (layer.hasLayer(en.marker)) {
-      layer.removeLayer(en.marker);
-    }
-  }
-  renderStats(shown);
-  // Nearest-first: when the toggle is on and we know where the user is, rank
-  // matches by distance to them; otherwise keep the dataset's A-Z order.
   const near = nearToggle.checked && userLoc;
   if (near) {
-    for (const en of matches) en._dist = map.distance(userLoc, [en.rec.lat, en.rec.lon]);
-    matches.sort((a, b) => a._dist - b._dist);
+    for (const e of visible)
+      e._dist = map.distance(userLoc, [e.rec.lat, e.rec.lon]);
+    visible.sort((a, b) => a._dist - b._dist);
   }
-  renderResults(matches, q, near);
-  if (q && visible.length) map.fitBounds(visible, { padding: [40, 40], maxZoom: 15 });
-}
-
-// Reflect whether "Nearest first" can actually apply yet (needs a location).
-function updateNearToggle() {
-  const label = document.getElementById('near-toggle-label');
-  if (userLoc) { nearHint.textContent = ''; label.classList.remove('disabled'); }
-  else { nearHint.textContent = ' \u00b7 share location to use'; label.classList.add('disabled'); }
-}
-
-search.addEventListener('input', runSearch);
-nearToggle.addEventListener('change', runSearch);
-updateNearToggle();
-
-// Center on the user's location when available/permitted (button + auto-attempt).
-let youMarker = null;
-function locate() {
-  if (!navigator.geolocation) return;
-  navigator.geolocation.getCurrentPosition(
-    pos => {
-      userLoc = [pos.coords.latitude, pos.coords.longitude];
-      if (youMarker) youMarker.setLatLng(userLoc);
-      else youMarker = L.circleMarker(userLoc, { radius: 8, color: '#fff', weight: 2,
-        fillColor: '#2b8cbe', fillOpacity: 1 }).addTo(map).bindPopup('You are here');
-      map.setView(userLoc, 14);
-      updateNearToggle();
-      if (search.value.trim()) runSearch();  // re-rank any open results now we know where they are
+  Explorer.layerCounts(counts);
+  Explorer.count(visible.length, "establishments", visible.length);
+  Explorer.results(
+    visible,
+    (e) => e.rec.name,
+    (e) =>
+      [e.rec.address, catFor(e.cat).label, near ? fmtDist(e._dist) : ""]
+        .filter(Boolean)
+        .join(" · "),
+    (e) => {
+      Explorer.focus(map, e.marker.getLatLng());
+      openSidebar(e.rec);
     },
-    () => {},  // denied/unavailable: keep the city-wide view and A-Z result order
-    { enableHighAccuracy: true, timeout: 8000 }
   );
+  nearHint.textContent = userLoc
+    ? ""
+    : " · use the location button to rank nearby";
 }
-const LocateControl = L.Control.extend({
-  options: { position: 'topleft' },
-  onAdd() {
-    const a = L.DomUtil.create('a', 'leaflet-bar leaflet-control');
-    a.href = '#';
-    a.title = 'Center on my location';
-    a.innerHTML = '&#9678;';
-    a.style.cssText = 'width:30px;height:30px;line-height:30px;text-align:center;font-size:18px;background:#fff;';
-    L.DomEvent.on(a, 'click', e => { L.DomEvent.preventDefault(e); locate(); });
-    return a;
+Explorer.layers(
+  Object.entries(DATA.categories).map(([id, c]) => ({ id, ...c })),
+  update,
+);
+document.getElementById("source").href = DATA.meta.source_page;
+document.getElementById("generated").textContent = DATA.meta.generated_at;
+if (DATA.meta.sample) {
+  const b = document.getElementById("sample-banner");
+  b.hidden = false;
+  b.textContent = "Sample data: fictional establishments.";
+}
+nearToggle.addEventListener("change", update);
+document.getElementById("search").addEventListener("input", update);
+Explorer.stamp(DATA.meta.generated_at);
+Explorer.connect(map, {
+  bounds: () => L.latLngBounds(visible.map((e) => e.marker.getLatLng())),
+  located: (pos) => {
+    userLoc = [pos.coords.latitude, pos.coords.longitude];
+    update();
   },
 });
-map.addControl(new LocateControl());
-locate();  // use the user's location if the browser provides it
-
-// Mobile info toggle.
-const panel = document.getElementById('panel');
-const toggle = document.getElementById('toggle');
-toggle.addEventListener('click', () => {
-  const shown = panel.style.display === 'block';
-  panel.style.display = shown ? 'none' : 'block';
-  toggle.textContent = shown ? 'Info' : 'Close';
-});
-</script>
-</body>
+closeSidebar();
+update();
+;
+    </script>
+  </body>
 </html>
