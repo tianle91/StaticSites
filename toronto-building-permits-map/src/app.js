@@ -141,7 +141,7 @@ PermitStartup.run(async () => {
         ($("status").value && get(r, "status") !== $("status").value) ||
         ($("type").value && get(r, "type") !== $("type").value) ||
         ($("year").value && !get(r, "applied").startsWith($("year").value)) ||
-        !matches(get(r, "address"), get(r, "number"), get(r, "description"))
+        !matches(get(r, "address"))
       )
         continue;
       const cat = category(r);
@@ -177,10 +177,7 @@ PermitStartup.run(async () => {
           "<b>" +
           g.rows.length +
           " permits at this address</b>" +
-          g.rows.slice(0, 30).map(details).join("<hr>") +
-          (g.rows.length > 30
-            ? "<p>First 30 shown; search a permit number for its details.</p>"
-            : ""),
+          g.rows.map(details).join("<hr>"),
       ),
     );
     Explorer.layerCounts(counts);

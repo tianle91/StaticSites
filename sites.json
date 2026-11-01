@@ -20,7 +20,7 @@
   {
     "slug": "toronto-building-permits-map",
     "title": "Toronto building permits",
-    "description": "the complete active permit register, searchable by address and permit number, with status, type, and year filters.",
+    "description": "the complete active permit register, searchable by address, with status, type, and year filters.",
     "output": "toronto-building-permits-map/output/toronto-building-permits-map.html"
   },
   {

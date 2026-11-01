@@ -1,20 +1,23 @@
 # Toronto building permits map
 
 An interactive Leaflet map of Toronto's **complete active building permit
-register**, with address / permit-number / description search and filters for
+register**, with address search and filters for
 status, permit type and application year. Pins group permits at the same address;
 click for work, structure, application / issue dates, estimated cost and description.
 All matching locations are clustered; cluster numbers count permit records,
 not addresses. Type layers group the six most common permit types plus Other,
 with exact type, status and year controls under More filters.
 The sidebar lists the first 50 matching records, including unmatched addresses.
+Map-pin popups show all matching permits at the location.
 
 Address queries such as `8 The Esplanade` match the complete house number in
 the address field, excluding `38`, `58`, and mentions in another property's
 description. Case, extra spaces, commas and periods are ignored. Street text
 can be partial while typing. House-number suffixes and ranges are literal:
 `8A` and `8-10` are separate from `8`; trailing unit information is allowed.
-Other queries still search address, permit number and description as text.
+A house number alone also requires a complete-number match. Street-name-only
+queries match partial address text. Permit numbers and descriptions are shown
+in the results/details but are not searched.
 
 ## Map controls
 

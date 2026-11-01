@@ -17,12 +17,21 @@ for (const slug of ["toronto-building-permits-map", "toronto-dinesafe-map"]) {
   assert.equal(compile("8A The Esplanade")("8A The Esplanade"), true);
   assert.equal(compile("8-10 The Esplanade")("8–10 The Esplanade"), true);
   assert.equal(compile("8 The Esplanade")("8 The Esplanade Unit 2"), true);
-  assert.equal(compile("25 270971 BLD")("220 Major St", "25 270971 BLD"), true);
-  assert.equal(compile("interior alterations")("220 Major St", "", "Interior  alterations"), true);
-  assert.equal(compile("3 brewers", { addressOnly: false })("120 Adelaide St", "The 3 Brewers"), true);
+  const textSearch = slug === "toronto-dinesafe-map";
+  assert.equal(compile("25 270971 BLD")("220 Major St", "25 270971 BLD"), textSearch);
+  assert.equal(compile("interior alterations")("220 Major St", "", "Interior  alterations"), textSearch);
+  assert.equal(compile("3 brewers", { addressOnly: false })("120 Adelaide St", "The 3 Brewers"), textSearch);
   assert.equal(compile("8 the esplanade", { addressOnly: false })("38 The Esplanade", "Restaurant at 38 The Esplanade"), false);
-  assert.equal(compile("parlour")("58 The Esplanade", "Dolly's Parlour"), true);
+  assert.equal(compile("parlour")("58 The Esplanade", "Dolly's Parlour"), textSearch);
   assert.equal(compile("")("anything"), true);
+  assert.equal(compile("major")("220 Major St"), true);
+  if (!textSearch) {
+    assert.equal(compile("8")("8 The Esplanade"), true);
+    assert.equal(compile("8")("38 The Esplanade"), false);
+    assert.equal(compile("8")("8A The Esplanade"), false);
+    assert.equal(compile("8")("8-10 The Esplanade"), false);
+    assert.equal(compile("2 storey")("35 Agincourt Dr", "", "2 storey addition"), false);
+  }
 }
 async function main() {
   const h = await harness("toronto-building-permits-map", true, { deferChunks: true, console: { error() {} } });
@@ -44,6 +53,30 @@ async function main() {
   h.search("8  The Esplanade");
   while (h.chunks.length) h.chunks.shift()();
   assert.equal(h.total(), 2);
+  for (const query of ["2 storey", "cold cellar", "25 270971 BLD"]) {
+    h.search(query);
+    while (h.chunks.length) h.chunks.shift()();
+    assert.equal(h.total(), 0, query + " must not match non-address fields");
+  }
+  // With permit-number search removed, a property's popup must retain access
+  // to records beyond the former 30-permit popup cutoff.
+  const fixture = h.context.DATA;
+  const fields = Object.fromEntries(fixture.columns.map((name, i) => [name, i]));
+  const many = await harness("toronto-building-permits-map", false, {
+    data: {
+      ...fixture,
+      permits: Array.from({ length: 31 }, (_, i) => {
+        const row = [...fixture.permits[0]];
+        row[fields.address] = "100 TEST ST";
+        row[fields.number] = "test permit " + i;
+        row[fields.lat] = 43.7;
+        row[fields.lon] = -79.4;
+        return row;
+      }),
+    },
+  });
+  const manyGroup = [...many.map.layers].find((l) => l.options?.chunkedLoading);
+  assert.match(manyGroup.children[0].popup(), /test permit 30/);
   for (const fn of h.get("search").listeners.focus) fn();
   assert.equal(h.get("panel").classList.contains("expanded"), true);
   assert.equal(h.get("sheet-toggle").attributes["aria-expanded"], "true");
