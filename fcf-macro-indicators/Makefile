@@ -7,6 +7,8 @@ OUT_PNG := output/$(PROJECT).png
 OUTPUTS := output/$(PROJECT).html $(OUT_PNG)
 SCRIPT := src/plot_fcf_macro.py
 
+SNAPSHOT_SCRIPT := src/snapshot_site.py
+
 include ../python-project.mk
 
 $(OUT): $(SCRIPT) src/chart_style.py src/chart.css src/chart.js data/series.csv $(wildcard data/generated_at.txt data/fcf_source.txt)

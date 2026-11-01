@@ -12,8 +12,8 @@ so build them within the repository checkout.
 | Project | What it is |
 | --- | --- |
 | [canada-mortgage-stress/](canada-mortgage-stress/) | Monthly Ontario bank mortgage arrears including CMHC forecasts and Toronto-area sale prices in one plot, limited to their shared available period. |
-| [fcf-macro-indicators/](fcf-macro-indicators/) | Quarterly free cash flow and cash balances of a basket of large public companies vs. M2, the S&P 500, and the 3M / 2Y / 10Y / 30Y Treasury curve, rebased to a chosen anchor quarter. Renders a static PNG and a interactive HTML chart. |
-| [margin-sp500-m2-visualization/](margin-sp500-m2-visualization/) | FINRA margin debt vs. S&P 500, M2, CPI, and PPI, rebased to a configurable anchor date. Renders a static PNG and a interactive HTML chart. |
+| [fcf-macro-indicators/](fcf-macro-indicators/) | Quarterly free cash flow and cash balances of a basket of large public companies vs. M2, the S&P 500, and the 3M / 2Y / 10Y / 30Y Treasury curve, rebased to a chosen anchor quarter. Renders a static PNG and an interactive HTML chart. |
+| [margin-sp500-m2-visualization/](margin-sp500-m2-visualization/) | FINRA margin debt vs. S&P 500, M2, CPI, and PPI, rebased to a configurable anchor date. Renders a static PNG and an interactive HTML chart. |
 | [ontario-physiotherapy-clinics-map/](ontario-physiotherapy-clinics-map/) | The 255 publicly-funded (OHIP-covered) physiotherapy clinics and hospitals listed by the province, searchable by name / city / postal code. |
 | [toronto-building-permits-map/](toronto-building-permits-map/) | Toronto’s complete active building permit register, searchable by address with status, type and application-year filters. |
 | [toronto-crime-map/](toronto-crime-map/) | Toronto Police reports from 2025 onward, merged by incident ID with seven type layers, text search and approximate intersection locations. |
@@ -48,6 +48,15 @@ Duplicate `src/chart_style.py`, `src/chart.css` and `src/chart.js` locally when
 starting another chart project. Do not import a shared runtime theme or another
 project's code. Native charts embed their data/scripts/styles in the HTML and
 make no external runtime requests.
+
+All three chart projects support the same review-image commands as maps:
+`make -C <project> snapshot-browser` explicitly sets up headless Chromium, then
+`make -C <project> snapshots` rebuilds and captures desktop (1440 × 900) and
+mobile (390 × 844) JPEGs in `tests/snapshots/`. Capture waits for every plot,
+readout, fonts and geometry to settle and rejects horizontal overflow or script
+errors. The chart pages are self-contained; capture blocks external requests and
+works offline after setup. Review snapshots show the initial viewport; the
+macro projects' Matplotlib PNGs remain separate static charts.
 
 ## Map interface convention
 

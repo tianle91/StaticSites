@@ -12,7 +12,10 @@ dependencies = [
 ]
 
 [dependency-groups]
-dev = ["pytest>=8.0"]
+dev = [
+    "playwright>=1.50",  # explicit desktop/mobile review captures via make snapshots
+    "pytest>=8.0",
+]
 
 [tool.uv]
 # This project is an environment, not a distributable package -- nothing to build.

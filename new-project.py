@@ -149,7 +149,7 @@ FILES["Makefile"] = '''\
 # Shared Python/uv targets live in ../python-project.mk; build rules stay here.
 
 PROJECT := __PROJECT__
-# Map projects can opt in after copying src/snapshot_site.py locally and adding
+# Map/chart projects can opt in after copying src/snapshot_site.py locally and adding
 # Playwright as a locked dev dependency: SNAPSHOT_SCRIPT := src/snapshot_site.py
 
 include ../python-project.mk
@@ -372,7 +372,10 @@ These optional commands require network access; ordinary builds/tests stay offli
 For a chart project, follow the repo README's chart interface convention and
 copy the native SVG page components into this project's src/ locally. Keep
 legend, shared time axis, inspection readout and collapsed sources consistent
-with the Ontario mortgage chart; avoid an external plotting runtime.
+with the Ontario mortgage chart; avoid an external plotting runtime. For chart
+review snapshots, copy a chart project's src/snapshot_site.py and use the same
+Playwright/Make opt-in described above. The helper waits for charts/readouts and
+stable layout and blocks external requests; capture stays offline after setup.
 
 ## Usage
 

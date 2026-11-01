@@ -15,7 +15,7 @@ FETCH_SCRIPT ?= src/fetch_data.py
 PYTEST_ARGS ?= -q
 BREW_FORMULAE ?= uv
 BREW_CASKS ?=
-# Optional review images: map projects configure their own local helper.
+# Optional review images: map/chart projects configure their own local helper.
 SNAPSHOT_SCRIPT ?=
 
 .PHONY: all system-deps deps test data open clean clean-deps clean-venv

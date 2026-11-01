@@ -293,7 +293,7 @@ on other platforms. Credentials remain operator prerequisites.
 
 ## Verifying changes
 
-Map projects opt in to review snapshots by setting `SNAPSHOT_SCRIPT` before the
+Map and chart projects opt in to review snapshots by setting `SNAPSHOT_SCRIPT` before the
 shared Make include. `make snapshots` rebuilds the HTML and runs the local
 helper; `make snapshot-browser` explicitly downloads Playwright's headless
 Chromium. These optional commands are separate from `all`, `test` and `data` and
@@ -304,7 +304,9 @@ locked dev dependencies and keep the helper in its own `src/`. Browser binaries
 are installed only by the explicit setup target. Store review JPEGs in
 `tests/snapshots/`, preserve existing images on capture failure, and document the
 viewport sizes and recapture commands in the project README. New map projects
-follow the scaffolder README's opt-in instructions; non-map scaffolds do not
+follow the scaffolder README's opt-in instructions. Chart snapshots use the same
+targets and viewports, wait for all plots and the readout to settle, and block
+external requests because the chart pages are self-contained. Scaffolds do not
 install browser dependencies by default.
 
 ```bash
