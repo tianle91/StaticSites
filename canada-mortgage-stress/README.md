@@ -14,11 +14,10 @@ forecast** and **monthly Toronto-area average sale prices**. There are no series
 selectors or date controls. The plot always shows their full shared history,
 with the bounds calculated from the committed observations.
 
-The current shared period is **January 2021–September 2026**. The plot, cursor,
-and CSV also clip to those exact month boundaries. Bank observations run through
+The current shared period is **January 2021–September 2026**. The plot and cursor
+clip to those exact month boundaries. Bank observations run through
 June 2026, so the displayed dashed forecast covers July–September 2026. Later
 forecast months are excluded because corresponding price data are unavailable.
-Export data (CSV) includes the full shared period.
 
 Hover to inspect, or focus the chart and use Left/Right to step through months
 (Home/End jump to the window edges). The readout labels the exact period of each
@@ -48,7 +47,7 @@ lag or prove that prices have not bottomed.
 
 The source JSON retains the original broader CMHC tables for provenance and
 refresh validation. Quarterly bank history, annual prices, GTHA private-lender rates, other
-provinces and national consumer-credit series are excluded from the plot and selection export. No
+provinces and national consumer-credit series are excluded from the plot. No
 power-of-sale or inventory history is presented.
 
 ## Build, test and refresh

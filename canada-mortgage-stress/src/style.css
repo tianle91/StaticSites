@@ -19,7 +19,6 @@ button:focus-visible,select:focus-visible,svg:focus-visible,summary:focus-visibl
 .price-key { color:var(--price); }.price-key i { background:var(--price); }
 .legend small { color:var(--muted); font-size:10px; font-weight:400; }
 .series-description { color:var(--muted); font-size:11px; margin:0 0 3px; }
-.export { margin-top:12px; }
 .series-label { font-size:10px; color:var(--muted); margin:0 0 9px; }
 .chart svg { display:block; width:100%; height:auto; touch-action:pan-y; }
 .gridline { stroke:var(--line); stroke-width:1; }

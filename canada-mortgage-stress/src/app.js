@@ -190,15 +190,6 @@ function render() {
   for (const metric of selected) $('definitions').append(text('h2',metric.title),text('p',metric.note));
   inspectMonth(state.inspect);
 }
-$('download').onclick=()=>{
-  const csv=T.selectionRows(DATA,state).map(row=>row.map(value=>'"'+String(value).replaceAll('"','""')+'"').join(',')).join('\r\n');
-  const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
-  const link=document.createElement('a');
-  link.href=url;
-  link.download='ontario-arrears-prices.csv';
-  link.click();
-  setTimeout(()=>URL.revokeObjectURL(url),1000);
-};
 let resizeTimer;
 window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(render,100);});
 render();
