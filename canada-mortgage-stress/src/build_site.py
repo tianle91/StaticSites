@@ -16,7 +16,9 @@ def build():
     # Avoid a data string closing the script element, even if an upstream label changes.
     payload = json.dumps(data, indent=2, ensure_ascii=False).replace('<', '\\u003c')
     for marker, value in [('__STYLE__', (source / 'style.css').read_text()),
-                          ('__DATA__', payload), ('__APP__', (source / 'app.js').read_text())]:
+                          ('__DATA__', payload),
+                          ('__TIMELINE__', (source / 'timeline.js').read_text()),
+                          ('__APP__', (source / 'app.js').read_text())]:
         html = html.replace(marker, value)
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     target = OUT_DIR / 'canada-mortgage-stress.html'

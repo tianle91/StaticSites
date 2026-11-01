@@ -1,8 +1,8 @@
 [
   {
     "slug": "canada-mortgage-stress",
-    "title": "Canada Mortgage Stress",
-    "description": "historical CMHC mortgage arrears, private-lender stress and Toronto-area house prices, with explicit definitions and data gaps.",
+    "title": "Ontario Mortgage Stress",
+    "description": "Ontario bank mortgage arrears and Toronto-area house prices in one plot, with a shared timeline and simple date and series controls.",
     "output": "canada-mortgage-stress/output/canada-mortgage-stress.html"
   },
   {

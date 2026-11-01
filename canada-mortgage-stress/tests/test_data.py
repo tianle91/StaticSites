@@ -2,7 +2,6 @@
 from copy import deepcopy
 import json
 from pathlib import Path
-from types import SimpleNamespace
 
 from bs4 import BeautifulSoup
 import pytest
@@ -109,7 +108,7 @@ def test_required_source_failure_does_not_publish(data, tmp_path):
 def test_offline_build_is_deterministic_and_embeds_sources(data, tmp_path, monkeypatch):
     source = tmp_path / 'src'
     source.mkdir()
-    for filename in ('page.html','style.css','app.js'):
+    for filename in ('page.html','style.css','timeline.js','app.js'):
         (source / filename).write_bytes((ROOT / 'src' / filename).read_bytes())
     inputs = tmp_path / 'data'
     inputs.mkdir()
@@ -124,8 +123,10 @@ def test_offline_build_is_deterministic_and_embeds_sources(data, tmp_path, monke
     assert build_site.build().read_bytes() == original
     assert target.stat().st_mtime_ns == mtime
     html = target.read_text()
-    assert all(marker not in html for marker in ('__DATA__','__APP__','__STYLE__'))
+    assert all(marker not in html for marker in ('__DATA__','__TIMELINE__','__APP__','__STYLE__'))
     soup = BeautifulSoup(html,'html.parser')
     assert json.loads(soup.select_one('#dataset').string) == data
     assert not soup.select('script[src],link[rel=stylesheet]')
-    assert 'Data sources' in html and 'Power-of-sale listings' in html
+    assert 'data sources' in html.lower()
+    assert len(soup.select('#chart')) == 1
+    assert not soup.select('#plots, #show-private, #headlines, #coverage')

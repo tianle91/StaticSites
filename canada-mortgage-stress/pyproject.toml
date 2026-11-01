@@ -1,7 +1,7 @@
 [project]
 name = "canada-mortgage-stress"
 version = "0.0.0"
-description = "Canada Mortgage Stress — historical CMHC mortgage arrears, private-lender stress and Toronto-area house prices, with explicit definitions and data gaps."
+description = "Ontario Mortgage Stress — Ontario bank mortgage arrears and Toronto-area house prices in one plot, with a shared timeline and simple date and series controls."
 requires-python = ">=3.11"
 
 # Runtime dependencies. Say why each one is here.
@@ -27,4 +27,4 @@ pythonpath = ["src"]
 # ../generate_manifest.py. `title` is the link text; the blurb shown after it is
 # [project].description with the leading "<title> — " stripped, so description
 # must start with "<title> — ".
-title = "Canada Mortgage Stress"
+title = "Ontario Mortgage Stress"

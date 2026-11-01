@@ -1,127 +1,104 @@
-# Canada Mortgage Stress
+# Ontario arrears & house prices
 
-A self-contained time-series dashboard for CMHC mortgage arrears, lender risk,
-and Toronto-area house prices. Choose a metric, date range and reported/indexed
-view; toggle series, inspect observations and export all records as CSV. An
-optional second chart shows prices on the same date axis, with a separate scale.
-The HTML runs offline without a server, CDN or external JavaScript.
+A single-plot comparison of **Ontario bank mortgage arrears** and **Toronto-area
+house prices**. Both metrics share one calendar time scale. The left vertical
+axis shows bank mortgages 90+ days overdue as a percentage of accounts; the right
+axis shows nominal average sale prices in Canadian dollars. Axis labels and
+lines share their colors. Both vertical scales start at zero. Visual line
+crossings have no economic meaning because the units differ.
 
-## Available data
+## Interface
 
-- **Provincial mortgage arrears:** quarterly, 1995 Q1–2026 Q2; Quebec, Ontario,
-  Alberta and British Columbia. CBA-member bank mortgages, 90+ days overdue.
-- **Arrears by lender type:** quarterly, 2020 Q1–2026 Q2; national chartered banks,
-  credit unions, other non-bank lenders and mortgage investment entities (MIEs).
-- **GTHA MIE arrears:** quarterly, 2023 Q3–2026 Q1; GTHA versus rest of Canada.
-  These are **balance-weighted** rates, not the percentage of loans in arrears.
-- **Non-mortgage credit delinquencies:** quarterly, 2014 Q1–2026 Q2; national
-  HELOC, credit card, auto loan and line-of-credit rates across consumers.
-- **Monthly arrears and outlook:** observed January 2021–June 2026, followed by
-  the CMHC Fall 2026 forecast through June 2027; Canada and selected provinces.
-  Forecasts are dashed and can be hidden. This monthly series is kept separate
-  from quarterly provincial figures.
-- **Toronto-area prices:** monthly January 2020–September 2026, and annual
-  averages 1980–2025. These are nominal TRREB average sale prices, **not HPI**.
-  Monthly records are split between legacy report coverage (2020–2023) and
-  expanded board coverage (2024 onward). The boundary marks a source-vintage
-  break, not the exact date membership changed. Overlapping newer monthly
-  revisions take precedence; every monthly observation retains its source URL.
+Set start/end years or choose a date preset. **Series options** contains:
 
-These are the ranges in the committed snapshot, not promises of live coverage.
-CMHC's geographic Equifax workbook is another potential extension (e.g. Toronto
-CMA history), but is not merged into the CBA provincial series in this version.
+- Quarterly bank history or monthly observations, with an optional CMHC forecast.
+- Monthly or annual average sale prices.
+- CSV export of the current series, dates and forecast selection.
 
-## Data gaps and interpretation
+Forecasts are dashed; choose an end year of 2027 for the full outlook. Changing
+series types preserves the date selection. All history explicitly fits the
+available history of the current series types.
 
-**We have enough data for a descriptive dashboard, but not for every claim in
-the motivating discussion.** Power-of-sale listings have no verified consistent
-public historical series in this project. Active inventory is available in
-individual TRREB reports but has not been assembled into a comparable historical
-series. Neither the unverified 600+ power-of-sale figure nor a single inventory
-snapshot is plotted as a historical series.
+Hover to inspect, or focus the chart and use Left/Right to step through months
+(Home/End jump to the window edges). The readout labels the exact period of each
+nearest published observation, within half the reporting interval. It never
+interpolates values or carries a stale series beyond its published coverage.
+Definitions and linked sources are in one collapsed section beneath the chart.
+The page embeds all data, scripts and styles and works offline.
 
-Ontario, Toronto CMA, TRREB market area and GTHA are different geographies.
-National lender rates and GTHA balance-weighted MIE rates have different coverage
-and denominators. Do not equate 11.14% of balances with one in nine loans.
+## Data and limits
 
-Price averages are sensitive to sales mix, geography changes and revisions.
-Older TRREB PDFs use a narrower market coverage; the dashboard does not connect
-the monthly lines across that break. The annual series also has changing market
-coverage, as TRREB warns. Indexed mode rebases each line independently to its
-first visible value; it does not resolve these comparability limits.
+- **Ontario bank arrears:** quarterly 1995 Q1–2026 Q2; CBA-member bank mortgages,
+  share of accounts 90+ days overdue.
+- **Ontario monthly arrears:** observed January 2021–June 2026; CMHC Fall 2026
+  forecast July 2026–June 2027. Monthly figures stay separate from quarterly
+  averages. Arrears and delinquency mean the same 90+ day measure here.
+- **Toronto-area prices:** monthly January 2020–September 2026; annual averages
+  1980–2025. These are TRREB average sale prices, **not Ontario-wide prices** and
+  **not a quality-adjusted HPI**. Sales mix affects price averages.
 
-Straight chart segments connect published observations; no intervening records
-are invented. Quarterly and annual data are not forward-filled or interpolated.
-Annual averages conceal monthly troughs, so the long-run series cannot establish
-whether house prices bottom before or after peak arrears. Rising arrears alone
-are not proof of a future price bottom. A consistently revised resale benchmark
-series is still needed for a stronger cycle-timing study.
+Monthly prices retain two report vintages: legacy coverage through 2023 and
+expanded member-board coverage from the 2024 records used here. Separate paths
+in the same price color preserve the break; a vertical dashed line marks it.
+The boundary is a source-vintage break, not the exact date membership changed.
+Newer overlapping report revisions take precedence. Each monthly record retains
+its source URL. Annual history also has changing market coverage and conceals
+monthly turning points. These data do not establish an arrears-to-price-bottom
+lag or prove that prices have not bottomed.
 
-## Usage
+The source JSON retains the original broader CMHC tables for provenance and
+refresh validation. GTHA private-lender rates, other provinces and national
+consumer-credit series are excluded from the plot and selection export. No
+power-of-sale or inventory history is presented.
+
+## Build, test and refresh
 
 ```sh
 make system-deps # explicit macOS/Homebrew installation of uv
-make deps        # complete locked environment
+make deps        # install complete locked environment when missing/stale
 make             # offline build from committed data
-make test        # offline parser, validation and publication tests
-make open        # open the HTML
-make data        # explicit refresh of every source, then rebuild
+make test        # offline Python tests
+make open        # open the generated HTML
+make data        # explicit network refresh, then rebuild
 make clean       # remove generated HTML
-make clean-deps  # remove only environment/stamp; clean-venv is an alias
+make clean-deps  # remove environment/stamp; clean-venv is an alias
+node tests/test_timeline.cjs # optional checks, Node 18+, no npm dependencies
 ```
 
-Build within the repository checkout; the Makefile includes
-[`../python-project.mk`](../python-project.mk). Homebrew must already be installed
-for `system-deps`. On other platforms install uv manually. Python >=3.11 is
-managed by uv. No credentials are needed. Existing dependency environments are
-reused; incomplete environments fail and require explicit
-`make clean-deps && make deps`. Missing or stale lockfiles fail without repair.
+Build within this checkout: the Makefile includes `../python-project.mk`.
+Homebrew must already be installed for `system-deps`; other platforms need uv
+installed manually. uv manages Python >=3.11. No credentials are needed.
+Environments are reused without repair. Use `make clean-deps && make deps` for
+an incomplete environment. Missing/stale locks fail without being rewritten.
 
-## Refresh behavior
+Fetching uses requests, BeautifulSoup for CMHC accessible chart tables, and
+pypdf layout extraction for TRREB PDFs. All required inputs must validate before
+one `data/series.json` is replaced atomically. Missing periods, duplicates,
+implausible values, truncated tables and missing report links fail the refresh.
+Unchanged normalized records preserve bytes, timestamps and mtime. Raw PDFs are
+not retained. Network access is confined to `make data` and dependency setup;
+installed builds/tests stay offline. Failed refreshes retain previous data/output.
 
-`src/fetch_data.py` fetches CMHC's accessible HTML chart tables and TRREB's annual
-PDF, latest report page, December 2021/2023/2025 reports and latest report PDF.
-`pypdf` layout extraction prevents column reversal in older PDF layouts.
-The project reads public reports rather than requiring an MLS login.
+The rolling CMHC URL must still contain the **Fall 2026** edition; a new edition
+requires reviewing definitions and forecast vintage before updating the parser.
+TRREB archive reports may need extending when a new year creates a history gap.
 
-All required sources must succeed before one validated `data/series.json` is
-replaced atomically. Missing periods, duplicate observations, implausible values,
-truncated tables and absent report links fail the refresh. Unchanged normalized
-records preserve the file's bytes, retrieval timestamp and mtime. Raw upstream
-PDFs are not retained; normalized records and their source URLs are committed.
-`make data` also restores a missing HTML output. Tests never hit live sources.
-
-The CMHC parser deliberately requires the **Fall 2026** edition. When that
-rolling URL changes editions, refresh fails until definitions, captions and
-forecast vintage have been reviewed in the code. TRREB monthly coverage is
-validated continuously from January 2020; additional archive reports may be
-needed when a new year is no longer covered by the configured reports.
-Required-source failures preserve the previous complete dataset and output.
-
-## Layout
-
-- `src/fetch_data.py`: network refresh, parsers and validation.
-- `src/build_site.py`: deterministic offline HTML build.
-- `src/page.html`, `src/style.css`, `src/app.js`: locally embedded dashboard.
-- `data/series.json`: committed observations, definitions and provenance.
-- `tests/fixtures/`: short text extracts from the public monthly PDF tables.
-- `output/canada-mortgage-stress.html`: generated standalone page, committed.
+Sources live in `src/`; `timeline.js` holds the date/selection model and `app.js`
+renders the one SVG plot. `tests/` contains parser fixtures and model checks.
+The committed artifact is `output/canada-mortgage-stress.html`.
 
 ## Data sources
 
 - [CMHC Residential Mortgage Industry Report, Fall 2026](https://www.cmhc-schl.gc.ca/professionals/housing-markets-data-and-research/housing-research/research-reports/housing-finance/residential-mortgage-industry-report):
-  accessible tables for Figures 1, 3, 7, 8 and 13. Underlying sources include CBA,
-  Equifax, regulatory reporting and Statistics Canada's Survey of Non-Bank
-  Mortgage Lenders. Source attribution is preserved on the page.
+  accessible tables, Ontario observations from Figures 1 and 13. Underlying
+  sources include the Canadian Bankers Association and Statistics Canada.
 - [TRREB Historic Statistics](https://public.trreb.ca/wp-content/files/market-stats/market-watch/historic.pdf):
-  annual average sale prices, with TRREB's changing-market-area caveat.
-- [TRREB Market Watch](https://public.trreb.ca/market-data/market-watch/):
-  latest report discovery and the notice about expanded PropTx/member-board
-  coverage and revised history.
-- [December 2021 report](https://public.trreb.ca/wp-content/files/market-stats/market-watch/mw2112.pdf),
-  [December 2023 report](https://public.trreb.ca/wp-content/files/market-stats/market-watch/mw2312.pdf),
-  [December 2025 report](https://public.trreb.ca/wp-content/files/market-stats/market-watch/mw2512.pdf),
-  and [September 2026 report](https://public.trreb.ca/wp-content/files/market-stats/market-watch/mw2609.pdf):
-  monthly average sale-price tables. Copyright Toronto Regional Real Estate Board;
-  prices are attributed to TRREB, not presented as CMHC data. The current
-  snapshot's exact report URLs are listed in the HTML and JSON.
+  annual sale prices and the changing-market-area caveat.
+- [TRREB Market Watch](https://public.trreb.ca/market-data/market-watch/): latest
+  report discovery and the notice about expanded coverage and revised history.
+- [December 2021](https://public.trreb.ca/wp-content/files/market-stats/market-watch/mw2112.pdf),
+  [December 2023](https://public.trreb.ca/wp-content/files/market-stats/market-watch/mw2312.pdf),
+  [December 2025](https://public.trreb.ca/wp-content/files/market-stats/market-watch/mw2512.pdf),
+  and [September 2026](https://public.trreb.ca/wp-content/files/market-stats/market-watch/mw2609.pdf)
+  Market Watch reports: monthly sale-price tables. Copyright Toronto Regional
+  Real Estate Board. Exact report URLs are also in the HTML and JSON.
