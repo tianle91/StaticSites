@@ -290,6 +290,7 @@ async function harness(slug, mobile = false, override = {}) {
     location: { reload() {} },
   };
   const context = vm.createContext({
+    URL,
     document,
     window,
     L,

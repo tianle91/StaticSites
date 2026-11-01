@@ -6,6 +6,18 @@ const PermitStartup = (() => {
     ready = false,
     snapshot = null;
   const history = [];
+  const scriptLoadErrors = [];
+  // Keep useful source locations without URL queries/fragments, which may carry
+  // private values in scripts added by a browser or hosting page.
+  function sourceLocation(value) {
+    if (!value) return null;
+    try {
+      const url = new URL(value, window.location.href);
+      return /^https?:$/.test(url.protocol) ? url.origin + url.pathname : url.protocol;
+    } catch {
+      return null;
+    }
+  }
   function diagnostics() {
     const viewport = window.visualViewport;
     return JSON.stringify({
@@ -20,6 +32,7 @@ const PermitStartup = (() => {
         visibleHeight: viewport?.height ?? null,
       },
       failure,
+      scriptLoadErrors,
       history,
     }, null, 2);
   }
@@ -42,20 +55,39 @@ const PermitStartup = (() => {
     if (history.length > 8) history.shift();
     render();
   }
-  function fail(error) {
+  function fail(error, location = {}) {
     if (failure) return;
     failure = {
       phase,
       name: error?.name || "Error",
       message: String(error?.message || error).slice(0, 300),
+      ...location,
     };
     ready = false;
     console.error("Permit map failed at " + phase, error);
     render();
   }
   window.addEventListener("error", (event) => {
-    if (event.error) fail(event.error);
-    else if (event.target?.tagName === "SCRIPT") fail(new Error("A required script could not load."));
+    // ErrorEvent.error can be null (including restricted cross-origin errors).
+    // Preserve its message instead of silently ignoring a runtime failure.
+    if (event.error || event.message) {
+      fail(event.error || new Error(event.message), {
+        kind: "runtime",
+        source: sourceLocation(event.filename),
+        line: event.lineno || null,
+        column: event.colno || null,
+      });
+    } else if (event.target?.tagName === "SCRIPT") {
+      const script = event.target;
+      const required = script.dataset?.permitRequired || null;
+      const detail = { kind: "script-load", required, source: sourceLocation(script.src) };
+      scriptLoadErrors.push(detail);
+      if (scriptLoadErrors.length > 4) scriptLoadErrors.shift();
+      // A browser/host may insert unrelated scripts. Their resource failures
+      // must not disable a map whose own initialization is still succeeding.
+      if (required) fail(new Error(required + " could not load."), detail);
+      else render();
+    }
   }, true);
   window.addEventListener("unhandledrejection", (event) => fail(event.reason));
   window.visualViewport?.addEventListener("resize", render);
