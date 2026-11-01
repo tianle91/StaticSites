@@ -23,22 +23,12 @@ function svgNode(tag, attrs = {}, value) {
 function format(value, unit) {
   return unit === 'CAD' ? '$' + Math.round(value).toLocaleString('en-CA') : value.toFixed(2) + '%';
 }
-function syncYearRange() {
+function useSharedHistory() {
   [state.coverageStart,state.coverageEnd] = T.sharedBounds(DATA,state);
   const years = T.overlapYears(DATA,state);
-  if (!years.length) throw new Error('The selected series have no years in common.');
-  for (const key of ['from','to']) {
-    // Preserve the chosen window where possible, clamping it when a series
-    // switch makes an endpoint unavailable (e.g. annual prices stop in 2025).
-    state[key] = years.reduce((best,year) => Math.abs(year-state[key]) < Math.abs(best-state[key]) ? year : best);
-    $(key).replaceChildren();
-    for (const year of years) {
-      const option = text('option',String(year));
-      option.value = year;
-      $(key).append(option);
-    }
-    $(key).value = state[key];
-  }
+  if (!years.length) throw new Error('The series have no years in common.');
+  state.from = years[0];
+  state.to = years.at(-1);
 }
 for (const source of DATA.sources) {
   const li = document.createElement('li');
@@ -102,7 +92,7 @@ function inspectMonth(period) {
 }
 
 function render() {
-  syncYearRange();
+  useSharedHistory();
   selected = T.panels(DATA,state);
   $('chart').replaceChildren();
   width = Math.max(300,$('chart').clientWidth);
@@ -199,26 +189,7 @@ function render() {
   $('definitions').replaceChildren();
   for (const metric of selected) $('definitions').append(text('h2',metric.title),text('p',metric.note));
   inspectMonth(state.inspect);
-  document.querySelectorAll('[data-start]').forEach(button=>button.classList.toggle('active',
-    button.dataset.start==='all'?state.from===T.overlapYears(DATA,state)[0]:state.from===Number(button.dataset.start)));
 }
-for (const key of ['from','to']) {
-  $(key).onchange=()=>{
-    state[key]=Number($(key).value);
-    if (state.from>state.to) state[key==='from'?'to':'from']=state[key];
-    $('from').value=state.from;
-    $('to').value=state.to;
-    render();
-  };
-}
-document.querySelectorAll('[data-start]').forEach(button=>{
-  button.onclick=()=>{
-    const years=T.overlapYears(DATA,state);
-    state.from=button.dataset.start==='all'?years[0]:Number(button.dataset.start);
-    state.to=years.at(-1);
-    render();
-  };
-});
 $('download').onclick=()=>{
   const csv=T.selectionRows(DATA,state).map(row=>row.map(value=>'"'+String(value).replaceAll('"','""')+'"').join(',')).join('\r\n');
   const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));

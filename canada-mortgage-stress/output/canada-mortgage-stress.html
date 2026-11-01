@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Ontario arrears & house prices</title>
-<meta name="description" content="Ontario bank mortgage arrears and Toronto-area house prices in one plot, over their shared available period, with simple date controls.">
+<meta name="description" content="Ontario bank mortgage arrears and Toronto-area house prices in one plot, over their shared available period.">
 <style>:root { --ink:#182d37; --muted:#596b71; --paper:#f5f6f3; --surface:#fff; --line:#dce2df; --bank:#116965; --price:#aa5633; }
 * { box-sizing:border-box; }
 body { margin:0; background:var(--paper); color:var(--ink); font:14px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
@@ -18,11 +18,6 @@ button { padding:7px 11px; cursor:pointer; font-size:11px; }
 button:hover { border-color:var(--bank); }
 button:focus-visible,select:focus-visible,svg:focus-visible,summary:focus-visible,a:focus-visible { outline:3px solid var(--bank); outline-offset:3px; }
 .explorer { background:var(--surface); border:1px solid var(--line); border-radius:7px; padding:20px; }
-.controls { display:flex; align-items:end; gap:12px; flex-wrap:wrap; }
-label { font-size:11px; color:var(--muted); font-weight:600; }
-select { display:block; padding:7px 25px 7px 9px; margin-top:4px; font-size:12px; min-width:100px; }
-.presets { display:flex; flex-wrap:wrap; gap:5px; margin-left:auto; }
-.presets button.active { background:var(--ink); border-color:var(--ink); color:white; }
 .legend { display:flex; gap:12px 28px; flex-wrap:wrap; margin:0 0 5px; font-size:12px; font-weight:600; }
 .legend>span { display:inline-flex; align-items:center; flex-wrap:wrap; gap:6px; }
 .legend i { display:inline-block; width:19px; height:3px; flex-shrink:0; }
@@ -31,7 +26,6 @@ select { display:block; padding:7px 25px 7px 9px; margin-top:4px; font-size:12px
 .legend small { color:var(--muted); font-size:10px; font-weight:400; }
 .series-description { color:var(--muted); font-size:11px; margin:0 0 3px; }
 .export { margin-top:12px; }
-.legend { padding-top:20px; }
 .series-label { font-size:10px; color:var(--muted); margin:0 0 9px; }
 .chart svg { display:block; width:100%; height:auto; touch-action:pan-y; }
 .gridline { stroke:var(--line); stroke-width:1; }
@@ -57,8 +51,6 @@ footer ol { padding-left:18px; }
   main { padding:23px 14px; }
   .explorer { padding:14px; }
   .subtitle { font-size:12px; }
-  .controls { gap:9px; }.controls>label { flex:1; }select { width:100%; }
-  .presets { margin-left:0; }
   .legend { gap:7px; flex-direction:column; font-size:11px; }
   .readout { grid-template-columns:1fr; gap:7px; }
   .readout-row+.readout-row { padding-top:7px; border-top:1px solid var(--line); }
@@ -69,13 +61,11 @@ footer ol { padding-left:18px; }
 <main>
 <header><p class="eyebrow">ONTARIO HOUSING</p><h1>Arrears & house prices</h1><p class="subtitle">Ontario bank mortgages 90+ days overdue and Toronto-area average sale prices.</p></header>
 <section class="explorer" aria-label="Arrears and house prices">
-<div class="controls"><label>From year<select id="from"></select></label><label>To year<select id="to"></select></label><div class="presets" aria-label="Date presets"><button data-start="2021">Since 2021</button><button data-start="2022">Since 2022</button><button data-start="all">All shared years</button></div></div>
-
 <div class="legend"><span class="bank-key"><i></i>Ontario bank arrears <small>left axis · % of accounts</small></span><span class="price-key"><i></i>Toronto-area prices <small>right axis · CAD</small></span></div>
 <p class="series-description">Monthly bank arrears + CMHC forecast · Monthly average sale price</p><p id="series-label" class="series-label"></p>
 <div id="chart" class="chart"></div>
 <div class="inspection"><p id="inspect-period"></p><div id="readout" class="readout" aria-live="polite" aria-atomic="true"></div></div>
-<button id="download" class="export">Export selection (CSV)</button><p class="hint">Hover over the plot, or focus it and use the arrow keys, to inspect published observations.</p>
+<button id="download" class="export">Export data (CSV)</button><p class="hint">Hover over the plot, or focus it and use the arrow keys, to inspect published observations.</p>
 </section>
 <footer><p>Prices cover the Toronto area, not all of Ontario. They are nominal sale averages, not a quality-adjusted HPI. The two axes use different units; their visual crossings have no economic meaning.</p><details><summary>Definitions & data sources</summary><div id="definitions"></div><p>“Arrears” and “delinquency” both mean 90+ days overdue here. The monthly price line breaks at the change in TRREB report coverage around 2024. The plot is limited to the period covered by both series, so the bank forecast stops at the latest available price month. Straight lines connect published observations without inventing intervening data. Rising arrears alone do not establish a house-price bottom.</p><ol id="source-list"></ol><p id="snapshot"></p></details></footer>
 </main>
@@ -8460,22 +8450,12 @@ function svgNode(tag, attrs = {}, value) {
 function format(value, unit) {
   return unit === 'CAD' ? '$' + Math.round(value).toLocaleString('en-CA') : value.toFixed(2) + '%';
 }
-function syncYearRange() {
+function useSharedHistory() {
   [state.coverageStart,state.coverageEnd] = T.sharedBounds(DATA,state);
   const years = T.overlapYears(DATA,state);
-  if (!years.length) throw new Error('The selected series have no years in common.');
-  for (const key of ['from','to']) {
-    // Preserve the chosen window where possible, clamping it when a series
-    // switch makes an endpoint unavailable (e.g. annual prices stop in 2025).
-    state[key] = years.reduce((best,year) => Math.abs(year-state[key]) < Math.abs(best-state[key]) ? year : best);
-    $(key).replaceChildren();
-    for (const year of years) {
-      const option = text('option',String(year));
-      option.value = year;
-      $(key).append(option);
-    }
-    $(key).value = state[key];
-  }
+  if (!years.length) throw new Error('The series have no years in common.');
+  state.from = years[0];
+  state.to = years.at(-1);
 }
 for (const source of DATA.sources) {
   const li = document.createElement('li');
@@ -8539,7 +8519,7 @@ function inspectMonth(period) {
 }
 
 function render() {
-  syncYearRange();
+  useSharedHistory();
   selected = T.panels(DATA,state);
   $('chart').replaceChildren();
   width = Math.max(300,$('chart').clientWidth);
@@ -8636,26 +8616,7 @@ function render() {
   $('definitions').replaceChildren();
   for (const metric of selected) $('definitions').append(text('h2',metric.title),text('p',metric.note));
   inspectMonth(state.inspect);
-  document.querySelectorAll('[data-start]').forEach(button=>button.classList.toggle('active',
-    button.dataset.start==='all'?state.from===T.overlapYears(DATA,state)[0]:state.from===Number(button.dataset.start)));
 }
-for (const key of ['from','to']) {
-  $(key).onchange=()=>{
-    state[key]=Number($(key).value);
-    if (state.from>state.to) state[key==='from'?'to':'from']=state[key];
-    $('from').value=state.from;
-    $('to').value=state.to;
-    render();
-  };
-}
-document.querySelectorAll('[data-start]').forEach(button=>{
-  button.onclick=()=>{
-    const years=T.overlapYears(DATA,state);
-    state.from=button.dataset.start==='all'?years[0]:Number(button.dataset.start);
-    state.to=years.at(-1);
-    render();
-  };
-});
 $('download').onclick=()=>{
   const csv=T.selectionRows(DATA,state).map(row=>row.map(value=>'"'+String(value).replaceAll('"','""')+'"').join(',')).join('\r\n');
   const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));

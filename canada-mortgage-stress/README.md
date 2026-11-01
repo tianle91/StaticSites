@@ -11,15 +11,14 @@ crossings have no economic meaning because the units differ.
 
 The fixed series are **monthly Ontario bank arrears including the CMHC
 forecast** and **monthly Toronto-area average sale prices**. There are no series
-selectors. Set start/end years or choose a date preset; dropdowns and presets
-are restricted to years present in both series. **All shared years** restores
-their full overlap.
+selectors or date controls. The plot always shows their full shared history,
+with the bounds calculated from the committed observations.
 
 The current shared period is **January 2021–September 2026**. The plot, cursor,
 and CSV also clip to those exact month boundaries. Bank observations run through
 June 2026, so the displayed dashed forecast covers July–September 2026. Later
 forecast months are excluded because corresponding price data are unavailable.
-Export selection (CSV) follows the shared bounds and chosen date window.
+Export data (CSV) includes the full shared period.
 
 Hover to inspect, or focus the chart and use Left/Right to step through months
 (Home/End jump to the window edges). The readout labels the exact period of each

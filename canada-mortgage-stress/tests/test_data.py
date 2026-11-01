@@ -130,5 +130,5 @@ def test_offline_build_is_deterministic_and_embeds_sources(data, tmp_path, monke
     assert 'data sources' in html.lower()
     assert len(soup.select('#chart')) == 1
     assert not soup.select('#plots, #show-private, #headlines, #coverage')
-    assert not soup.select('#bank-type, #price-type')
+    assert not soup.select('#bank-type, #price-type, #from, #to, [data-start]')
     assert 'Monthly bank arrears + CMHC forecast' in html

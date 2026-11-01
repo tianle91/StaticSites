@@ -12,11 +12,6 @@ button { padding:7px 11px; cursor:pointer; font-size:11px; }
 button:hover { border-color:var(--bank); }
 button:focus-visible,select:focus-visible,svg:focus-visible,summary:focus-visible,a:focus-visible { outline:3px solid var(--bank); outline-offset:3px; }
 .explorer { background:var(--surface); border:1px solid var(--line); border-radius:7px; padding:20px; }
-.controls { display:flex; align-items:end; gap:12px; flex-wrap:wrap; }
-label { font-size:11px; color:var(--muted); font-weight:600; }
-select { display:block; padding:7px 25px 7px 9px; margin-top:4px; font-size:12px; min-width:100px; }
-.presets { display:flex; flex-wrap:wrap; gap:5px; margin-left:auto; }
-.presets button.active { background:var(--ink); border-color:var(--ink); color:white; }
 .legend { display:flex; gap:12px 28px; flex-wrap:wrap; margin:0 0 5px; font-size:12px; font-weight:600; }
 .legend>span { display:inline-flex; align-items:center; flex-wrap:wrap; gap:6px; }
 .legend i { display:inline-block; width:19px; height:3px; flex-shrink:0; }
@@ -25,7 +20,6 @@ select { display:block; padding:7px 25px 7px 9px; margin-top:4px; font-size:12px
 .legend small { color:var(--muted); font-size:10px; font-weight:400; }
 .series-description { color:var(--muted); font-size:11px; margin:0 0 3px; }
 .export { margin-top:12px; }
-.legend { padding-top:20px; }
 .series-label { font-size:10px; color:var(--muted); margin:0 0 9px; }
 .chart svg { display:block; width:100%; height:auto; touch-action:pan-y; }
 .gridline { stroke:var(--line); stroke-width:1; }
@@ -51,8 +45,6 @@ footer ol { padding-left:18px; }
   main { padding:23px 14px; }
   .explorer { padding:14px; }
   .subtitle { font-size:12px; }
-  .controls { gap:9px; }.controls>label { flex:1; }select { width:100%; }
-  .presets { margin-left:0; }
   .legend { gap:7px; flex-direction:column; font-size:11px; }
   .readout { grid-template-columns:1fr; gap:7px; }
   .readout-row+.readout-row { padding-top:7px; border-top:1px solid var(--line); }
