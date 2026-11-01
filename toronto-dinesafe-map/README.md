@@ -10,6 +10,12 @@ outcome of its most recent inspection (**Pass**, **Conditional Pass**, or
   to fly to its pin and open its details. A **Nearest first** toggle (on by
   default) ranks the results by distance and labels each once you allow the
   browser to share your location; without a location it falls back to A–Z.
+  Number-and-street queries match the complete house number in the address
+  field: `8 The Esplanade` excludes `38`, `58`, and `248`. Numeric business
+  names remain searchable with the same complete-number boundary. Case, extra spaces,
+  commas and periods are ignored. Street text can be partial; suffixes/ranges
+  (`8A`, `8-10`) stay distinct from `8`, and trailing unit/postal information is
+  allowed. Other queries still search name, type and address as text.
 - **Detail sidebar** — clicking a pin (or a search result) opens a sidebar with
   the establishment's current status, key facts, and its **inspection history**:
   every inspection on record, each visit's outcome, and the individual

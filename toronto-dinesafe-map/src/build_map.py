@@ -96,7 +96,7 @@ def main() -> None:
     # JSON can't close the <script> element and break the page. These become
     # < inside the JSON string literals, leaving the parsed data unchanged.
     out = HTML
-    for token, filename in [("__EXPLORER_CSS__", "explorer.css"), ("__EXPLORER_JS__", "explorer.js"), ("__APP_JS__", "app.js")]:
+    for token, filename in [("__SEARCH_JS__", "search.js"), ("__EXPLORER_CSS__", "explorer.css"), ("__EXPLORER_JS__", "explorer.js"), ("__APP_JS__", "app.js")]:
         out = out.replace(token, (ROOT / "src" / filename).read_text(encoding="utf-8"))
     out = out.replace("__PAYLOAD__", PAYLOAD.replace("<", "\\u003c"))
     OUT_DIR.mkdir(parents=True, exist_ok=True)

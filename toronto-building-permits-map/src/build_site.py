@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Build the single-file map offline from the committed snapshot and template."""
+import hashlib
 import json
 import pathlib
 
@@ -12,13 +13,15 @@ def render(data):
     # Escape HTML script terminators even when they appear in upstream text.
     payload = json.dumps(data, indent=2, ensure_ascii=False, allow_nan=False).replace("<", "\\u003c").replace("\u2028", "\\u2028").replace("\u2029", "\\u2029")
     template = (ROOT / "src/page.html").read_text(encoding="utf-8")
-    for token, filename in [("__EXPLORER_CSS__", "explorer.css"), ("__EXPLORER_JS__", "explorer.js"), ("__APP_JS__", "app.js")]:
+    for token, filename in [("__STARTUP_JS__", "startup.js"), ("__SEARCH_JS__", "search.js"), ("__EXPLORER_CSS__", "explorer.css"), ("__EXPLORER_JS__", "explorer.js"), ("__APP_JS__", "app.js")]:
         template = template.replace(token, (ROOT / "src" / filename).read_text(encoding="utf-8"))
     template = template.replace("__CLUSTER_CSS__", "\n".join((ROOT / "src/vendor" / name).read_text(encoding="utf-8") for name in ["markercluster.css", "markercluster-default.css"]))
     license_text = (ROOT / "src/vendor/LICENSE.txt").read_text(encoding="utf-8")
     cluster_js = (ROOT / "src/vendor/markercluster.js").read_text(encoding="utf-8")
     template = template.replace("__CLUSTER_JS__", "/*\n" + license_text + "*/\n" + cluster_js)
-    return template.replace("__PAYLOAD__", payload)
+    # Hash the code and data so phone diagnostics identify the exact artifact.
+    build_id = hashlib.sha256((template + payload).encode("utf-8")).hexdigest()[:12]
+    return template.replace("__BUILD_ID__", build_id).replace("__PAYLOAD__", payload)
 
 
 def main():

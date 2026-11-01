@@ -47,7 +47,6 @@ for (const e of DATA.establishments) {
     marker,
     rec: e,
     cat: e.cat,
-    haystack: [e.name, e.type, e.address].join(" ").toLowerCase(),
   });
 }
 
@@ -235,13 +234,13 @@ function fmtDist(m) {
     : (m / 1000).toFixed(1) + " km";
 }
 function update() {
-  const q = document.getElementById("search").value.trim().toLowerCase(),
+  const matches = FeatureSearch.compile(document.getElementById("search").value, { addressOnly: false }),
     counts = Object.fromEntries(
       Object.keys(DATA.categories).map((k) => [k, 0]),
     );
   visible = [];
   for (const e of entries) {
-    const match = !q || e.haystack.includes(q);
+    const match = matches(e.rec.address, e.rec.name, e.rec.type);
     if (match) counts[e.cat]++;
     const show = match && Explorer.enabled(e.cat);
     if (show) {
