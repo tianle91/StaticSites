@@ -83,6 +83,11 @@ names the current phase. Startup and later JavaScript failures show an error,
 result area. **Data sources → Diagnostic details** is also available after a
 successful load. It contains a deterministic build fingerprint, browser/version,
 visible viewport, snapshot/count, recent phases and the error, when present.
+Script-load diagnostics identify the source (without URL queries or fragments)
+and whether it is required by the map. Failed scripts inserted by a browser or
+host are recorded without disabling the map. Runtime errors include the source
+and line/column when the browser exposes them; Leaflet requests anonymous CORS
+so its runtime errors can be reported with details.
 Diagnostics stay on the device; nothing is sent automatically, and the report
 does not collect the search text or geolocation. Select/copy the report when
 reporting a phone issue. Reloading retries the whole initialization.

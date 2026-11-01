@@ -36,6 +36,17 @@ for (const slug of ["toronto-building-permits-map", "toronto-dinesafe-map"]) {
 async function main() {
   const h = await harness("toronto-building-permits-map", true, { deferChunks: true, console: { error() {} } });
   assert.equal(h.get("search").disabled, true, "disable search until initial insertion completes");
+  // Reproduce the reported phase with a resource error from an unrelated
+  // script. Marker insertion must still finish and enable the map.
+  h.window.listeners.error[0]({ target: {
+    tagName: "SCRIPT", dataset: {},
+    type: "module",
+    src: "https://static.cloudflareinsights.com/beacon.min.js/vce701823e78c4301a35b7e07294d87301792088814092?private=value#fragment",
+  } });
+  const drawingReport = JSON.parse(h.get("diagnostic-output").textContent);
+  assert.equal(drawingReport.phase, "Drawing matching permits");
+  assert.equal(drawingReport.failure, null);
+  assert.equal(drawingReport.scriptLoadErrors[0].source, "https://static.cloudflareinsights.com/beacon.min.js/vce701823e78c4301a35b7e07294d87301792088814092");
   // Changing the query during an insertion must not leave markers from the old
   // query behind when markercluster resumes its asynchronous work.
   h.search("8 The Esplanade");
@@ -46,6 +57,7 @@ async function main() {
   assert.equal(group.children.length, 1);
   assert.equal(group.children[0].options.recordCount, 2);
   assert.equal(h.get("search").disabled, false);
+  assert.equal(JSON.parse(h.get("diagnostic-output").textContent).ready, true);
   assert.equal(h.get("permit-data").removed, true, "release raw JSON after parsing");
   h.search("8 The Esplanade");
   while (h.chunks.length) h.chunks.shift()();
@@ -112,6 +124,30 @@ async function main() {
   bad.window.location.reload = () => { retried = true; };
   bad.get("startup-retry").click();
   assert.equal(retried, true);
+  const resource = await harness("toronto-building-permits-map", true, {
+    deferChunks: true, console: { error() {} },
+  });
+  resource.window.listeners.error[0]({ target: {
+    tagName: "SCRIPT", dataset: { permitRequired: "Leaflet" },
+    src: "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js",
+  } });
+  while (resource.chunks.length) resource.chunks.shift()();
+  const resourceReport = JSON.parse(resource.get("diagnostic-output").textContent);
+  assert.equal(resourceReport.ready, false, "required script failures cannot become ready");
+  assert.equal(resourceReport.failure.message, "Leaflet could not load.");
+  assert.equal(resourceReport.failure.kind, "script-load");
+  assert.equal(resource.get("startup-retry").hidden, false);
+  const opaque = await harness("toronto-building-permits-map", true, { console: { error() {} } });
+  opaque.window.listeners.error[0]({
+    error: null, message: "Script error.", filename: "https://example.test/map.js?secret=1",
+    lineno: 12, colno: 3,
+  });
+  const opaqueReport = JSON.parse(opaque.get("diagnostic-output").textContent);
+  assert.equal(opaqueReport.failure.message, "Script error.");
+  assert.equal(opaqueReport.failure.source, "https://example.test/map.js");
+  assert.equal(opaqueReport.failure.line, 12);
+  assert.equal(opaqueReport.failure.column, 3);
+  assert.equal(opaque.get("search").disabled, true);
   const dinesafe = await harness("toronto-dinesafe-map");
   dinesafe.search("8 The Esplanade");
   assert.equal(dinesafe.total(), 0, "no establishments at 8 in this snapshot");
