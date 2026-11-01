@@ -5,6 +5,17 @@ An interactive Leaflet map of every clinic and hospital listed on
 with phone, email, a text filter (name / city / postal code) and directions
 links.
 
+## Visual snapshots
+
+[Desktop (1440 × 900)](tests/snapshots/desktop.jpg) ·
+[Mobile (390 × 844)](tests/snapshots/mobile.jpg)
+
+Captured on 2026-11-01 from the committed HTML in a desktop browser, using
+light appearance, the default view and layers, an empty search, and no user
+location. The mobile image shows the compact panel. These are manually captured
+visual references; browser chrome and the on-screen keyboard are excluded.
+Map tiles require internet access when recapturing.
+
 ## Map controls
 
 The desktop sidebar puts search and the matching count above **Layers**,
