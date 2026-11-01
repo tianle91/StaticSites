@@ -1,7 +1,7 @@
 [project]
 name = "canada-mortgage-stress"
 version = "0.0.0"
-description = "Ontario Mortgage Stress — Ontario bank mortgage arrears and Toronto-area house prices in one plot, with a shared timeline and simple date and series controls."
+description = "Ontario Mortgage Stress — monthly Ontario bank mortgage arrears including CMHC forecasts and Toronto-area house prices, plotted over their shared available period."
 requires-python = ">=3.11"
 
 # Runtime dependencies. Say why each one is here.

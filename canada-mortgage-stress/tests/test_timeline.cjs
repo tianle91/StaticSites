@@ -86,4 +86,25 @@ test('regional CSV exports preserve raw units, indexed values and report URLs', 
   assert.match(rows[1][9],/mw2512\.pdf$/);
   assert(rows.slice(1).every(row=>row[1].includes('TRREB')));
 });
+test('shared years exclude years available in only one metric', () => {
+  assert.deepEqual(T.overlapYears(data,{...base,bankType:'monthly',forecast:true}),[2021,2022,2023,2024,2025,2026]);
+  assert.deepEqual(T.overlapYears(data,base),[2020,2021,2022,2023,2024,2025,2026]);
+  assert.deepEqual(T.overlapYears(data,{...base,priceType:'annual'}).slice(0,2),[1995,1996]);
+  assert.equal(T.overlapYears(data,{...base,priceType:'annual'}).at(-1),2025);
+});
+test('fixed monthly series clip chart, inspection and export to exact shared coverage', () => {
+  const state={...base,bankType:'monthly',forecast:true,from:2021,to:2026};
+  [state.coverageStart,state.coverageEnd]=T.sharedBounds(data,state);
+  assert.deepEqual(T.domain(state),[Date.UTC(2021,0,31),Date.UTC(2026,8,30)]);
+  const panels=T.panels(data,state);
+  const bank=T.pointsFor(panels[0].series[0],state);
+  assert.equal(bank.length,69);
+  assert.equal(bank.filter(p=>p.status==='forecast').length,3);
+  assert.equal(bank.at(-1).period,'2026-09');
+  assert.equal(T.nearestObservation(panels[0].series[0],'2026-10','Monthly',state),null);
+  const rows=T.selectionRows(data,state).slice(1);
+  assert.equal(rows.length,138);
+  assert(rows.every(row=>row[3]>='2021-01' && row[3]<='2026-09'));
+  assert.equal(T.xPosition('2026-09',state,900),824);
+});
 console.log(count + ' timeline checks passed.');

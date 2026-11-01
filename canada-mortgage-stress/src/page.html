@@ -3,22 +3,22 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Ontario arrears & house prices</title>
-<meta name="description" content="Ontario bank mortgage arrears and Toronto-area house prices in one plot, with a shared timeline and simple date and series controls.">
+<meta name="description" content="Ontario bank mortgage arrears and Toronto-area house prices in one plot, over their shared available period, with simple date controls.">
 <style>__STYLE__</style>
 </head>
 <body>
 <main>
 <header><p class="eyebrow">ONTARIO HOUSING</p><h1>Arrears & house prices</h1><p class="subtitle">Ontario bank mortgages 90+ days overdue and Toronto-area average sale prices.</p></header>
 <section class="explorer" aria-label="Arrears and house prices">
-<div class="controls"><label>From year<select id="from"></select></label><label>To year<select id="to"></select></label><div class="presets" aria-label="Date presets"><button data-start="2020">Since 2020</button><button data-start="2022">Since 2022</button><button data-start="all">All history</button></div></div>
-<details class="series-options"><summary>Series options</summary><div class="option-fields"><label>Bank arrears<select id="bank-type"><option value="quarterly">Quarterly history</option><option value="monthly">Monthly observations</option><option value="forecast">Monthly + CMHC forecast</option></select></label><label>House prices<select id="price-type"><option value="monthly">Monthly average sale price</option><option value="annual">Annual average sale price</option></select></label><button id="download">Export selection (CSV)</button></div><p>Forecasts extend through June 2027; choose 2027 as the end year to see the full outlook.</p></details>
+<div class="controls"><label>From year<select id="from"></select></label><label>To year<select id="to"></select></label><div class="presets" aria-label="Date presets"><button data-start="2021">Since 2021</button><button data-start="2022">Since 2022</button><button data-start="all">All shared years</button></div></div>
+
 <div class="legend"><span class="bank-key"><i></i>Ontario bank arrears <small>left axis · % of accounts</small></span><span class="price-key"><i></i>Toronto-area prices <small>right axis · CAD</small></span></div>
-<p id="series-label" class="series-label"></p>
+<p class="series-description">Monthly bank arrears + CMHC forecast · Monthly average sale price</p><p id="series-label" class="series-label"></p>
 <div id="chart" class="chart"></div>
 <div class="inspection"><p id="inspect-period"></p><div id="readout" class="readout" aria-live="polite" aria-atomic="true"></div></div>
-<p class="hint">Hover over the plot, or focus it and use the arrow keys, to inspect published observations.</p>
+<button id="download" class="export">Export selection (CSV)</button><p class="hint">Hover over the plot, or focus it and use the arrow keys, to inspect published observations.</p>
 </section>
-<footer><p>Prices cover the Toronto area, not all of Ontario. They are nominal sale averages, not a quality-adjusted HPI. The two axes use different units; their visual crossings have no economic meaning.</p><details><summary>Definitions & data sources</summary><div id="definitions"></div><p>“Arrears” and “delinquency” both mean 90+ days overdue here. Quarterly and monthly bank figures remain separate. The monthly price line breaks at the change in TRREB report coverage around 2024; annual history also has changing coverage. Straight lines connect published observations without inventing intervening data. Rising arrears alone do not establish a house-price bottom.</p><ol id="source-list"></ol><p id="snapshot"></p></details></footer>
+<footer><p>Prices cover the Toronto area, not all of Ontario. They are nominal sale averages, not a quality-adjusted HPI. The two axes use different units; their visual crossings have no economic meaning.</p><details><summary>Definitions & data sources</summary><div id="definitions"></div><p>“Arrears” and “delinquency” both mean 90+ days overdue here. The monthly price line breaks at the change in TRREB report coverage around 2024. The plot is limited to the period covered by both series, so the bank forecast stops at the latest available price month. Straight lines connect published observations without inventing intervening data. Rising arrears alone do not establish a house-price bottom.</p><ol id="source-list"></ol><p id="snapshot"></p></details></footer>
 </main>
 <script id="dataset" type="application/json">__DATA__</script><script>__TIMELINE__</script><script>__APP__</script>
 </body></html>

@@ -13,7 +13,8 @@
   }
 
   function domain(state) {
-    return [Date.UTC(state.from, 0, 1), Date.UTC(state.to + 1, 0, 1)];
+    return [Math.max(Date.UTC(state.from, 0, 1), state.coverageStart ?? -Infinity),
+      Math.min(Date.UTC(state.to + 1, 0, 1), state.coverageEnd ?? Infinity)];
   }
 
   function xPosition(period, state, width, left = 76, right = 76) {
@@ -25,6 +26,8 @@
     return series.points.filter(point => {
       const year = Number(point.period.slice(0, 4));
       return year >= state.from && year <= state.to &&
+        stamp(point.period) >= (state.coverageStart ?? -Infinity) &&
+        stamp(point.period) <= (state.coverageEnd ?? Infinity) &&
         (state.forecast || point.status !== 'forecast');
     });
   }
@@ -65,6 +68,24 @@
     return date.getUTCFullYear() * 12 + date.getUTCMonth();
   }
 
+  function overlapYears(data, state) {
+    // Intersect at the metric level: the two price vintages together form the
+    // price history. Intersecting each individual path would lose all years.
+    const coverage = panels(data, state).map(panel => new Set(panel.series.flatMap(series =>
+      series.points.filter(point => state.forecast || point.status !== 'forecast')
+        .map(point => Number(point.period.slice(0, 4))))));
+    return coverage.length ? [...coverage[0]].filter(year => coverage.every(years => years.has(year)))
+      .sort((a, b) => a - b) : [];
+  }
+
+  function sharedBounds(data, state) {
+    const ranges = panels(data,state).map(panel => panel.series.flatMap(series =>
+      series.points.filter(point => state.forecast || point.status !== 'forecast')
+        .map(point => stamp(point.period))));
+    return [Math.max(...ranges.map(points => Math.min(...points))),
+      Math.min(...ranges.map(points => Math.max(...points)))];
+  }
+
   function nearestObservation(series, period, frequency, state) {
     const points = pointsFor(series, state);
     if (!points.length) return null;
@@ -92,7 +113,7 @@
     return rows;
   }
 
-  const api = { stamp, domain, xPosition, pointsFor, visibleSeries, panels, nearestObservation, selectionRows };
+  const api = { stamp, domain, xPosition, pointsFor, visibleSeries, panels, overlapYears, sharedBounds, nearestObservation, selectionRows };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.MortgageTimeline = api;
 })(typeof globalThis === 'undefined' ? this : globalThis);

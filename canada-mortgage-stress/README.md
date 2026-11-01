@@ -9,15 +9,17 @@ crossings have no economic meaning because the units differ.
 
 ## Interface
 
-Set start/end years or choose a date preset. **Series options** contains:
+The fixed series are **monthly Ontario bank arrears including the CMHC
+forecast** and **monthly Toronto-area average sale prices**. There are no series
+selectors. Set start/end years or choose a date preset; dropdowns and presets
+are restricted to years present in both series. **All shared years** restores
+their full overlap.
 
-- Quarterly bank history or monthly observations, with an optional CMHC forecast.
-- Monthly or annual average sale prices.
-- CSV export of the current series, dates and forecast selection.
-
-Forecasts are dashed; choose an end year of 2027 for the full outlook. Changing
-series types preserves the date selection. All history explicitly fits the
-available history of the current series types.
+The current shared period is **January 2021–September 2026**. The plot, cursor,
+and CSV also clip to those exact month boundaries. Bank observations run through
+June 2026, so the displayed dashed forecast covers July–September 2026. Later
+forecast months are excluded because corresponding price data are unavailable.
+Export selection (CSV) follows the shared bounds and chosen date window.
 
 Hover to inspect, or focus the chart and use Left/Right to step through months
 (Home/End jump to the window edges). The readout labels the exact period of each
@@ -28,14 +30,13 @@ The page embeds all data, scripts and styles and works offline.
 
 ## Data and limits
 
-- **Ontario bank arrears:** quarterly 1995 Q1–2026 Q2; CBA-member bank mortgages,
-  share of accounts 90+ days overdue.
-- **Ontario monthly arrears:** observed January 2021–June 2026; CMHC Fall 2026
-  forecast July 2026–June 2027. Monthly figures stay separate from quarterly
-  averages. Arrears and delinquency mean the same 90+ day measure here.
-- **Toronto-area prices:** monthly January 2020–September 2026; annual averages
-  1980–2025. These are TRREB average sale prices, **not Ontario-wide prices** and
-  **not a quality-adjusted HPI**. Sales mix affects price averages.
+- **Ontario monthly bank arrears:** observed January 2021–June 2026; CMHC Fall
+  2026 forecast July 2026–June 2027, clipped to shared price coverage. Share of
+  CBA-member bank mortgage accounts 90+ days overdue. Arrears and delinquency
+  mean the same 90+ day measure here.
+- **Toronto-area monthly prices:** January 2020–September 2026 in the source,
+  clipped to the shared window. TRREB average sale prices, **not Ontario-wide
+  prices** and **not a quality-adjusted HPI**. Sales mix affects price averages.
 
 Monthly prices retain two report vintages: legacy coverage through 2023 and
 expanded member-board coverage from the 2024 records used here. Separate paths
@@ -47,8 +48,8 @@ monthly turning points. These data do not establish an arrears-to-price-bottom
 lag or prove that prices have not bottomed.
 
 The source JSON retains the original broader CMHC tables for provenance and
-refresh validation. GTHA private-lender rates, other provinces and national
-consumer-credit series are excluded from the plot and selection export. No
+refresh validation. Quarterly bank history, annual prices, GTHA private-lender rates, other
+provinces and national consumer-credit series are excluded from the plot and selection export. No
 power-of-sale or inventory history is presented.
 
 ## Build, test and refresh

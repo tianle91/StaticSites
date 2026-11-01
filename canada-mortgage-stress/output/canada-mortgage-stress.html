@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Ontario arrears & house prices</title>
-<meta name="description" content="Ontario bank mortgage arrears and Toronto-area house prices in one plot, with a shared timeline and simple date and series controls.">
+<meta name="description" content="Ontario bank mortgage arrears and Toronto-area house prices in one plot, over their shared available period, with simple date controls.">
 <style>:root { --ink:#182d37; --muted:#596b71; --paper:#f5f6f3; --surface:#fff; --line:#dce2df; --bank:#116965; --price:#aa5633; }
 * { box-sizing:border-box; }
 body { margin:0; background:var(--paper); color:var(--ink); font:14px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
@@ -23,18 +23,15 @@ label { font-size:11px; color:var(--muted); font-weight:600; }
 select { display:block; padding:7px 25px 7px 9px; margin-top:4px; font-size:12px; min-width:100px; }
 .presets { display:flex; flex-wrap:wrap; gap:5px; margin-left:auto; }
 .presets button.active { background:var(--ink); border-color:var(--ink); color:white; }
-.series-options { margin:12px 0 20px; color:var(--muted); font-size:11px; }
-summary { cursor:pointer; width:fit-content; }
-.option-fields { display:flex; align-items:end; flex-wrap:wrap; gap:13px; margin:12px 0 8px; }
-.option-fields select { width:100%; }
-.option-fields button { margin-left:auto; }
-.series-options p { margin:6px 0 0; font-size:10px; }
 .legend { display:flex; gap:12px 28px; flex-wrap:wrap; margin:0 0 5px; font-size:12px; font-weight:600; }
 .legend>span { display:inline-flex; align-items:center; flex-wrap:wrap; gap:6px; }
 .legend i { display:inline-block; width:19px; height:3px; flex-shrink:0; }
 .bank-key { color:var(--bank); }.bank-key i { background:var(--bank); }
 .price-key { color:var(--price); }.price-key i { background:var(--price); }
 .legend small { color:var(--muted); font-size:10px; font-weight:400; }
+.series-description { color:var(--muted); font-size:11px; margin:0 0 3px; }
+.export { margin-top:12px; }
+.legend { padding-top:20px; }
 .series-label { font-size:10px; color:var(--muted); margin:0 0 9px; }
 .chart svg { display:block; width:100%; height:auto; touch-action:pan-y; }
 .gridline { stroke:var(--line); stroke-width:1; }
@@ -63,9 +60,6 @@ footer ol { padding-left:18px; }
   .controls { gap:9px; }.controls>label { flex:1; }select { width:100%; }
   .presets { margin-left:0; }
   .legend { gap:7px; flex-direction:column; font-size:11px; }
-  .series-options { margin-bottom:15px; }
-  .option-fields { display:grid; grid-template-columns:1fr; gap:10px; }
-  .option-fields button { margin-left:0; width:fit-content; }
   .readout { grid-template-columns:1fr; gap:7px; }
   .readout-row+.readout-row { padding-top:7px; border-top:1px solid var(--line); }
 }
@@ -75,15 +69,15 @@ footer ol { padding-left:18px; }
 <main>
 <header><p class="eyebrow">ONTARIO HOUSING</p><h1>Arrears & house prices</h1><p class="subtitle">Ontario bank mortgages 90+ days overdue and Toronto-area average sale prices.</p></header>
 <section class="explorer" aria-label="Arrears and house prices">
-<div class="controls"><label>From year<select id="from"></select></label><label>To year<select id="to"></select></label><div class="presets" aria-label="Date presets"><button data-start="2020">Since 2020</button><button data-start="2022">Since 2022</button><button data-start="all">All history</button></div></div>
-<details class="series-options"><summary>Series options</summary><div class="option-fields"><label>Bank arrears<select id="bank-type"><option value="quarterly">Quarterly history</option><option value="monthly">Monthly observations</option><option value="forecast">Monthly + CMHC forecast</option></select></label><label>House prices<select id="price-type"><option value="monthly">Monthly average sale price</option><option value="annual">Annual average sale price</option></select></label><button id="download">Export selection (CSV)</button></div><p>Forecasts extend through June 2027; choose 2027 as the end year to see the full outlook.</p></details>
+<div class="controls"><label>From year<select id="from"></select></label><label>To year<select id="to"></select></label><div class="presets" aria-label="Date presets"><button data-start="2021">Since 2021</button><button data-start="2022">Since 2022</button><button data-start="all">All shared years</button></div></div>
+
 <div class="legend"><span class="bank-key"><i></i>Ontario bank arrears <small>left axis · % of accounts</small></span><span class="price-key"><i></i>Toronto-area prices <small>right axis · CAD</small></span></div>
-<p id="series-label" class="series-label"></p>
+<p class="series-description">Monthly bank arrears + CMHC forecast · Monthly average sale price</p><p id="series-label" class="series-label"></p>
 <div id="chart" class="chart"></div>
 <div class="inspection"><p id="inspect-period"></p><div id="readout" class="readout" aria-live="polite" aria-atomic="true"></div></div>
-<p class="hint">Hover over the plot, or focus it and use the arrow keys, to inspect published observations.</p>
+<button id="download" class="export">Export selection (CSV)</button><p class="hint">Hover over the plot, or focus it and use the arrow keys, to inspect published observations.</p>
 </section>
-<footer><p>Prices cover the Toronto area, not all of Ontario. They are nominal sale averages, not a quality-adjusted HPI. The two axes use different units; their visual crossings have no economic meaning.</p><details><summary>Definitions & data sources</summary><div id="definitions"></div><p>“Arrears” and “delinquency” both mean 90+ days overdue here. Quarterly and monthly bank figures remain separate. The monthly price line breaks at the change in TRREB report coverage around 2024; annual history also has changing coverage. Straight lines connect published observations without inventing intervening data. Rising arrears alone do not establish a house-price bottom.</p><ol id="source-list"></ol><p id="snapshot"></p></details></footer>
+<footer><p>Prices cover the Toronto area, not all of Ontario. They are nominal sale averages, not a quality-adjusted HPI. The two axes use different units; their visual crossings have no economic meaning.</p><details><summary>Definitions & data sources</summary><div id="definitions"></div><p>“Arrears” and “delinquency” both mean 90+ days overdue here. The monthly price line breaks at the change in TRREB report coverage around 2024. The plot is limited to the period covered by both series, so the bank forecast stops at the latest available price month. Straight lines connect published observations without inventing intervening data. Rising arrears alone do not establish a house-price bottom.</p><ol id="source-list"></ol><p id="snapshot"></p></details></footer>
 </main>
 <script id="dataset" type="application/json">{
   "schema_version": 1,
@@ -8337,7 +8331,8 @@ footer ol { padding-left:18px; }
   }
 
   function domain(state) {
-    return [Date.UTC(state.from, 0, 1), Date.UTC(state.to + 1, 0, 1)];
+    return [Math.max(Date.UTC(state.from, 0, 1), state.coverageStart ?? -Infinity),
+      Math.min(Date.UTC(state.to + 1, 0, 1), state.coverageEnd ?? Infinity)];
   }
 
   function xPosition(period, state, width, left = 76, right = 76) {
@@ -8349,6 +8344,8 @@ footer ol { padding-left:18px; }
     return series.points.filter(point => {
       const year = Number(point.period.slice(0, 4));
       return year >= state.from && year <= state.to &&
+        stamp(point.period) >= (state.coverageStart ?? -Infinity) &&
+        stamp(point.period) <= (state.coverageEnd ?? Infinity) &&
         (state.forecast || point.status !== 'forecast');
     });
   }
@@ -8389,6 +8386,24 @@ footer ol { padding-left:18px; }
     return date.getUTCFullYear() * 12 + date.getUTCMonth();
   }
 
+  function overlapYears(data, state) {
+    // Intersect at the metric level: the two price vintages together form the
+    // price history. Intersecting each individual path would lose all years.
+    const coverage = panels(data, state).map(panel => new Set(panel.series.flatMap(series =>
+      series.points.filter(point => state.forecast || point.status !== 'forecast')
+        .map(point => Number(point.period.slice(0, 4))))));
+    return coverage.length ? [...coverage[0]].filter(year => coverage.every(years => years.has(year)))
+      .sort((a, b) => a - b) : [];
+  }
+
+  function sharedBounds(data, state) {
+    const ranges = panels(data,state).map(panel => panel.series.flatMap(series =>
+      series.points.filter(point => state.forecast || point.status !== 'forecast')
+        .map(point => stamp(point.period))));
+    return [Math.max(...ranges.map(points => Math.min(...points))),
+      Math.min(...ranges.map(points => Math.max(...points)))];
+  }
+
   function nearestObservation(series, period, frequency, state) {
     const points = pointsFor(series, state);
     if (!points.length) return null;
@@ -8416,7 +8431,7 @@ footer ol { padding-left:18px; }
     return rows;
   }
 
-  const api = { stamp, domain, xPosition, pointsFor, visibleSeries, panels, nearestObservation, selectionRows };
+  const api = { stamp, domain, xPosition, pointsFor, visibleSeries, panels, overlapYears, sharedBounds, nearestObservation, selectionRows };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.MortgageTimeline = api;
 })(typeof globalThis === 'undefined' ? this : globalThis);
@@ -8424,8 +8439,8 @@ footer ol { padding-left:18px; }
 const DATA = JSON.parse(document.getElementById('dataset').textContent);
 const T = MortgageTimeline;
 const $ = id => document.getElementById(id);
-const state = { bank:true, prices:true, bankType:'quarterly', priceType:'monthly',
-  from:2020, to:2026, mode:'raw', forecast:false, inspect:'2026-06' };
+const state = { bank:true, prices:true, bankType:'monthly', priceType:'monthly',
+  from:2021, to:2026, mode:'raw', forecast:true, inspect:'2026-06' };
 let selected = [];
 let width = 900;
 let layout = {};
@@ -8445,20 +8460,23 @@ function svgNode(tag, attrs = {}, value) {
 function format(value, unit) {
   return unit === 'CAD' ? '$' + Math.round(value).toLocaleString('en-CA') : value.toFixed(2) + '%';
 }
-const observedYear = Math.max(...DATA.groups.filter(group => ['provinces','prices'].includes(group.id))
-  .flatMap(group => group.series.flatMap(series => series.points.filter(p => p.status === 'observed')
-    .map(p => Number(p.period.slice(0, 4))))));
-const maxYear = Math.max(...DATA.groups.flatMap(group => group.series.flatMap(series =>
-  series.points.map(p => Number(p.period.slice(0, 4))))));
-for (let year = 1980; year <= maxYear; year++) {
-  for (const id of ['from','to']) {
-    const option = text('option', String(year));
-    option.value = year;
-    $(id).append(option);
+function syncYearRange() {
+  [state.coverageStart,state.coverageEnd] = T.sharedBounds(DATA,state);
+  const years = T.overlapYears(DATA,state);
+  if (!years.length) throw new Error('The selected series have no years in common.');
+  for (const key of ['from','to']) {
+    // Preserve the chosen window where possible, clamping it when a series
+    // switch makes an endpoint unavailable (e.g. annual prices stop in 2025).
+    state[key] = years.reduce((best,year) => Math.abs(year-state[key]) < Math.abs(best-state[key]) ? year : best);
+    $(key).replaceChildren();
+    for (const year of years) {
+      const option = text('option',String(year));
+      option.value = year;
+      $(key).append(option);
+    }
+    $(key).value = state[key];
   }
 }
-$('from').value = state.from;
-$('to').value = state.to;
 for (const source of DATA.sources) {
   const li = document.createElement('li');
   const link = text('a', source.name);
@@ -8476,21 +8494,28 @@ function xAt(date) {
   return layout.left + (date - start) / (end - start) * layout.plotWidth;
 }
 function ticks() {
+  const [start,end] = T.domain(state);
+  const withStart = ticks => {
+    if (!ticks.length || ticks[0].date > start) ticks.unshift({date:start,label:String(state.from)});
+    return ticks;
+  };
   const span = state.to - state.from + 1;
-  if (span === 1) return [0,3,6,9,12].map(month => ({date:Date.UTC(state.from,month,1),
-    label:month === 12 ? String(state.to+1) : ['Jan','Apr','Jul','Oct'][month/3]}));
+  if (span === 1) return withStart([0,3,6,9,12].map(month => ({date:Date.UTC(state.from,month,1),
+    label:month === 12 ? String(state.to+1) : ['Jan','Apr','Jul','Oct'][month/3]}))
+    .filter(tick => tick.date >= start && tick.date <= end));
   const target = Math.max(2, Math.floor(layout.plotWidth/70));
   const step = [1,2,5,10,20].find(step => step >= span/target) || 20;
   const result = [];
   for (let year = Math.ceil(state.from/step)*step; year <= state.to+1; year += step) {
     result.push({date:Date.UTC(year,0,1),label:String(year)});
   }
-  return result;
+  return withStart(result.filter(tick => tick.date >= start && tick.date <= end));
 }
 
 function inspectMonth(period) {
-  const min = state.from + '-01';
-  const max = state.to + '-12';
+  const [start,end] = T.domain(state);
+  const min = new Date(start).toISOString().slice(0,7);
+  const max = new Date(end).toISOString().slice(0,7);
   state.inspect = period < min ? min : period > max ? max : period;
   const cursor = document.querySelector('.shared-cursor');
   if (cursor) {
@@ -8514,6 +8539,7 @@ function inspectMonth(period) {
 }
 
 function render() {
+  syncYearRange();
   selected = T.panels(DATA,state);
   $('chart').replaceChildren();
   width = Math.max(300,$('chart').clientWidth);
@@ -8594,9 +8620,8 @@ function render() {
   overlay.addEventListener('pointermove',event=>{
     const bounds=svg.getBoundingClientRect();
     const x=(event.clientX-bounds.left)/bounds.width*width;
-    const total=(state.to-state.from+1)*12;
-    const index=Math.max(0,Math.min(total-1,Math.floor((x-left)/layout.plotWidth*total)));
-    inspectMonth((state.from+Math.floor(index/12))+'-'+String(index%12+1).padStart(2,'0'));
+    const date=start+Math.max(0,Math.min(1,(x-left)/layout.plotWidth))*(end-start);
+    inspectMonth(new Date(date).toISOString().slice(0,7));
   });
   svg.addEventListener('keydown',event=>{
     if (!['ArrowLeft','ArrowRight','Home','End'].includes(event.key)) return;
@@ -8606,15 +8631,13 @@ function render() {
     const period=event.key==='Home'?state.from+'-01':event.key==='End'?state.to+'-12':date.toISOString().slice(0,7);
     inspectMonth(period);
   });
-  $('series-label').textContent=state.from+'–'+state.to+' · Bank: '+selected[0].frequency.toLowerCase()+
-    ' · Prices: '+selected[1].frequency.toLowerCase()+
-    (state.forecast?' · Dashed bank line = CMHC forecast':'')+
-    (state.priceType==='monthly'?' · Price line breaks at the 2024 report-coverage change':'');
+  $('series-label').textContent=new Date(start).toISOString().slice(0,7)+'–'+new Date(end).toISOString().slice(0,7)+
+    ' · Monthly data · Dashed bank line = CMHC forecast · Price coverage changes at 2024';
   $('definitions').replaceChildren();
   for (const metric of selected) $('definitions').append(text('h2',metric.title),text('p',metric.note));
   inspectMonth(state.inspect);
   document.querySelectorAll('[data-start]').forEach(button=>button.classList.toggle('active',
-    button.dataset.start==='all'?false:state.from===Number(button.dataset.start)));
+    button.dataset.start==='all'?state.from===T.overlapYears(DATA,state)[0]:state.from===Number(button.dataset.start)));
 }
 for (const key of ['from','to']) {
   $(key).onchange=()=>{
@@ -8625,19 +8648,11 @@ for (const key of ['from','to']) {
     render();
   };
 }
-$('bank-type').onchange=()=>{
-  state.bankType=$('bank-type').value==='quarterly'?'quarterly':'monthly';
-  state.forecast=$('bank-type').value==='forecast';
-  render();
-};
-$('price-type').onchange=()=>{state.priceType=$('price-type').value;render();};
 document.querySelectorAll('[data-start]').forEach(button=>{
   button.onclick=()=>{
-    state.from=button.dataset.start==='all'?Math.min(...T.panels(DATA,state).flatMap(metric=>
-      metric.series.flatMap(series=>series.points.map(point=>Number(point.period.slice(0,4)))))):Number(button.dataset.start);
-    state.to=state.forecast?maxYear:observedYear;
-    $('from').value=state.from;
-    $('to').value=state.to;
+    const years=T.overlapYears(DATA,state);
+    state.from=button.dataset.start==='all'?years[0]:Number(button.dataset.start);
+    state.to=years.at(-1);
     render();
   };
 });

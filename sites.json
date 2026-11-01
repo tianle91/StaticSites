@@ -2,7 +2,7 @@
   {
     "slug": "canada-mortgage-stress",
     "title": "Ontario Mortgage Stress",
-    "description": "Ontario bank mortgage arrears and Toronto-area house prices in one plot, with a shared timeline and simple date and series controls.",
+    "description": "monthly Ontario bank mortgage arrears including CMHC forecasts and Toronto-area house prices, plotted over their shared available period.",
     "output": "canada-mortgage-stress/output/canada-mortgage-stress.html"
   },
   {

@@ -2,8 +2,8 @@
 const DATA = JSON.parse(document.getElementById('dataset').textContent);
 const T = MortgageTimeline;
 const $ = id => document.getElementById(id);
-const state = { bank:true, prices:true, bankType:'quarterly', priceType:'monthly',
-  from:2020, to:2026, mode:'raw', forecast:false, inspect:'2026-06' };
+const state = { bank:true, prices:true, bankType:'monthly', priceType:'monthly',
+  from:2021, to:2026, mode:'raw', forecast:true, inspect:'2026-06' };
 let selected = [];
 let width = 900;
 let layout = {};
@@ -23,20 +23,23 @@ function svgNode(tag, attrs = {}, value) {
 function format(value, unit) {
   return unit === 'CAD' ? '$' + Math.round(value).toLocaleString('en-CA') : value.toFixed(2) + '%';
 }
-const observedYear = Math.max(...DATA.groups.filter(group => ['provinces','prices'].includes(group.id))
-  .flatMap(group => group.series.flatMap(series => series.points.filter(p => p.status === 'observed')
-    .map(p => Number(p.period.slice(0, 4))))));
-const maxYear = Math.max(...DATA.groups.flatMap(group => group.series.flatMap(series =>
-  series.points.map(p => Number(p.period.slice(0, 4))))));
-for (let year = 1980; year <= maxYear; year++) {
-  for (const id of ['from','to']) {
-    const option = text('option', String(year));
-    option.value = year;
-    $(id).append(option);
+function syncYearRange() {
+  [state.coverageStart,state.coverageEnd] = T.sharedBounds(DATA,state);
+  const years = T.overlapYears(DATA,state);
+  if (!years.length) throw new Error('The selected series have no years in common.');
+  for (const key of ['from','to']) {
+    // Preserve the chosen window where possible, clamping it when a series
+    // switch makes an endpoint unavailable (e.g. annual prices stop in 2025).
+    state[key] = years.reduce((best,year) => Math.abs(year-state[key]) < Math.abs(best-state[key]) ? year : best);
+    $(key).replaceChildren();
+    for (const year of years) {
+      const option = text('option',String(year));
+      option.value = year;
+      $(key).append(option);
+    }
+    $(key).value = state[key];
   }
 }
-$('from').value = state.from;
-$('to').value = state.to;
 for (const source of DATA.sources) {
   const li = document.createElement('li');
   const link = text('a', source.name);
@@ -54,21 +57,28 @@ function xAt(date) {
   return layout.left + (date - start) / (end - start) * layout.plotWidth;
 }
 function ticks() {
+  const [start,end] = T.domain(state);
+  const withStart = ticks => {
+    if (!ticks.length || ticks[0].date > start) ticks.unshift({date:start,label:String(state.from)});
+    return ticks;
+  };
   const span = state.to - state.from + 1;
-  if (span === 1) return [0,3,6,9,12].map(month => ({date:Date.UTC(state.from,month,1),
-    label:month === 12 ? String(state.to+1) : ['Jan','Apr','Jul','Oct'][month/3]}));
+  if (span === 1) return withStart([0,3,6,9,12].map(month => ({date:Date.UTC(state.from,month,1),
+    label:month === 12 ? String(state.to+1) : ['Jan','Apr','Jul','Oct'][month/3]}))
+    .filter(tick => tick.date >= start && tick.date <= end));
   const target = Math.max(2, Math.floor(layout.plotWidth/70));
   const step = [1,2,5,10,20].find(step => step >= span/target) || 20;
   const result = [];
   for (let year = Math.ceil(state.from/step)*step; year <= state.to+1; year += step) {
     result.push({date:Date.UTC(year,0,1),label:String(year)});
   }
-  return result;
+  return withStart(result.filter(tick => tick.date >= start && tick.date <= end));
 }
 
 function inspectMonth(period) {
-  const min = state.from + '-01';
-  const max = state.to + '-12';
+  const [start,end] = T.domain(state);
+  const min = new Date(start).toISOString().slice(0,7);
+  const max = new Date(end).toISOString().slice(0,7);
   state.inspect = period < min ? min : period > max ? max : period;
   const cursor = document.querySelector('.shared-cursor');
   if (cursor) {
@@ -92,6 +102,7 @@ function inspectMonth(period) {
 }
 
 function render() {
+  syncYearRange();
   selected = T.panels(DATA,state);
   $('chart').replaceChildren();
   width = Math.max(300,$('chart').clientWidth);
@@ -172,9 +183,8 @@ function render() {
   overlay.addEventListener('pointermove',event=>{
     const bounds=svg.getBoundingClientRect();
     const x=(event.clientX-bounds.left)/bounds.width*width;
-    const total=(state.to-state.from+1)*12;
-    const index=Math.max(0,Math.min(total-1,Math.floor((x-left)/layout.plotWidth*total)));
-    inspectMonth((state.from+Math.floor(index/12))+'-'+String(index%12+1).padStart(2,'0'));
+    const date=start+Math.max(0,Math.min(1,(x-left)/layout.plotWidth))*(end-start);
+    inspectMonth(new Date(date).toISOString().slice(0,7));
   });
   svg.addEventListener('keydown',event=>{
     if (!['ArrowLeft','ArrowRight','Home','End'].includes(event.key)) return;
@@ -184,15 +194,13 @@ function render() {
     const period=event.key==='Home'?state.from+'-01':event.key==='End'?state.to+'-12':date.toISOString().slice(0,7);
     inspectMonth(period);
   });
-  $('series-label').textContent=state.from+'–'+state.to+' · Bank: '+selected[0].frequency.toLowerCase()+
-    ' · Prices: '+selected[1].frequency.toLowerCase()+
-    (state.forecast?' · Dashed bank line = CMHC forecast':'')+
-    (state.priceType==='monthly'?' · Price line breaks at the 2024 report-coverage change':'');
+  $('series-label').textContent=new Date(start).toISOString().slice(0,7)+'–'+new Date(end).toISOString().slice(0,7)+
+    ' · Monthly data · Dashed bank line = CMHC forecast · Price coverage changes at 2024';
   $('definitions').replaceChildren();
   for (const metric of selected) $('definitions').append(text('h2',metric.title),text('p',metric.note));
   inspectMonth(state.inspect);
   document.querySelectorAll('[data-start]').forEach(button=>button.classList.toggle('active',
-    button.dataset.start==='all'?false:state.from===Number(button.dataset.start)));
+    button.dataset.start==='all'?state.from===T.overlapYears(DATA,state)[0]:state.from===Number(button.dataset.start)));
 }
 for (const key of ['from','to']) {
   $(key).onchange=()=>{
@@ -203,19 +211,11 @@ for (const key of ['from','to']) {
     render();
   };
 }
-$('bank-type').onchange=()=>{
-  state.bankType=$('bank-type').value==='quarterly'?'quarterly':'monthly';
-  state.forecast=$('bank-type').value==='forecast';
-  render();
-};
-$('price-type').onchange=()=>{state.priceType=$('price-type').value;render();};
 document.querySelectorAll('[data-start]').forEach(button=>{
   button.onclick=()=>{
-    state.from=button.dataset.start==='all'?Math.min(...T.panels(DATA,state).flatMap(metric=>
-      metric.series.flatMap(series=>series.points.map(point=>Number(point.period.slice(0,4)))))):Number(button.dataset.start);
-    state.to=state.forecast?maxYear:observedYear;
-    $('from').value=state.from;
-    $('to').value=state.to;
+    const years=T.overlapYears(DATA,state);
+    state.from=button.dataset.start==='all'?years[0]:Number(button.dataset.start);
+    state.to=years.at(-1);
     render();
   };
 });
