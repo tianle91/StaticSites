@@ -1,42 +1,61 @@
-"""Presentation must preserve chart data and the controls that act on it."""
+"""Native pages preserve observations and need no external rendering runtime."""
 import json
+import math
+import re
 
-import plotly.graph_objects as go
-from plotly.subplots import make_subplots
+import pandas as pd
+import pytest
 
-from chart_style import chart_page, plotly_style
-
-
-def test_styling_preserves_data_buttons_shapes_and_slider_scope():
-    fig = make_subplots(rows=3, cols=1, shared_xaxes=True)
-    for row in (1, 2, 3):
-        fig.add_trace(go.Scatter(x=[1, 2], y=[100, 110], name=f'Series {row}'), row=row, col=1)
-    fig.update_xaxes(rangeslider=dict(visible=True), row=3, col=1)
-    fig.add_shape(type='line', x0=1, x1=1, y0=0, y1=1)
-    fig.update_layout(updatemenus=[dict(buttons=[
-        dict(label='Linear', method='relayout', args=[{'yaxis.type': 'linear'}]),
-        dict(label='Log', method='relayout', args=[{'yaxis.type': 'log'}]),
-    ])])
-    before = fig.to_plotly_json()
-    plotly_style(fig, height=1100, bottom=240)
-    after = fig.to_plotly_json()
-    assert after['data'] == before['data']
-    assert after['layout']['shapes'] == before['layout']['shapes']
-    assert after['layout']['updatemenus'][0]['buttons'] == before['layout']['updatemenus'][0]['buttons']
-    assert fig.layout.xaxis.rangeslider.visible is not True
-    assert fig.layout.xaxis2.rangeslider.visible is not True
-    assert fig.layout.xaxis3.rangeslider.visible is True
+from chart_style import chart_page, series_data
+from plot_fcf_macro import build_rebased, chart_payload, render_html
 
 
-def test_page_wrapper_preserves_interaction_targets_and_escapes_labels():
-    original = '<html><head></head><body><div id="chart-id"></div><script>window.chartReady=true;</script></body></html>'
-    html = chart_page(original, title='Cash &amp; <unsafe>', subtitle='Levels < 100',
-                      sources=[('Source <A>', 'https://example.com/?a=1&b=2')],
-                      pulled='2026-10-01', hint='<span id="rebase-anchor-label">2020</span>',
-                      script='<script>window.rebaseReady=true;</script>')
-    assert 'id="chart-id"' in html and 'id="rebase-anchor-label"' in html
-    assert 'window.chartReady=true' in html and 'window.rebaseReady=true' in html
+def test_missing_values_stay_gaps_and_zero_is_not_dropped():
+    values = pd.Series([1., float('nan'), 0.], index=pd.date_range('2024-01-31', periods=3, freq='ME'))
+    trace = series_data(values, name='A', color='#116965', key='a')
+    assert [point['value'] for point in trace['points']] == [1., None, 0.]
+    assert [point['date'] for point in trace['points']] == ['2024-01-31','2024-02-29','2024-03-31']
+
+
+def test_page_payload_is_escaped_and_sources_stay_linked():
+    payload = {'domain':['2024-01-01','2024-12-31'], 'panels':[], 'note':'</script><unsafe>'}
+    html = chart_page(payload, title='Cash &amp; <unsafe>', subtitle='Levels < 100',
+                      sources=[('Source <A>', 'https://example.com/?a=1&b=2')], pulled='2026-10-01')
     assert 'Cash &amp; &lt;unsafe&gt;' in html and 'Levels &lt; 100' in html
     assert 'Source &lt;A&gt;' in html
-    assert '<summary>Data sources</summary>' in html
-    assert html.count('<body>') == html.count('</body>') == 1
+    embedded = re.search(r'<script id="chart-data" type="application/json">(.*?)</script>', html, re.S)[1]
+    assert json.loads(embedded) == payload
+    assert '<unsafe>' not in html
+    assert 'Definitions & data sources' in html
+    assert not re.search(r'<script[^>]+src=',html)
+
+
+def test_native_payload_keeps_source_coordinates_and_units():
+    frame = build_rebased(None)
+    payload = chart_payload(frame)
+    assert payload['domain'] == [frame.index.min().strftime('%Y-%m-%d'),frame.index.max().strftime('%Y-%m-%d')]
+    direct = [series for panel in payload['panels'] if not panel.get('choices') for series in panel['series']]
+    assert len(direct) == len(frame.columns)
+    for series in direct:
+        values = frame[series['id']]
+        assert len(series['points']) == len(values)
+        for point,(date,value) in zip(series['points'],values.items()):
+            assert point['date'] == date.strftime('%Y-%m-%d')
+            assert point['value'] == (None if not math.isfinite(float(value)) else float(value))
+    if len(payload['panels']) > 1:
+        assert payload['panels'][1]['unit'] == '%'
+        assert len(payload['panels'][2]['choices']) == 2
+        assert all(choice['series'][0]['points'][0]['value'] == pytest.approx(100) for choice in payload['panels'][2]['choices'])
+
+
+def test_html_build_is_deterministic_and_has_no_plotly(tmp_path):
+    frame = build_rebased(None)
+    target = tmp_path / 'chart.html'
+    render_html(frame,target)
+    original,mtime = target.read_bytes(),target.stat().st_mtime_ns
+    render_html(frame,target)
+    assert target.read_bytes() == original and target.stat().st_mtime_ns == mtime
+    html = target.read_text()
+    assert 'plotly' not in html.lower()
+    assert 'chart-legend' in html and 'inspect-period' in html
+    assert 'zoom' not in html.lower()

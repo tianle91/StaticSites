@@ -7,19 +7,18 @@ market events.
 
 ![margin vs S&P 500 vs M2, rebased monthly from 2000](output/margin-sp500-m2-visualization.png)
 
-## Chart styling
+## Chart components
 
-The HTML and PNG follow the repository's chart interface convention: a light
-page, white plotting surface, system fonts on the web, muted gridlines and a
-consistent metric palette. S&P 500 is teal and M2 is blue in both macro projects.
-The interactive page keeps its analytical controls and places the legend below
-the data, with linked sources in a collapsible footer. The Plotly runtime still
-loads from its existing CDN; the build itself remains offline.
+The page follows the Ontario mortgage chart's compact native SVG layout: a
+legend above the plot, one shared time axis, a synchronized inspection readout
+below, and collapsed definitions/sources. It has no plotting runtime, CDN,
+zoom toolbar, range slider or log-scale controls. The generated HTML is fully
+self-contained, including its data, styles and JavaScript.
 
-`src/chart_style.py` and `src/chart.css` are project-local copies. They never
-import another project's theme. Rebuild HTML after changing either file; the
-Makefile tracks those inputs. PNG styling uses the same palette and neutral
-colors with Matplotlib's bundled DejaVu Sans font.
+The project-local `src/chart.js`, `src/chart.css` and `src/chart_style.py` copies
+keep projects independent. PNG exports continue to use Matplotlib with the same
+palette and neutral colors. The chart anchor remains configurable at build time
+with `--rebase-date`; there is no browser click-to-rebase control.
 
 ## Usage
 
@@ -35,7 +34,7 @@ standard — see the [repo README](../README.md):
 - `make` — render `output/margin-sp500-m2-visualization.{html,png}` from `data/series.csv`
 - `make data` — refetch FINRA / FRED / Yahoo into `data/series.csv`, then re-render
 - `make test` — run the unit tests
-- `make open` — open the zoomable chart
+- `make open` — open the interactive chart
 - `make clean` — remove the generated output
 
 The output format follows the file extension, so the script can also be driven
@@ -45,16 +44,18 @@ directly:
 .venv/bin/python src/plot_macro_series.py -o output/chart.html --rebase-date 2008-09-15
 ```
 
-## Zoomable chart
+## Interactive chart
 
-`make html` writes a self-contained page (plotly from CDN). Open it in a browser
-and:
+Open the committed HTML in a browser:
 
-- **drag** a region to zoom, **scroll** to zoom, **shift-drag** to pan
-- **double-click** to reset the view
-- use the **range slider** under the axis, or the **1y / 5y / 10y / All** buttons
-- toggle **Linear / Log** on the y-axis
-- click legend entries to hide or isolate a series; hover for aligned values
+- Hover or tap any plot, or focus it and use Left/Right/Home/End, to inspect values
+  from the chart's aligned data. The browser does not interpolate new values.
+- Tap legend entries to hide/show lines. Each panel keeps at least one visible.
+- The full available history is always shown. The page fits mobile screens
+  without a separate chart toolbar or horizontal page scrolling.
+
+Optional component-model checks use Node 18+ built-ins only:
+`node tests/test_chart.cjs`. Standard `make test` remains Python-only.
 
 ## Data sources
 

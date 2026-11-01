@@ -28,7 +28,7 @@ The chart is **three panels sharing one x-axis**:
   how equity prices move *per unit of cash in the system*. Rising = stocks outpacing
   liquidity (getting rich vs. the cash backdrop); falling = liquidity growing faster
   than prices. The denominator is an **official** liquidity series — **M2** or
-  **money-market-fund assets** — with each measure's pro/con shown in the panel title.
+  **money-market-fund assets** — with each measure's pro/con shown above the ratio plot.
   The static PNG draws a line for every denominator; the interactive chart adds a
   **picker** to switch between them (see below). Constructed proxies (e.g. "Fed net
   liquidity" = balance sheet − TGA − reverse repo) are deliberately excluded — official
@@ -36,19 +36,18 @@ The chart is **three panels sharing one x-axis**:
 
 ![free cash flow vs. M2, the S&P 500, and the Treasury curve](output/fcf-macro-indicators.png)
 
-## Chart styling
+## Chart components
 
-The HTML and PNG follow the repository's chart interface convention: a light
-page, white plotting surface, system fonts on the web, muted gridlines and a
-consistent metric palette. S&P 500 is teal and M2 is blue in both macro projects.
-The interactive page keeps its analytical controls and places the legend below
-the data, with linked sources in a collapsible footer. The Plotly runtime still
-loads from its existing CDN; the build itself remains offline.
+The page follows the Ontario mortgage chart's compact native SVG layout: a
+legend above the plot, one shared time axis, a synchronized inspection readout
+below, and collapsed definitions/sources. It has no plotting runtime, CDN,
+zoom toolbar, range slider or log-scale controls. The generated HTML is fully
+self-contained, including its data, styles and JavaScript.
 
-`src/chart_style.py` and `src/chart.css` are project-local copies. They never
-import another project's theme. Rebuild HTML after changing either file; the
-Makefile tracks those inputs. PNG styling uses the same palette and neutral
-colors with Matplotlib's bundled DejaVu Sans font.
+The project-local `src/chart.js`, `src/chart.css` and `src/chart_style.py` copies
+keep projects independent. PNG exports continue to use Matplotlib with the same
+palette and neutral colors. The chart anchor remains configurable at build time
+with `--rebase-date`; there is no browser click-to-rebase control.
 
 ## Usage
 
@@ -56,7 +55,7 @@ Render both charts from the committed `data/series.csv` (offline):
 
 ```sh
 make          # build output/fcf-macro-indicators.{html,png} from the committed data/
-make open     # build, then open the zoomable chart in a browser
+make open     # build, then open the interactive chart in a browser
 make test     # run the tests
 make data     # refetch SEC EDGAR + FRED into data/series.csv (requires internet), then rebuild
 ```
@@ -81,24 +80,21 @@ SEC_USER_AGENT="fcf-macro-indicators you@example.com" \
   .venv/bin/python src/fetch_data.py --tickers AAPL,MSFT,NVDA,GOOGL
 ```
 
-## Zoomable chart
+## Interactive chart
 
-`make` writes a self-contained page (plotly from CDN). Open it in a browser and:
+Open the committed HTML in a browser:
 
-- **drag** a region to zoom, **scroll** to zoom, **double-click** to reset
-- use the **range slider** under the axis, or the **3y / 5y / 10y / All** buttons
-- **click anywhere on the chart** to re-anchor: the click snaps to the nearest
-  quarter, a dotted marker line moves to it, and **both** the top (levels) and bottom
-  (ratio) panels re-rebase to 100 there — live, client-side, no rebuild.
-  `--rebase-date` sets the initial anchor
-- pick the **ratio denominator** from the dropdown at the top-left (**M2** or
-  **money-market-fund assets**): the bottom panel swaps to `S&P 500 ÷ that measure`
-  and the panel title updates with the chosen measure's pro/con. The hidden
-  denominator stays re-anchored in the background, so switching after a re-anchor
-  lines up immediately
-- toggle **Levels: Linear / Log** on the top panel's y-axis (log helps when a
-  decade of M2/S&P growth compresses the recent range)
-- click legend entries to hide or isolate a series; hover for aligned values
+- Hover or tap any plot, or focus it and use Left/Right/Home/End, to inspect values
+  from the chart's aligned data. The browser does not interpolate new values.
+- Tap legend entries to hide/show lines. Each panel keeps at least one visible.
+- The full available history is always shown. The page fits mobile screens
+  without a separate chart toolbar or horizontal page scrolling.
+
+The FCF page additionally offers a liquidity-denominator selector for its ratio
+panel. All its panels share the same horizontal time scale and inspection cursor.
+
+Optional component-model checks use Node 18+ built-ins only:
+`node tests/test_chart.cjs`. Standard `make test` remains Python-only.
 
 ## Layout
 
@@ -108,7 +104,7 @@ SEC_USER_AGENT="fcf-macro-indicators you@example.com" \
 | `src/plot_fcf_macro.py` | Offline build: renders `output/fcf-macro-indicators.{html,png}` from the CSV |
 | `data/series.csv` | Committed quarterly grid: `m2`, `mmf`, `sp500`, `dgs3mo/2/10/30`, and `fcf_<TICKER>` + `cash_<TICKER>` columns per basket member |
 | `data/fcf_source.txt` | Provenance marker (`label\|url`) recording where the committed FCF came from; drives the chart's source footer |
-| `output/fcf-macro-indicators.html` | Zoomable chart (committed so it works without a build) |
+| `output/fcf-macro-indicators.html` | Interactive chart (committed so it works without a build) |
 | `output/fcf-macro-indicators.png` | Static chart |
 
 ## Data sources
@@ -196,7 +192,7 @@ denominators.)
   and shows when the relationship strengthens or breaks.
 - **More official denominators for the ratio picker** — e.g. M1 (`M1SL`) or currency
   in circulation (`CURRCIR`). Each just needs a fetch column and an entry in
-  `LIQUIDITY_MEASURES`; the panel, picker, and re-anchor JS pick it up automatically.
+  `LIQUIDITY_MEASURES`; the panel and selector pick it up automatically.
 
 The ratio denominators are **official FRED series only**. The table below records why
 each is offered, and why the popular **Fed net liquidity** proxy is *not*:

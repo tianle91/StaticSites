@@ -12,8 +12,8 @@ so build them within the repository checkout.
 | Project | What it is |
 | --- | --- |
 | [canada-mortgage-stress/](canada-mortgage-stress/) | Monthly Ontario bank mortgage arrears including CMHC forecasts and Toronto-area sale prices in one plot, limited to their shared available period. |
-| [fcf-macro-indicators/](fcf-macro-indicators/) | Quarterly free cash flow and cash balances of a basket of large public companies vs. M2, the S&P 500, and the 3M / 2Y / 10Y / 30Y Treasury curve, rebased to a chosen anchor quarter. Renders a static PNG and a zoomable HTML chart. |
-| [margin-sp500-m2-visualization/](margin-sp500-m2-visualization/) | FINRA margin debt vs. S&P 500, M2, CPI, and PPI, rebased to a configurable anchor date. Renders a static PNG and a zoomable HTML chart. |
+| [fcf-macro-indicators/](fcf-macro-indicators/) | Quarterly free cash flow and cash balances of a basket of large public companies vs. M2, the S&P 500, and the 3M / 2Y / 10Y / 30Y Treasury curve, rebased to a chosen anchor quarter. Renders a static PNG and a interactive HTML chart. |
+| [margin-sp500-m2-visualization/](margin-sp500-m2-visualization/) | FINRA margin debt vs. S&P 500, M2, CPI, and PPI, rebased to a configurable anchor date. Renders a static PNG and a interactive HTML chart. |
 | [ontario-physiotherapy-clinics-map/](ontario-physiotherapy-clinics-map/) | The 255 publicly-funded (OHIP-covered) physiotherapy clinics and hospitals listed by the province, searchable by name / city / postal code. |
 | [toronto-building-permits-map/](toronto-building-permits-map/) | Toronto’s complete active building permit register, searchable by address with status, type and application-year filters. |
 | [toronto-crime-map/](toronto-crime-map/) | Toronto Police reports from 2025 onward, merged by incident ID with seven type layers, text search and approximate intersection locations. |
@@ -34,14 +34,20 @@ backgrounds and colors to the interactive version where a PNG is provided.
 Use consistent colors for shared metrics: S&P 500 / primary series teal
 (`#116965`), M2 blue (`#466aa0`), margin debt / secondary series rust (`#aa5633`),
 CPI purple (`#806493`) and PPI slate (`#70868b`). Keep lines about 2px wide,
-forecasts dashed, legends outside the plotted data where practical, and distinct
+forecasts dashed, legends above the plot, and distinct
 units explicitly labelled. Multi-panel plots share a horizontal time scale.
 
-Keep controls that serve each chart's analysis (zoom, rebasing, scale or ratio
-selection); styling does not require adding those controls to simpler charts.
-Duplicate `src/chart_style.py` / `src/chart.css` within each Plotly project;
-the SVG chart implements the same convention locally. Projects never import a
-shared runtime theme or depend on another project's files.
+Use native SVG and page components modelled on the Ontario mortgage chart:
+compact legend above, plot/panels on one time scale, inspection readout below,
+and collapsed definitions/sources. Fit the viewport without a plotting-library
+toolbar. Hover and keyboard inspection expose exact observations; legend taps
+can toggle lines. Keep only essential controls, such as the FCF ratio choice.
+Rebasing is a build-time option in the macro projects.
+
+Duplicate `src/chart_style.py`, `src/chart.css` and `src/chart.js` locally when
+starting another chart project. Do not import a shared runtime theme or another
+project's code. Native charts embed their data/scripts/styles in the HTML and
+make no external runtime requests.
 
 ## Map interface convention
 

@@ -369,6 +369,11 @@ Then `make snapshot-browser` explicitly installs headless Chromium and
 `make snapshots` rebuilds the page and captures desktop/mobile review images.
 These optional commands require network access; ordinary builds/tests stay offline.
 
+For a chart project, follow the repo README's chart interface convention and
+copy the native SVG page components into this project's src/ locally. Keep
+legend, shared time axis, inspection readout and collapsed sources consistent
+with the Ontario mortgage chart; avoid an external plotting runtime.
+
 ## Usage
 
 ```sh

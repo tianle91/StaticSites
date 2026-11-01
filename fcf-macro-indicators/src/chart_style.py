@@ -3,6 +3,8 @@ from html import escape, unescape
 from pathlib import Path
 import textwrap
 import re
+import json
+import math
 
 INK = '#182d37'
 MUTED = '#596b71'
@@ -13,7 +15,7 @@ FONT = '-apple-system,BlinkMacSystemFont,Segoe UI,Arial,sans-serif'
 
 
 def compact_label(label):
-    """Source codes belong in hover text and provenance, not a crowded legend."""
+    """Keep source codes in provenance and use compact labels on the chart."""
     label = re.sub(r'\s*\((?:FRED:|\^GSPC|FINRA,)[^)]*\)', '', label)
     return (label.replace(' (basket sum)', '')
             .replace('Aggregate cash & equivalents', 'Aggregate cash')
@@ -47,59 +49,43 @@ def png_sources(fig, sources, pulled):
              ha='left', va='bottom', fontsize=7, color=MUTED)
 
 
-def plotly_style(fig, *, height, bottom):
-    """Match the SVG/PNG typography and grid, while retaining analytical controls."""
-    fig.update_layout(
-        title=None, height=height, autosize=True,
-        font=dict(family=FONT, size=12, color=INK),
-        paper_bgcolor=SURFACE, plot_bgcolor=SURFACE,
-        margin=dict(l=76, r=30, t=95, b=bottom),
-        # A horizontal legend keeps long source labels from shrinking the plot.
-        # Space below the range slider is reserved explicitly by each renderer.
-        legend=dict(orientation='h', x=0, y=-.30, xanchor='left', yanchor='top',
-                    bgcolor='rgba(0,0,0,0)', borderwidth=0,
-                    font=dict(size=11, color=INK)),
-        hoverlabel=dict(bgcolor=INK, bordercolor=INK,
-                        font=dict(family=FONT, size=12, color=SURFACE)),
-    )
-    fig.update_xaxes(gridcolor=GRID, zerolinecolor=GRID, linecolor=GRID,
-                     tickfont=dict(size=11, color=MUTED), title_font=dict(size=12, color=MUTED),
-                     spikecolor=MUTED)
-    for name in fig.layout:
-        if not name.startswith('xaxis'):
-            continue
-        axis = fig.layout[name]
-        # Styling must not create a new slider on another subplot.
-        if axis.rangeslider.visible is True:
-            axis.rangeslider.update(bgcolor=PAPER, bordercolor=GRID, borderwidth=1)
-        if axis.rangeselector.buttons:
-            axis.rangeselector.update(bgcolor=PAPER, activecolor=GRID,
-                                      bordercolor=GRID, borderwidth=1,
-                                      font=dict(size=11, color=INK))
-    fig.update_yaxes(gridcolor=GRID, zerolinecolor=GRID, linecolor=GRID,
-                     tickfont=dict(size=11, color=MUTED), title_font=dict(size=12, color=MUTED))
-    fig.update_annotations(font=dict(family=FONT, size=12, color=INK))
-    for menu in fig.layout.updatemenus:
-        menu.update(bgcolor=SURFACE, bordercolor=GRID, borderwidth=1,
-                    font=dict(family=FONT, size=11, color=INK))
+def series_data(values, *, name, color, key):
+    """Keep real zeroes and explicit missing values; never interpolate for display."""
+    points = []
+    for date, value in values.items():
+        try:
+            number = float(value)
+            number = number if math.isfinite(number) else None
+        except (TypeError, ValueError):
+            number = None
+        points.append({'date': date.strftime('%Y-%m-%d'), 'value': number})
+    return {'id': key, 'name': name, 'color': color, 'points': points}
 
 
-def chart_page(plot_html, *, title, subtitle, sources, pulled, hint='', script=''):
-    """Wrap Plotly's generated body without changing trace data or interaction JS."""
-    body = plot_html.split('<body>', 1)[1].rsplit('</body>', 1)[0]
-    style = Path(__file__).with_name('chart.css').read_text(encoding='utf-8')
+def chart_page(payload, *, title, subtitle, sources, pulled, context=''):
+    """One offline HTML artifact using native SVG, with no plotting runtime/CDN."""
+    source = Path(__file__).parent
+    style = (source / 'chart.css').read_text(encoding='utf-8')
+    behavior = (source / 'chart.js').read_text(encoding='utf-8')
     title = escape(unescape(title))
+    encoded = json.dumps(payload, indent=2, ensure_ascii=False, allow_nan=False).replace('<', '\\u003c')
     links = ''.join(f'<li><a href="{escape(url, quote=True)}" target="_blank" rel="noopener">{escape(name)}</a></li>'
                     for name, url in sources)
     stamp = f'<p>Data pulled {escape(pulled)}</p>' if pulled else ''
+    events = ''.join(f'<li>{escape(event["date"])}: {escape(event["label"])}</li>' for event in payload.get('events', []))
+    events = '<p>Market event markers</p><ul>' + events + '</ul>' if events else ''
     return f'''<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{title}</title><style>{style}</style></head>
 <body><main><header><p class="eyebrow">MARKETS & LIQUIDITY</p>
 <h1>{title}</h1><p class="subtitle">{escape(subtitle)}</p></header>
-<section class="explorer" aria-label="Interactive chart">{hint}{body}</section>
-<p class="hint">Drag to zoom · Double-click to reset · Click legend entries to toggle series</p>
-<footer><details><summary>Data sources</summary>{stamp}<ul>{links}</ul></details></footer>
-</main>{script}</body></html>
+<section class="explorer" aria-label="Chart">
+<div id="chart-legend" class="legend" aria-label="Toggle chart series"></div>
+<p class="series-description">{escape(context)}</p><div id="chart-choices" class="chart-choices"></div>
+<div id="chart" class="chart" tabindex="0" role="group" aria-label="Chart. Use arrow keys to inspect observations."></div>
+<div class="inspection"><p id="inspect-period"></p><div id="readout" class="readout" aria-live="polite" aria-atomic="true"></div></div>
+<p class="hint">Hover, tap the plot or use arrow keys to inspect · Tap legend entries to toggle series</p></section>
+<footer><details><summary>Definitions & data sources</summary>{stamp}<p>{escape(context)}</p>{events}<ul>{links}</ul></details></footer>
+</main><script id="chart-data" type="application/json">{encoded}</script><script>{behavior}</script></body></html>
 '''

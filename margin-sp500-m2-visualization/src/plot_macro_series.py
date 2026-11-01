@@ -4,14 +4,13 @@ Read the monthly source series from data/series.csv, rebase every series to 100
 using a configurable anchor date, and plot with vertical markers for major
 market events.
 
-Renders a static PNG (matplotlib) or a zoomable HTML chart (plotly), picked from
+Renders a static PNG (matplotlib) or a responsive HTML chart (native SVG), picked from
 the output file extension. Offline: refresh data/series.csv with `make data`.
 """
 
 from __future__ import annotations
 
 import argparse
-import json
 from datetime import date
 from pathlib import Path
 
@@ -19,53 +18,15 @@ import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from chart_style import chart_page, compact_label, matplotlib_style, png_sources, plotly_style
+from chart_style import chart_page, compact_label, matplotlib_style, png_sources, series_data
 
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT_DIR = ROOT / "output"
 SERIES_CSV = ROOT / "data" / "series.csv"
 PULLED_STAMP = ROOT / "data" / "generated_at.txt"  # written by fetch_data.py
 
-# Browser tab / bookmark title for the HTML chart. Plotly's to_html() emits a
-# document with an empty <head> and no <title>, so we inject this one -- every
-# sibling site has a <title>, and downstream tooling reads it.
+# Browser tab, bookmark and page heading.
 PAGE_TITLE = "Margin Debt vs. the S&amp;P 500, M2, CPI &amp; PPI"
-
-
-def _pretty_plotly_html(html: str) -> str:
-    """Expand Plotly.newPlot(...) JSON args so the committed HTML stays readable.
-
-    Plotly's to_html() packs the figure onto one enormous line; re-dumping the
-    args with indent=2 makes diffs and source viewing usable. ``<`` is escaped
-    the same way Plotly does, so the payload stays safe inside a <script> tag.
-    """
-    marker = "Plotly.newPlot("
-    start = html.find(marker)
-    if start < 0:
-        return html
-    pos = start + len(marker)
-    decoder = json.JSONDecoder()
-    args: list[object] = []
-    try:
-        for _ in range(4):  # div id, data, layout, config
-            while pos < len(html) and html[pos] in " \t\n\r,":
-                pos += 1
-            if pos >= len(html) or html[pos] == ")":
-                break
-            obj, end = decoder.raw_decode(html, pos)
-            args.append(obj)
-            pos = end
-        while pos < len(html) and html[pos] in " \t\n\r":
-            pos += 1
-        if not args or pos >= len(html) or html[pos] != ")":
-            return html
-    except json.JSONDecodeError:
-        return html
-    pretty = ",\n".join(
-        json.dumps(a, indent=2, ensure_ascii=False).replace("<", "\\u003c")
-        for a in args
-    )
-    return html[:start] + f"Plotly.newPlot(\n{pretty}\n)" + html[pos + 1 :]
 
 
 
@@ -241,108 +202,31 @@ def render_png(rebased: pd.DataFrame, out_path: Path) -> None:
     plt.close(fig)
 
 
+def chart_payload(rebased: pd.DataFrame) -> dict:
+    start, end = rebased.index.min(), rebased.index.max()
+    return {
+        'domain': [start.strftime('%Y-%m-%d'), end.strftime('%Y-%m-%d')],
+        'markers': False,
+        'panels': [{'id': 'levels', 'title': 'Indexed market series',
+                    'unit': 'index', 'axis': 'Index (anchor = 100)', 'reference': 100,
+                    'series': [series_data(rebased[col], name=compact_label(col),
+                                           color=SERIES_COLORS[col], key=col)
+                               for col in rebased.columns]}],
+        'events': [{'date': date.isoformat(), 'label': label} for date, label in MARKET_EVENTS
+                   if start <= pd.Timestamp(date) <= end],
+    }
+
+
 def render_html(rebased: pd.DataFrame, out_path: Path) -> None:
-    """Zoomable/pannable plotly chart: drag to zoom, double-click to reset."""
-    import plotly.graph_objects as go
-
-    anchor = rebased.attrs["anchor"]
-    anchor_me = rebased.attrs["anchor_month_end"]
-
-    fig = go.Figure()
-    for col in rebased.columns:
-        fig.add_trace(
-            go.Scatter(
-                x=rebased.index,
-                y=rebased[col],
-                name=compact_label(col),
-                mode="lines",
-                line=dict(color=SERIES_COLORS[col], width=1.8),
-                hovertemplate="%{y:.1f}<extra>" + col + "</extra>",
-            )
-        )
-
-    for ev_date, label in MARKET_EVENTS:
-        ev = pd.Timestamp(ev_date)
-        if not (rebased.index.min() <= ev <= rebased.index.max()):
-            continue
-        fig.add_vline(
-            x=ev,
-            line=dict(color="#8a989b", width=0.9, dash="dot"),
-            annotation_text=label,
-            annotation_position="top",
-            annotation=dict(textangle=-90, font=dict(size=9, color="#596b71"), yanchor="top"),
-        )
-
-    fig.update_layout(
-        template="plotly_white",
-        title=dict(
-            text=(
-                "Margin, S&P 500, M2, CPI, and PPI (rebased to 100 using each series level on or "
-                f"before {anchor_me:%Y-%m-%d}; anchor date {anchor:%Y-%m-%d})"
-            ),
-            font=dict(size=14),
-        ),
-        hovermode="x unified",
-        dragmode="zoom",
-        legend=dict(x=0.01, y=0.99, bgcolor="rgba(255,255,255,0.8)", bordercolor="#cccccc", borderwidth=1),
-        margin=dict(l=70, r=30, t=110, b=60),
-        # Linear/log toggle — log makes the pre-2020 range legible once zoomed out.
-        updatemenus=[
-            dict(
-                type="buttons",
-                direction="right",
-                x=1.0,
-                y=1.12,
-                xanchor="right",
-                showactive=True,
-                buttons=[
-                    dict(label="Linear", method="relayout", args=[{"yaxis.type": "linear"}]),
-                    dict(label="Log", method="relayout", args=[{"yaxis.type": "log"}]),
-                ],
-            )
-        ],
-    )
-    fig.update_xaxes(
-        title_text="Month-end",
-        showspikes=True,
-        spikemode="across",
-        spikethickness=1,
-        rangeslider=dict(visible=True, thickness=0.06),
-        rangeselector=dict(
-            buttons=[
-                dict(count=1, label="1y", step="year", stepmode="backward"),
-                dict(count=5, label="5y", step="year", stepmode="backward"),
-                dict(count=10, label="10y", step="year", stepmode="backward"),
-                dict(step="all", label="All"),
-            ]
-        ),
-    )
-    fig.update_yaxes(
-        title_text="Index (anchor = 100)",
-        fixedrange=False,
-        showspikes=False,
-    )
-
-    plotly_style(fig, height=720, bottom=220)
-
+    """Responsive native SVG page, built entirely from the committed series."""
+    anchor_me = rebased.attrs['anchor_month_end']
+    html = chart_page(chart_payload(rebased), title=PAGE_TITLE,
+                      subtitle='Margin debt, equity prices, money supply and inflation.',
+                      context=f'Monthly data · Index 100 uses each series on or before {anchor_me:%Y-%m-%d}.',
+                      sources=DATA_SOURCES, pulled=data_pulled_date())
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    html = fig.to_html(
-        include_plotlyjs="cdn",
-        full_html=True,
-        config={"scrollZoom": True, "displaylogo": False, "responsive": True},
-        # A stable id keeps repeated offline builds byte-for-byte deterministic;
-        # Plotly otherwise generates a random UUID and the refresh bot sees a
-        # false output change even when the source data is identical.
-        div_id="macro-series-chart",
-    )
-    # Plotly's full_html output has an empty <head> with no <title>; give the
-    # page one so the browser tab/bookmark isn't blank.
-    html = chart_page(
-        html, title=PAGE_TITLE,
-        subtitle=f"Monthly levels rebased to 100 using each series on or before {anchor_me:%Y-%m-%d}.",
-        sources=DATA_SOURCES, pulled=data_pulled_date(),
-    )
-    out_path.write_text(_pretty_plotly_html(html), encoding="utf-8")
+    if not out_path.exists() or out_path.read_text(encoding='utf-8') != html:
+        out_path.write_text(html, encoding='utf-8')
 
 
 def build_chart(out_path: Path, rebase_anchor: pd.Timestamp) -> None:
@@ -367,7 +251,7 @@ def main() -> int:
         "--output",
         type=Path,
         default=OUTPUT_DIR / "margin_sp500_m2_2000.png",
-        help="Output path; .html renders the zoomable chart, anything else a static PNG (default: %(default)s)",
+        help="Output path; .html renders the interactive chart, anything else a static PNG (default: %(default)s)",
     )
     parser.add_argument(
         "output_positional",

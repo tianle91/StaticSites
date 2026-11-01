@@ -12,15 +12,14 @@ assets) chosen via a picker in the interactive chart.
 
 Free cash flow is the coarsest input (reported quarterly), so it sets both the
 grid and the charted window: the chart spans the quarters in which every basket
-member reports FCF. Renders a static PNG (matplotlib) or a zoomable HTML chart
-(plotly), picked from the output file extension. Offline: refresh data/series.csv
+member reports FCF. Renders a static PNG (matplotlib) or a responsive HTML chart
+(native SVG), picked from the output file extension. Offline: refresh data/series.csv
 with `make data`.
 """
 
 from __future__ import annotations
 
 import argparse
-import json
 from datetime import date
 from pathlib import Path
 
@@ -28,51 +27,14 @@ import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from chart_style import chart_page, compact_label, matplotlib_style, png_sources, plotly_style
-
-def _pretty_plotly_html(html: str) -> str:
-    """Expand Plotly.newPlot(...) JSON args so the committed HTML stays readable.
-
-    Plotly's to_html() packs the figure onto one enormous line; re-dumping the
-    args with indent=2 makes diffs and source viewing usable. ``<`` is escaped
-    the same way Plotly does, so the payload stays safe inside a <script> tag.
-    """
-    marker = "Plotly.newPlot("
-    start = html.find(marker)
-    if start < 0:
-        return html
-    pos = start + len(marker)
-    decoder = json.JSONDecoder()
-    args: list[object] = []
-    try:
-        for _ in range(4):  # div id, data, layout, config
-            while pos < len(html) and html[pos] in " \t\n\r,":
-                pos += 1
-            if pos >= len(html) or html[pos] == ")":
-                break
-            obj, end = decoder.raw_decode(html, pos)
-            args.append(obj)
-            pos = end
-        while pos < len(html) and html[pos] in " \t\n\r":
-            pos += 1
-        if not args or pos >= len(html) or html[pos] != ")":
-            return html
-    except json.JSONDecodeError:
-        return html
-    pretty = ",\n".join(
-        json.dumps(a, indent=2, ensure_ascii=False).replace("<", "\\u003c")
-        for a in args
-    )
-    return html[:start] + f"Plotly.newPlot(\n{pretty}\n)" + html[pos + 1 :]
-
+from chart_style import chart_page, compact_label, matplotlib_style, png_sources, series_data
 
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT_DIR = ROOT / "output"
 SERIES_CSV = ROOT / "data" / "series.csv"
 PULLED_STAMP = ROOT / "data" / "generated_at.txt"  # written by fetch_data.py
 
-# Browser tab / bookmark title for the HTML chart. Plotly's to_html() emits a
-# document with an empty <head> and no <title>, so we inject this one.
+# Browser tab, bookmark and page heading.
 PAGE_TITLE = "Free Cash Flow vs. M2, the S&amp;P 500 &amp; the Treasury Curve"
 
 # Display label -> CSV column. Order controls legend/plot order. The aggregate
@@ -167,18 +129,6 @@ def compute_ratios(aligned: pd.DataFrame) -> dict[str, pd.Series]:
     sp = aligned[SP500_LABEL]
     return {m["key"]: sp / aligned[m["column"]]
             for m in LIQUIDITY_MEASURES if m["column"] in aligned}
-
-
-def _ratio_panel_title(key: str) -> str:
-    """Third-panel title for a chosen denominator, with its pro/con as subtext. The
-    interactive picker swaps this; the anchor date lives on the y-axis, not here, so
-    re-anchoring never has to rewrite it. Pro and con get a line each: joined on one
-    line they run past both edges of the plot area and collide with the rangeselector
-    buttons sitting in this panel's top-left corner."""
-    m = _measure(key)
-    return (f"S&P 500 ÷ {m['name']} (rebased to 100)"
-            f"<br><sup>Pro: {m['pro']}</sup>"
-            f"<br><sup>Con: {m['con']}</sup>")
 
 
 def _split_columns(columns) -> tuple[list[str], list[str]]:
@@ -366,11 +316,10 @@ def build_rebased(rebase_anchor: pd.Timestamp | None) -> pd.DataFrame:
     })
     rebased.attrs["anchor"] = anchor
     rebased.attrs["tickers"] = basket_tickers(frame)
-    # Raw (un-rebased) aligned values, so the HTML chart can re-rebase the level
-    # panel client-side when the viewer picks a different anchor quarter.
+    # Preserve aligned source levels for inspection alongside the indexed frame.
     rebased.attrs["raw"] = aligned
     # Raw S&P-÷-liquidity ratios for the third panel, keyed by measure. Rebased to
-    # the anchor at render time and re-rebased client-side alongside the levels.
+    # the configured anchor at render time for both HTML and PNG.
     rebased.attrs["ratio_raw"] = compute_ratios(aligned)
     return rebased
 
@@ -446,287 +395,52 @@ def render_png(rebased: pd.DataFrame, out_path: Path) -> None:
     plt.close(fig)
 
 
-def render_html(rebased: pd.DataFrame, out_path: Path) -> None:
-    """Zoomable/pannable plotly chart: drag to zoom, double-click to reset. Three
-    panels share one x-axis -- rebased levels on top, raw Treasury yields in the
-    middle, and S&P-÷-liquidity ratios below (denominator chosen via a picker)."""
-    import plotly.graph_objects as go
-    from plotly.subplots import make_subplots
-
-    anchor = rebased.attrs["anchor"]
-    tickers = rebased.attrs.get("tickers", [])
-    level_cols, yield_cols = _split_columns(rebased.columns)
-
-    fig = make_subplots(
-        rows=3, cols=1, shared_xaxes=True, vertical_spacing=0.06,
-        row_heights=[0.46, 0.30, 0.24],
-        subplot_titles=(
-            f"Levels rebased to 100 at {anchor:%Y-%m-%d}",
-            "Treasury yields (%)",
-            _ratio_panel_title(DEFAULT_MEASURE_KEY),
-        ),
-    )
-    for col in level_cols:
-        fig.add_trace(
-            go.Scatter(
-                x=rebased.index, y=rebased[col], name=compact_label(col), legendgroup="levels",
-                mode="lines+markers",
-                line=dict(color=SERIES_COLORS[col], width=2.6 if col.startswith("Aggregate") else 1.7),
-                marker=dict(size=5),
-                hovertemplate="%{y:.1f}<extra>" + col + "</extra>",
-            ),
-            row=1, col=1,
-        )
-    for col in yield_cols:
-        fig.add_trace(
-            go.Scatter(
-                x=rebased.index, y=rebased[col], name=compact_label(col), legendgroup="yields",
-                mode="lines+markers",
-                line=dict(color=SERIES_COLORS[col], width=1.7),
-                marker=dict(size=5),
-                hovertemplate="%{y:.2f}%<extra>" + col + "</extra>",
-            ),
-            row=2, col=1,
-        )
-
-    fig.add_hline(y=100.0, line=dict(color="#8a989b", width=0.8, dash="dash"), row=1, col=1)
-
-    # Inverted-curve periods get a full-height band across every panel (added below,
-    # once all three panels have traces), plus one dummy trace so the shading gets a
-    # legend entry.
-    spans = inversion_spans(rebased)
-    if spans:
-        fig.add_trace(
-            go.Scatter(
-                x=[None], y=[None], mode="markers", name=compact_label(INVERSION_LABEL),
-                legendgroup="yields",
-                marker=dict(size=12, symbol="square",
-                            color="rgba(182,73,73,0.28)", line=dict(width=0)),
-                hoverinfo="skip",
-            ),
-            row=2, col=1,
-        )
-
-    # Third panel: S&P 500 ÷ liquidity, one trace per official denominator, rebased
-    # to 100 at the anchor. Only the default measure starts visible; the picker
-    # (updatemenu below) toggles the others and swaps the pro/con panel title. Added
-    # after the level/yield/inversion traces so their indices stay stable for the
-    # re-rebase JS; the ratio traces re-rebase on click too (see _rebase_script).
-    ratio_raw = rebased.attrs.get("ratio_raw", {})
-    ratio_traces: list[tuple[str, int]] = []  # (measure key, trace index)
-    for m in LIQUIDITY_MEASURES:
-        series = ratio_raw.get(m["key"])
-        if series is None:
-            continue
-        ratio_traces.append((m["key"], len(fig.data)))
-        fig.add_trace(
-            go.Scatter(
-                x=series.index, y=_rebase_to_anchor(series, anchor),
-                name=f"S&P 500 ÷ {m['name']}", legendgroup="ratio",
-                mode="lines+markers", visible=(m["key"] == DEFAULT_MEASURE_KEY),
-                line=dict(color=m["color"], width=2.0), marker=dict(size=5),
-                hovertemplate="%{y:.1f}<extra>S&P 500 ÷ " + m["name"] + "</extra>",
-            ),
-            row=3, col=1,
-        )
-    if ratio_traces:
-        fig.add_hline(y=100.0, line=dict(color="#8a989b", width=0.8, dash="dash"), row=3, col=1)
-
-    # Inversion shading, drawn only now: add_vrect skips subplots that hold no traces
-    # yet, so shading before the ratio traces existed would band the top two panels
-    # and silently leave the third one clear (the PNG bands all three).
-    for x0, x1 in spans:
-        fig.add_vrect(x0=x0, x1=x1, fillcolor=INVERSION_COLOR, opacity=0.09,
-                      line_width=0, layer="below")
-
-    # Movable vertical marker at the rebase anchor, spanning all panels (xref to the
-    # top x-axis, yref to paper). The viewer clicks the chart to move it and re-rebase
-    # the level + ratio panels (see _rebase_script); drawn here so the initial anchor
-    # is marked without JS. Added last so it is the final shape -- the JS targets it
-    # by index (anchor_shape_idx) to move it on click.
-    fig.add_shape(type="line", x0=anchor, x1=anchor, xref="x", yref="paper",
-                  y0=0, y1=1, line=dict(color="#182d37", width=1.5, dash="dot"),
-                  layer="above")
-    anchor_shape_idx = len(fig.layout.shapes) - 1
-
-    # Denominator picker for the ratio panel: each button shows only that measure's
-    # ratio trace and swaps the panel title (subplot title = annotations[2]) to its
-    # pro/con. method="update" carries [trace visibility, layout change, target trace
-    # indices] so it touches only the ratio traces. Labels name what the control does
-    # ("Ratio ÷ ...", like the "Levels: ..." buttons) because the closed dropdown is
-    # the only thing on screen: a separate caption annotation would sit above the
-    # chart's top margin, where plotly clips it away.
-    ratio_idx = [ti for _, ti in ratio_traces]
-    measure_buttons = [
-        dict(
-            label=f"Ratio ÷ {_measure(key)['name']}",
-            method="update",
-            args=[
-                {"visible": [k == key for k, _ in ratio_traces]},
-                {"annotations[2].text": _ratio_panel_title(key)},
-                ratio_idx,
-            ],
-        )
-        for key, _ in ratio_traces
+def chart_payload(rebased: pd.DataFrame) -> dict:
+    anchor = rebased.attrs['anchor']
+    levels, yields = _split_columns(rebased.columns)
+    start, end = rebased.index.min(), rebased.index.max()
+    panels = [
+        {'id': 'levels', 'title': 'Corporate cash & the macro backdrop', 'unit': 'index',
+         'axis': f'Index (100 = {anchor:%Y-%m-%d})', 'reference': 100,
+         'series': [series_data(rebased[col], name=compact_label(col), color=SERIES_COLORS[col], key=col)
+                    for col in levels]},
+        {'id': 'yields', 'title': 'Treasury yields', 'unit': '%', 'axis': 'Treasury yield (%)', 'zero': True,
+         'series': [series_data(rebased[col], name=compact_label(col), color=SERIES_COLORS[col], key=col)
+                    for col in yields]},
     ]
+    choices = []
+    for measure in LIQUIDITY_MEASURES:
+        raw = rebased.attrs.get('ratio_raw', {}).get(measure['key'])
+        if raw is None:
+            continue
+        values = _rebase_to_anchor(raw, anchor).loc[start:end]
+        choices.append({'key': measure['key'], 'label': measure['name'],
+                        'description': 'Pro: ' + measure['pro'] + '. Limitation: ' + measure['con'] + '.',
+                        'series': [series_data(values, name='S&P 500 ÷ ' + measure['name'],
+                                               color=measure['color'], key='ratio-' + measure['key'])]})
+    if choices:
+        panels.append({'id': 'ratio', 'title': 'Equities relative to liquidity', 'unit': 'index',
+                       'axis': f'Index (100 = {anchor:%Y-%m-%d})', 'reference': 100,
+                       'choices': choices, 'defaultChoice': DEFAULT_MEASURE_KEY})
+    return {'domain': [start.strftime('%Y-%m-%d'), end.strftime('%Y-%m-%d')],
+            'anchor': anchor.strftime('%Y-%m-%d'), 'panels': panels,
+            'bands': [{'from': left.strftime('%Y-%m-%d'), 'to': right.strftime('%Y-%m-%d'),
+                       'label': INVERSION_LABEL, 'color': INVERSION_COLOR}
+                      for left, right in inversion_spans(rebased)]}
 
-    basket = (f"Aggregates sum {len(tickers)} companies: {', '.join(tickers)}"
-              if tickers else "")
-    fig.update_layout(
-        template="plotly_white",
-        title=dict(
-            text=("Free cash flow & money-market-fund cash vs. M2, the S&P 500, and the Treasury curve"
-                  + (f"<br><sup>{basket}</sup>" if basket else "")),
-            font=dict(size=14),
-        ),
-        hovermode="x unified",
-        dragmode="zoom",
-        legend=dict(bgcolor="rgba(255,255,255,0.8)", bordercolor="#cccccc", borderwidth=1,
-                    groupclick="toggleitem"),
-        margin=dict(l=70, r=30, t=110, b=60),
-        updatemenus=[
-            dict(
-                type="buttons",
-                direction="right",
-                x=1.0,
-                y=1.14,
-                xanchor="right",
-                showactive=True,
-                buttons=[
-                    dict(label="Levels: Linear", method="relayout", args=[{"yaxis.type": "linear"}]),
-                    dict(label="Levels: Log", method="relayout", args=[{"yaxis.type": "log"}]),
-                ],
-            ),
-            # Ratio-panel denominator picker, parked at the top-left above the chart.
-            # Only shown when there is more than one official measure to choose from.
-            *([dict(
-                type="dropdown",
-                direction="down",
-                x=0.0,
-                y=1.14,
-                xanchor="left",
-                yanchor="top",
-                showactive=True,
-                active=[k for k, _ in ratio_traces].index(DEFAULT_MEASURE_KEY),
-                buttons=measure_buttons,
-                bgcolor="rgba(255,255,255,0.9)",
-                bordercolor="#cccccc",
-                pad={"t": 2, "b": 2, "l": 4, "r": 4},
-            )] if len(measure_buttons) > 1 else []),
-        ],
-    )
-    # Spikes on every panel; rangeslider/selector + x-axis title on the shared bottom
-    # (ratio) x-axis.
-    fig.update_xaxes(showspikes=True, spikemode="across", spikethickness=1, row=1, col=1)
-    fig.update_xaxes(showspikes=True, spikemode="across", spikethickness=1, row=2, col=1)
-    fig.update_xaxes(
-        title_text="Quarter-end",
-        showspikes=True,
-        spikemode="across",
-        spikethickness=1,
-        rangeslider=dict(visible=True, thickness=0.05),
-        rangeselector=dict(
-            buttons=[
-                dict(count=3, label="3y", step="year", stepmode="backward"),
-                dict(count=5, label="5y", step="year", stepmode="backward"),
-                dict(count=10, label="10y", step="year", stepmode="backward"),
-                dict(step="all", label="All"),
-            ]
-        ),
-        row=3, col=1,
-    )
-    fig.update_yaxes(title_text=f"Index (100 @ {anchor:%Y-%m-%d})", fixedrange=False,
-                     showspikes=False, row=1, col=1)
-    fig.update_yaxes(title_text="Yield (%)", fixedrange=False, showspikes=False, row=2, col=1)
-    fig.update_yaxes(title_text=f"Index (100 @ {anchor:%Y-%m-%d})", fixedrange=False,
-                     showspikes=False, row=3, col=1)
 
-    plotly_style(fig, height=1160, bottom=300)
-
+def render_html(rebased: pd.DataFrame, out_path: Path) -> None:
+    """Native SVG panels share one calendar axis, with inspection below the chart."""
+    anchor = rebased.attrs['anchor']
+    tickers = rebased.attrs.get('tickers', [])
+    basket = 'Basket: ' + ', '.join(tickers) + '.' if tickers else ''
+    html = chart_page(chart_payload(rebased), title=PAGE_TITLE,
+                      subtitle='Quarterly corporate cash, liquidity, equity prices and Treasury yields. ' + basket,
+                      context=f'Levels and ratios indexed to 100 at {anchor:%Y-%m-%d}; yields are raw percentages. Shading marks 10Y < 2Y inversion.',
+                      sources=data_sources(), pulled=data_pulled_date())
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    div_id = "fcf-chart"
-    html = fig.to_html(
-        include_plotlyjs="cdn",
-        full_html=True,
-        div_id=div_id,
-        config={"scrollZoom": True, "displaylogo": False, "responsive": True},
-    )
-    html = chart_page(
-        html, title=PAGE_TITLE,
-        subtitle="Quarterly corporate cash, liquidity, equity prices and Treasury yields. " + basket,
-        sources=data_sources(), pulled=data_pulled_date(), hint=_rebase_control(rebased),
-        script=_rebase_script(rebased, div_id, anchor_shape_idx, ratio_traces),
-    )
-    out_path.write_text(_pretty_plotly_html(html), encoding="utf-8")
-
-
-def _rebase_control(rebased: pd.DataFrame) -> str:
-    """Hint text above the chart. Re-anchoring is done by clicking the chart (see
-    _rebase_script); the current anchor is shown here and updated live."""
-    anchor = rebased.attrs["anchor"]
-    return (
-        '<p class="chart-hint"><strong>Click the chart</strong> to rebase levels and ratios '
-        'to that quarter. Anchor: <span id="rebase-anchor-label">'
-        f'{anchor:%Y-%m-%d}</span></p>'
-    )
-
-
-
-def _rebase_script(rebased: pd.DataFrame, div_id: str, anchor_shape_idx: int,
-                   ratio_traces: list[tuple[str, int]]) -> str:
-    """JS that re-rebases the level AND ratio traces when the viewer clicks the chart,
-    entirely client-side (no rebuild): index i = 100 * raw[i] / raw[anchor]. The
-    click x is snapped to the nearest quarter. Level traces are added first, so
-    their indices are 0..len(level_cols)-1; the yield/inversion traces are left
-    untouched; the ratio traces carry their own explicit indices (both denominators
-    re-rebase, visible or not, so switching the picker after a re-anchor still lines
-    up). The anchor marker line (shape `anchor_shape_idx`), the level + ratio y-axis
-    titles, the levels panel title, and the hint label all follow the new anchor. The
-    ratio panel title is left alone -- it holds the denominator's pro/con, not a date."""
-    raw = rebased.attrs["raw"]
-    ratio_raw = rebased.attrs.get("ratio_raw", {})
-    level_cols, _ = _split_columns(rebased.columns)
-    payload = {
-        "dates": [f"{d:%Y-%m-%d}" for d in raw.index],
-        "labels": level_cols,
-        "raw": {c: [float(v) for v in raw[c]] for c in level_cols},
-        "idx": list(range(len(level_cols))),
-        "shape": anchor_shape_idx,
-        "ratio": [{"idx": ti, "raw": [float(v) for v in ratio_raw[key]]}
-                  for key, ti in ratio_traces if key in ratio_raw],
-    }
-    return (
-        '<script type="text/javascript">(function(){'
-        f"var D={json.dumps(payload, indent=2)};"
-        f'var gd=document.getElementById("{div_id}");'
-        "if(!gd)return;"
-        "var lbl=document.getElementById(\"rebase-anchor-label\");"
-        "var times=D.dates.map(function(s){return new Date(s).getTime();});"
-        "function nearest(x){"  # x may be an ISO string or epoch ms
-        "var t=(typeof x===\"string\")?new Date(x).getTime():+x;"
-        "var bi=0,bd=Infinity;"
-        "for(var i=0;i<times.length;i++){var d=Math.abs(times[i]-t);if(d<bd){bd=d;bi=i;}}"
-        "return bi;}"
-        "function reb(vals,b){return vals.map(function(v){return b?100*v/b:null;});}"
-        "function rebase(ai){"
-        "var iso=D.dates[ai];"
-        "var ys=D.labels.map(function(l){var r=D.raw[l];return reb(r,r[ai]);});"
-        "Plotly.restyle(gd,{y:ys},D.idx);"
-        "if(D.ratio.length){"
-        "var rys=D.ratio.map(function(o){return reb(o.raw,o.raw[ai]);});"
-        "Plotly.restyle(gd,{y:rys},D.ratio.map(function(o){return o.idx;}));}"
-        "var rl={\"yaxis.title.text\":\"Index (100 @ \"+iso+\")\","
-        "\"yaxis3.title.text\":\"Index (100 @ \"+iso+\")\","
-        "\"annotations[0].text\":\"Levels rebased to 100 at \"+iso};"
-        "rl[\"shapes[\"+D.shape+\"].x0\"]=iso;rl[\"shapes[\"+D.shape+\"].x1\"]=iso;"
-        "Plotly.relayout(gd,rl);"
-        "if(lbl)lbl.textContent=iso;}"
-        "gd.on(\"plotly_click\",function(ev){"
-        "if(!ev||!ev.points||!ev.points.length)return;"
-        "rebase(nearest(ev.points[0].x));});"
-        "gd.style.cursor=\"pointer\";"
-        "})();</script>"
-    )
+    if not out_path.exists() or out_path.read_text(encoding='utf-8') != html:
+        out_path.write_text(html, encoding='utf-8')
 
 
 def build_chart(out_path: Path, rebase_anchor: pd.Timestamp | None) -> None:
@@ -752,7 +466,7 @@ def main() -> int:
         "--output",
         type=Path,
         default=OUTPUT_DIR / "fcf-macro-indicators.html",
-        help="Output path; .html renders the zoomable chart, anything else a static PNG (default: %(default)s)",
+        help="Output path; .html renders the interactive chart, anything else a static PNG (default: %(default)s)",
     )
     parser.add_argument(
         "output_positional",
