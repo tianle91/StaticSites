@@ -28,6 +28,8 @@ import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 import pandas as pd
 
+from chart_style import chart_page, compact_label, matplotlib_style, png_sources, plotly_style
+
 def _pretty_plotly_html(html: str) -> str:
     """Expand Plotly.newPlot(...) JSON args so the committed HTML stays readable.
 
@@ -77,15 +79,15 @@ PAGE_TITLE = "Free Cash Flow vs. M2, the S&amp;P 500 &amp; the Treasury Curve"
 # FCF line is derived from the fcf_* columns (see build_rebased); the rest map
 # straight through. Yields run light->dark from the short end to the long end.
 SERIES_COLORS = {
-    "Aggregate FCF (basket sum)": "#d62728",
-    "Aggregate cash & equivalents (basket sum)": "#ff7f0e",
-    "Money-market-fund assets (FRED: MMMFFAQ027S)": "#17becf",
-    "M2 money supply (FRED: M2SL)": "#1f77b4",
-    "S&P 500 (^GSPC)": "#2ca02c",
-    "3M Treasury yield (FRED: DGS3MO)": "#c5b0d5",
-    "2Y Treasury yield (FRED: DGS2)": "#9467bd",
-    "10Y Treasury yield (FRED: DGS10)": "#6a3d9a",
-    "30Y Treasury yield (FRED: DGS30)": "#3f007d",
+    "Aggregate FCF (basket sum)": "#b64949",
+    "Aggregate cash & equivalents (basket sum)": "#aa5633",
+    "Money-market-fund assets (FRED: MMMFFAQ027S)": "#317f98",
+    "M2 money supply (FRED: M2SL)": "#466aa0",
+    "S&P 500 (^GSPC)": "#116965",
+    "3M Treasury yield (FRED: DGS3MO)": "#a79bb5",
+    "2Y Treasury yield (FRED: DGS2)": "#806493",
+    "10Y Treasury yield (FRED: DGS10)": "#5f4778",
+    "30Y Treasury yield (FRED: DGS30)": "#382650",
 }
 
 # Display label -> CSV column for the straight-through (non-derived) series.
@@ -127,7 +129,7 @@ LIQUIDITY_MEASURES = [
         "key": "m2",
         "name": "M2 money supply",
         "column": "M2 money supply (FRED: M2SL)",
-        "color": "#1f77b4",
+        "color": "#466aa0",
         "pro": "broadest money measure, decades of history, short (~4-week) lag",
         "con": "broad and slow; includes retail savings that don't move prices; "
                "weak short-horizon link to equities; 2020 definitional break",
@@ -136,7 +138,7 @@ LIQUIDITY_MEASURES = [
         "key": "mmf",
         "name": "Money-market-fund assets",
         "column": "Money-market-fund assets (FRED: MMMFFAQ027S)",
-        "color": "#17becf",
+        "color": "#317f98",
         "pro": "“cash on the sidelines” that can rotate into stocks; at record highs",
         "con": "~10-week Z.1 lag; ambiguous sign (dry powder vs. risk-off flight); "
                "driven heavily by the level of short rates",
@@ -192,7 +194,7 @@ def _split_columns(columns) -> tuple[list[str], list[str]]:
 _INVERSION_LONG = "10Y Treasury yield (FRED: DGS10)"
 _INVERSION_SHORT = "2Y Treasury yield (FRED: DGS2)"
 INVERSION_LABEL = "Yield-curve inversion (10Y < 2Y)"
-INVERSION_COLOR = "#d62728"
+INVERSION_COLOR = "#b64949"
 
 
 def inversion_spans(frame: pd.DataFrame) -> list[tuple[pd.Timestamp, pd.Timestamp]]:
@@ -378,10 +380,7 @@ def render_png(rebased: pd.DataFrame, out_path: Path) -> None:
     tickers = rebased.attrs.get("tickers", [])
     level_cols, yield_cols = _split_columns(rebased.columns)
 
-    try:
-        plt.style.use("seaborn-v0_8-whitegrid")
-    except OSError:
-        plt.style.use("ggplot")
+    matplotlib_style()
     # Three panels on a shared x-axis: rebased levels on top, raw Treasury yields in
     # the middle, and S&P-÷-liquidity ratios at the bottom. The top panel is tallest
     # (it carries the aggregate + M2 + MMF + S&P lines).
@@ -391,15 +390,15 @@ def render_png(rebased: pd.DataFrame, out_path: Path) -> None:
     )
 
     for col in level_cols:
-        ax_lvl.plot(rebased.index, rebased[col], label=col, color=SERIES_COLORS[col],
+        ax_lvl.plot(rebased.index, rebased[col], label=compact_label(col), color=SERIES_COLORS[col],
                     linewidth=2.4 if col.startswith("Aggregate") else 1.7,
                     marker="o", markersize=4)
-    ax_lvl.axhline(100.0, color="#999999", linewidth=0.8, linestyle="--", alpha=0.7, zorder=1)
+    ax_lvl.axhline(100.0, color="#8a989b", linewidth=0.8, linestyle="--", alpha=0.7, zorder=1)
     ax_lvl.set_ylabel(f"Index (100 = level at {anchor:%Y-%m-%d})", fontsize=10)
-    ax_lvl.legend(loc="upper left", frameon=True, fontsize=9)
+    ax_lvl.legend(loc="upper left", frameon=False, fontsize=9)
 
     for col in yield_cols:
-        ax_yld.plot(rebased.index, rebased[col], label=col, color=SERIES_COLORS[col],
+        ax_yld.plot(rebased.index, rebased[col], label=compact_label(col), color=SERIES_COLORS[col],
                     linewidth=1.7, marker="o", markersize=4)
 
     # Bottom panel: S&P 500 ÷ liquidity, rebased to 100. The static PNG shows every
@@ -412,10 +411,10 @@ def render_png(rebased: pd.DataFrame, out_path: Path) -> None:
         ax_ratio.plot(series.index, _rebase_to_anchor(series, anchor),
                       label=f"S&P 500 ÷ {m['name']}", color=m["color"],
                       linewidth=1.9, marker="o", markersize=4)
-    ax_ratio.axhline(100.0, color="#999999", linewidth=0.8, linestyle="--", alpha=0.7, zorder=1)
+    ax_ratio.axhline(100.0, color="#8a989b", linewidth=0.8, linestyle="--", alpha=0.7, zorder=1)
     ax_ratio.set_ylabel(f"Index (100 = {anchor:%Y-%m-%d})", fontsize=10)
     if ratio_raw:
-        ax_ratio.legend(loc="upper left", frameon=True, fontsize=9)
+        ax_ratio.legend(loc="upper left", frameon=False, fontsize=9)
 
     # Shade inverted-curve periods as a band across all three panels.
     spans = inversion_spans(rebased)
@@ -425,7 +424,7 @@ def render_png(rebased: pd.DataFrame, out_path: Path) -> None:
                        label=INVERSION_LABEL if (i == 0 and ax is ax_yld) else None)
 
     ax_yld.set_ylabel("Treasury yield (%)", fontsize=10)
-    ax_yld.legend(loc="upper left", frameon=True, fontsize=9, ncol=2)
+    ax_yld.legend(loc="upper left", frameon=False, fontsize=9, ncol=2)
     ax_ratio.set_xlabel("Quarter-end")
     ax_ratio.xaxis.set_major_locator(mdates.MonthLocator(interval=3))
     ax_ratio.xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m"))
@@ -440,13 +439,7 @@ def render_png(rebased: pd.DataFrame, out_path: Path) -> None:
     fig.autofmt_xdate()
     fig.subplots_adjust(left=0.06, right=0.98, top=0.90, bottom=0.13)
 
-    pulled = data_pulled_date()
-    fig.text(
-        0.5, 0.005,
-        (f"Data pulled {pulled} · " if pulled else "")
-        + "Data sources: " + " · ".join(f"{label} ({url})" for label, url in data_sources()),
-        ha="center", va="bottom", fontsize=6.0, color="#666666",
-    )
+    png_sources(fig, data_sources(), data_pulled_date())
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(out_path, bbox_inches="tight")
@@ -476,7 +469,7 @@ def render_html(rebased: pd.DataFrame, out_path: Path) -> None:
     for col in level_cols:
         fig.add_trace(
             go.Scatter(
-                x=rebased.index, y=rebased[col], name=col, legendgroup="levels",
+                x=rebased.index, y=rebased[col], name=compact_label(col), legendgroup="levels",
                 mode="lines+markers",
                 line=dict(color=SERIES_COLORS[col], width=2.6 if col.startswith("Aggregate") else 1.7),
                 marker=dict(size=5),
@@ -487,7 +480,7 @@ def render_html(rebased: pd.DataFrame, out_path: Path) -> None:
     for col in yield_cols:
         fig.add_trace(
             go.Scatter(
-                x=rebased.index, y=rebased[col], name=col, legendgroup="yields",
+                x=rebased.index, y=rebased[col], name=compact_label(col), legendgroup="yields",
                 mode="lines+markers",
                 line=dict(color=SERIES_COLORS[col], width=1.7),
                 marker=dict(size=5),
@@ -496,7 +489,7 @@ def render_html(rebased: pd.DataFrame, out_path: Path) -> None:
             row=2, col=1,
         )
 
-    fig.add_hline(y=100.0, line=dict(color="#999999", width=0.8, dash="dash"), row=1, col=1)
+    fig.add_hline(y=100.0, line=dict(color="#8a989b", width=0.8, dash="dash"), row=1, col=1)
 
     # Inverted-curve periods get a full-height band across every panel (added below,
     # once all three panels have traces), plus one dummy trace so the shading gets a
@@ -505,10 +498,10 @@ def render_html(rebased: pd.DataFrame, out_path: Path) -> None:
     if spans:
         fig.add_trace(
             go.Scatter(
-                x=[None], y=[None], mode="markers", name=INVERSION_LABEL,
+                x=[None], y=[None], mode="markers", name=compact_label(INVERSION_LABEL),
                 legendgroup="yields",
                 marker=dict(size=12, symbol="square",
-                            color="rgba(214,39,40,0.28)", line=dict(width=0)),
+                            color="rgba(182,73,73,0.28)", line=dict(width=0)),
                 hoverinfo="skip",
             ),
             row=2, col=1,
@@ -537,7 +530,7 @@ def render_html(rebased: pd.DataFrame, out_path: Path) -> None:
             row=3, col=1,
         )
     if ratio_traces:
-        fig.add_hline(y=100.0, line=dict(color="#999999", width=0.8, dash="dash"), row=3, col=1)
+        fig.add_hline(y=100.0, line=dict(color="#8a989b", width=0.8, dash="dash"), row=3, col=1)
 
     # Inversion shading, drawn only now: add_vrect skips subplots that hold no traces
     # yet, so shading before the ratio traces existed would band the top two panels
@@ -552,7 +545,7 @@ def render_html(rebased: pd.DataFrame, out_path: Path) -> None:
     # is marked without JS. Added last so it is the final shape -- the JS targets it
     # by index (anchor_shape_idx) to move it on click.
     fig.add_shape(type="line", x0=anchor, x1=anchor, xref="x", yref="paper",
-                  y0=0, y1=1, line=dict(color="#111111", width=1.5, dash="dot"),
+                  y0=0, y1=1, line=dict(color="#182d37", width=1.5, dash="dot"),
                   layer="above")
     anchor_shape_idx = len(fig.layout.shapes) - 1
 
@@ -648,6 +641,8 @@ def render_html(rebased: pd.DataFrame, out_path: Path) -> None:
     fig.update_yaxes(title_text=f"Index (100 @ {anchor:%Y-%m-%d})", fixedrange=False,
                      showspikes=False, row=3, col=1)
 
+    plotly_style(fig, height=1160, bottom=300)
+
     out_path.parent.mkdir(parents=True, exist_ok=True)
     div_id = "fcf-chart"
     html = fig.to_html(
@@ -656,22 +651,12 @@ def render_html(rebased: pd.DataFrame, out_path: Path) -> None:
         div_id=div_id,
         config={"scrollZoom": True, "displaylogo": False, "responsive": True},
     )
-    html = html.replace("<head>", "<head><title>" + PAGE_TITLE + "</title>", 1)
-    html = html.replace("<body>", "<body>" + _rebase_control(rebased), 1)
-    links = " · ".join(
-        f'<a href="{url}" target="_blank" rel="noopener">{label}</a>'
-        for label, url in data_sources()
+    html = chart_page(
+        html, title=PAGE_TITLE,
+        subtitle="Quarterly corporate cash, liquidity, equity prices and Treasury yields. " + basket,
+        sources=data_sources(), pulled=data_pulled_date(), hint=_rebase_control(rebased),
+        script=_rebase_script(rebased, div_id, anchor_shape_idx, ratio_traces),
     )
-    pulled = data_pulled_date()
-    pulled_html = f"Data pulled {pulled} &middot; " if pulled else ""
-    footer = (
-        '<footer style="font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;'
-        'font-size:12px;color:#666;text-align:center;padding:8px 16px 16px">'
-        + pulled_html + "<strong>Data sources:</strong> " + links + "</footer>"
-    )
-    html = html.replace(
-        "</body>",
-        footer + _rebase_script(rebased, div_id, anchor_shape_idx, ratio_traces) + "</body>", 1)
     out_path.write_text(_pretty_plotly_html(html), encoding="utf-8")
 
 
@@ -680,12 +665,11 @@ def _rebase_control(rebased: pd.DataFrame) -> str:
     _rebase_script); the current anchor is shown here and updated live."""
     anchor = rebased.attrs["anchor"]
     return (
-        '<div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;'
-        'font-size:13px;color:#333;text-align:center;padding:10px 16px 0">'
-        "\U0001f4cd <strong>Click the chart</strong> to rebase the levels and ratio "
-        'panels to that quarter &mdash; anchor: <span id="rebase-anchor-label" '
-        f'style="font-variant-numeric:tabular-nums">{anchor:%Y-%m-%d}</span></div>'
+        '<p class="chart-hint"><strong>Click the chart</strong> to rebase levels and ratios '
+        'to that quarter. Anchor: <span id="rebase-anchor-label">'
+        f'{anchor:%Y-%m-%d}</span></p>'
     )
+
 
 
 def _rebase_script(rebased: pd.DataFrame, div_id: str, anchor_shape_idx: int,

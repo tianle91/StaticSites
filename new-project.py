@@ -256,15 +256,17 @@ HTML = """<!DOCTYPE html>
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>__TITLE__</title>
 <style>
-  body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
-  main { max-width: 760px; margin: 40px auto; padding: 0 16px; }
-  h1 { font-size: 20px; margin: 0 0 4px; }
+  body { margin: 0; background: #f5f6f3; color: #182d37;
+    font: 14px/1.6 system-ui, -apple-system, Segoe UI, sans-serif; }
+  main { max-width: 1200px; margin: auto; padding: 35px 28px; }
+  h1 { font-size: clamp(27px, 3.5vw, 38px); line-height: 1.25; margin: 0 0 8px; }
   h2 { font-size: 14px; margin: 24px 0 6px; }
-  p.meta { color: #555; font-size: 13px; margin: 0 0 20px; }
+  p.meta { color: #596b71; font-size: 14px; margin: 0 0 20px; }
   li { margin: 4px 0; }
-  footer.sources { margin-top: 28px; border-top: 1px solid #eee; padding-top: 12px;
-    font-size: 13px; color: #555; }
-  footer.sources a { color: #1f78b4; }
+  footer.sources { margin-top: 28px; border-top: 1px solid #dce2df; padding-top: 12px;
+    font-size: 11px; color: #596b71; }
+  footer.sources a { color: #116965; }
+  @media (max-width: 640px) { main { padding: 23px 14px; } }
 </style>
 </head>
 <body>

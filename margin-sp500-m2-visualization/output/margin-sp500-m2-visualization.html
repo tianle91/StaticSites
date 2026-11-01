@@ -1,18 +1,46 @@
-<html>
-<head><title>Margin Debt vs. the S&amp;P 500, M2, CPI &amp; PPI</title><meta charset="utf-8" /></head>
-<body>
-    <div style="height:100%; width:100%;">                        <script>window.PlotlyConfig = {MathJaxConfig: 'local'};</script>
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Margin Debt vs. the S&amp;P 500, M2, CPI &amp; PPI</title><style>/* Project-local copy of the chart page convention in the repository README. */
+:root { --ink:#182d37; --muted:#596b71; --paper:#f5f6f3; --surface:#fff; --line:#dce2df; --accent:#116965; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--paper); color:var(--ink); font:14px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+main { max-width:1200px; margin:auto; padding:35px 28px; }
+header { margin-bottom:23px; }
+.eyebrow { color:var(--accent); font-size:10px; font-weight:700; letter-spacing:1.8px; margin:0 0 5px; }
+h1 { font-size:clamp(27px,3.5vw,38px); font-weight:650; letter-spacing:-1px; line-height:1.25; margin:0 0 8px; }
+.subtitle { color:var(--muted); margin:0; font-size:14px; }
+a { color:var(--accent); text-underline-offset:3px; }
+.explorer { background:var(--surface); border:1px solid var(--line); border-radius:7px; padding:20px 12px; min-width:0; }
+.chart-hint { margin:0 8px 8px; color:var(--muted); font-size:12px; }
+.chart-hint span { font-variant-numeric:tabular-nums; color:var(--ink); }
+.hint,footer { color:var(--muted); font-size:11px; margin:12px 2px 0; }
+summary { cursor:pointer; width:fit-content; }
+summary:focus-visible,a:focus-visible { outline:3px solid var(--accent); outline-offset:3px; }
+footer ul { padding-left:18px; }
+footer li { margin:5px 0; }
+@media(max-width:640px) {
+  main { padding:23px 14px; }
+  .explorer { padding:12px 0; }
+  .subtitle { font-size:12px; }
+  .chart-hint { font-size:11px; }
+}
+</style></head>
+<body><main><header><p class="eyebrow">MARKETS & LIQUIDITY</p>
+<h1>Margin Debt vs. the S&amp;P 500, M2, CPI &amp; PPI</h1><p class="subtitle">Monthly levels rebased to 100 using each series on or before 2020-02-29.</p></header>
+<section class="explorer" aria-label="Interactive chart">
+    <div style="height:720px; width:100%;">                        <script>window.PlotlyConfig = {MathJaxConfig: 'local'};</script>
         <script charset="utf-8" src="https://cdn.plot.ly/plotly-3.7.0.min.js" integrity="sha256-jvTGqxNp8AGWEcvNLVuKr+8j5dGe9Yw51LQkmDH+IYA=" crossorigin="anonymous"></script>                <div id="macro-series-chart" class="plotly-graph-div" style="height:100%; width:100%;"></div>            <script>                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("macro-series-chart")) {                    Plotly.newPlot(
 "macro-series-chart",
 [
   {
     "hovertemplate": "%{y:.1f}\u003cextra>M2 (FRED: M2SL)\u003c/extra>",
     "line": {
-      "color": "#1f77b4",
+      "color": "#466aa0",
       "width": 1.8
     },
     "mode": "lines",
-    "name": "M2 (FRED: M2SL)",
+    "name": "M2",
     "x": [
       "2000-01-31T00:00:00.000000",
       "2000-02-29T00:00:00.000000",
@@ -345,11 +373,11 @@
   {
     "hovertemplate": "%{y:.1f}\u003cextra>CPI (FRED: CPIAUCSL)\u003c/extra>",
     "line": {
-      "color": "#ff7f0e",
+      "color": "#806493",
       "width": 1.8
     },
     "mode": "lines",
-    "name": "CPI (FRED: CPIAUCSL)",
+    "name": "CPI",
     "x": [
       "2000-01-31T00:00:00.000000",
       "2000-02-29T00:00:00.000000",
@@ -682,11 +710,11 @@
   {
     "hovertemplate": "%{y:.1f}\u003cextra>PPI (FRED: PPIACO)\u003c/extra>",
     "line": {
-      "color": "#9467bd",
+      "color": "#70868b",
       "width": 1.8
     },
     "mode": "lines",
-    "name": "PPI (FRED: PPIACO)",
+    "name": "PPI",
     "x": [
       "2000-01-31T00:00:00.000000",
       "2000-02-29T00:00:00.000000",
@@ -1019,11 +1047,11 @@
   {
     "hovertemplate": "%{y:.1f}\u003cextra>Margin debit (FINRA, $m)\u003c/extra>",
     "line": {
-      "color": "#d62728",
+      "color": "#aa5633",
       "width": 1.8
     },
     "mode": "lines",
-    "name": "Margin debit (FINRA, $m)",
+    "name": "Margin debit",
     "x": [
       "2000-01-31T00:00:00.000000",
       "2000-02-29T00:00:00.000000",
@@ -1356,11 +1384,11 @@
   {
     "hovertemplate": "%{y:.1f}\u003cextra>S&P 500 (^GSPC, month-end)\u003c/extra>",
     "line": {
-      "color": "#2ca02c",
+      "color": "#116965",
       "width": 1.8
     },
     "mode": "lines",
-    "name": "S&P 500 (^GSPC, month-end)",
+    "name": "S&P 500",
     "x": [
       "2000-01-31T00:00:00.000000",
       "2000-02-29T00:00:00.000000",
@@ -2471,7 +2499,7 @@
   "shapes": [
     {
       "line": {
-        "color": "#7f7f7f",
+        "color": "#8a989b",
         "dash": "dot",
         "width": 0.9
       },
@@ -2485,7 +2513,7 @@
     },
     {
       "line": {
-        "color": "#7f7f7f",
+        "color": "#8a989b",
         "dash": "dot",
         "width": 0.9
       },
@@ -2499,7 +2527,7 @@
     },
     {
       "line": {
-        "color": "#7f7f7f",
+        "color": "#8a989b",
         "dash": "dot",
         "width": 0.9
       },
@@ -2513,7 +2541,7 @@
     },
     {
       "line": {
-        "color": "#7f7f7f",
+        "color": "#8a989b",
         "dash": "dot",
         "width": 0.9
       },
@@ -2527,7 +2555,7 @@
     },
     {
       "line": {
-        "color": "#7f7f7f",
+        "color": "#8a989b",
         "dash": "dot",
         "width": 0.9
       },
@@ -2541,7 +2569,7 @@
     },
     {
       "line": {
-        "color": "#7f7f7f",
+        "color": "#8a989b",
         "dash": "dot",
         "width": 0.9
       },
@@ -2555,7 +2583,7 @@
     },
     {
       "line": {
-        "color": "#7f7f7f",
+        "color": "#8a989b",
         "dash": "dot",
         "width": 0.9
       },
@@ -2569,7 +2597,7 @@
     },
     {
       "line": {
-        "color": "#7f7f7f",
+        "color": "#8a989b",
         "dash": "dot",
         "width": 0.9
       },
@@ -2583,7 +2611,7 @@
     },
     {
       "line": {
-        "color": "#7f7f7f",
+        "color": "#8a989b",
         "dash": "dot",
         "width": 0.9
       },
@@ -2599,8 +2627,9 @@
   "annotations": [
     {
       "font": {
-        "color": "#444444",
-        "size": 9
+        "color": "#182d37",
+        "size": 12,
+        "family": "-apple-system,BlinkMacSystemFont,Segoe UI,Arial,sans-serif"
       },
       "showarrow": false,
       "text": "Dot-com peak",
@@ -2614,8 +2643,9 @@
     },
     {
       "font": {
-        "color": "#444444",
-        "size": 9
+        "color": "#182d37",
+        "size": 12,
+        "family": "-apple-system,BlinkMacSystemFont,Segoe UI,Arial,sans-serif"
       },
       "showarrow": false,
       "text": "9/11",
@@ -2629,8 +2659,9 @@
     },
     {
       "font": {
-        "color": "#444444",
-        "size": 9
+        "color": "#182d37",
+        "size": 12,
+        "family": "-apple-system,BlinkMacSystemFont,Segoe UI,Arial,sans-serif"
       },
       "showarrow": false,
       "text": "Lehman",
@@ -2644,8 +2675,9 @@
     },
     {
       "font": {
-        "color": "#444444",
-        "size": 9
+        "color": "#182d37",
+        "size": 12,
+        "family": "-apple-system,BlinkMacSystemFont,Segoe UI,Arial,sans-serif"
       },
       "showarrow": false,
       "text": "US downgrade",
@@ -2659,8 +2691,9 @@
     },
     {
       "font": {
-        "color": "#444444",
-        "size": 9
+        "color": "#182d37",
+        "size": 12,
+        "family": "-apple-system,BlinkMacSystemFont,Segoe UI,Arial,sans-serif"
       },
       "showarrow": false,
       "text": "Pre-COVID peak",
@@ -2674,8 +2707,9 @@
     },
     {
       "font": {
-        "color": "#444444",
-        "size": 9
+        "color": "#182d37",
+        "size": 12,
+        "family": "-apple-system,BlinkMacSystemFont,Segoe UI,Arial,sans-serif"
       },
       "showarrow": false,
       "text": "COVID low",
@@ -2689,8 +2723,9 @@
     },
     {
       "font": {
-        "color": "#444444",
-        "size": 9
+        "color": "#182d37",
+        "size": 12,
+        "family": "-apple-system,BlinkMacSystemFont,Segoe UI,Arial,sans-serif"
       },
       "showarrow": false,
       "text": "2022 drawdown",
@@ -2704,8 +2739,9 @@
     },
     {
       "font": {
-        "color": "#444444",
-        "size": 9
+        "color": "#182d37",
+        "size": 12,
+        "family": "-apple-system,BlinkMacSystemFont,Segoe UI,Arial,sans-serif"
       },
       "showarrow": false,
       "text": "Fed 75 bp",
@@ -2719,8 +2755,9 @@
     },
     {
       "font": {
-        "color": "#444444",
-        "size": 9
+        "color": "#182d37",
+        "size": 12,
+        "family": "-apple-system,BlinkMacSystemFont,Segoe UI,Arial,sans-serif"
       },
       "showarrow": false,
       "text": "SVB",
@@ -2733,24 +2770,26 @@
       "yref": "y domain"
     }
   ],
-  "title": {
-    "font": {
-      "size": 14
-    },
-    "text": "Margin, S&P 500, M2, CPI, and PPI (rebased to 100 using each series level on or before 2020-02-29; anchor date 2020-02-20)"
-  },
+  "title": {},
   "legend": {
-    "x": 0.01,
-    "y": 0.99,
-    "bgcolor": "rgba(255,255,255,0.8)",
+    "x": 0,
+    "y": -0.3,
+    "bgcolor": "rgba(0,0,0,0)",
     "bordercolor": "#cccccc",
-    "borderwidth": 1
+    "borderwidth": 0,
+    "font": {
+      "size": 11,
+      "color": "#182d37"
+    },
+    "orientation": "h",
+    "xanchor": "left",
+    "yanchor": "top"
   },
   "margin": {
-    "l": 70,
+    "l": 76,
     "r": 30,
-    "t": 110,
-    "b": 60
+    "t": 95,
+    "b": 220
   },
   "hovermode": "x unified",
   "dragmode": "zoom",
@@ -2781,16 +2820,31 @@
       "type": "buttons",
       "x": 1.0,
       "xanchor": "right",
-      "y": 1.12
+      "y": 1.12,
+      "font": {
+        "family": "-apple-system,BlinkMacSystemFont,Segoe UI,Arial,sans-serif",
+        "size": 11,
+        "color": "#182d37"
+      },
+      "bgcolor": "#ffffff",
+      "bordercolor": "#dce2df",
+      "borderwidth": 1
     }
   ],
   "xaxis": {
     "title": {
-      "text": "Month-end"
+      "text": "Month-end",
+      "font": {
+        "size": 12,
+        "color": "#596b71"
+      }
     },
     "rangeslider": {
       "visible": true,
-      "thickness": 0.06
+      "thickness": 0.06,
+      "bgcolor": "#f5f6f3",
+      "bordercolor": "#dce2df",
+      "borderwidth": 1
     },
     "showspikes": true,
     "spikemode": "across",
@@ -2819,16 +2873,61 @@
           "label": "All",
           "step": "all"
         }
-      ]
-    }
+      ],
+      "font": {
+        "size": 11,
+        "color": "#182d37"
+      },
+      "bgcolor": "#f5f6f3",
+      "activecolor": "#dce2df",
+      "bordercolor": "#dce2df",
+      "borderwidth": 1
+    },
+    "tickfont": {
+      "size": 11,
+      "color": "#596b71"
+    },
+    "gridcolor": "#dce2df",
+    "zerolinecolor": "#dce2df",
+    "linecolor": "#dce2df",
+    "spikecolor": "#596b71"
   },
   "yaxis": {
     "title": {
-      "text": "Index (100 = value on or before 2020-02-29, by series)"
+      "text": "Index (anchor = 100)",
+      "font": {
+        "size": 12,
+        "color": "#596b71"
+      }
     },
     "fixedrange": false,
-    "showspikes": false
-  }
+    "showspikes": false,
+    "tickfont": {
+      "size": 11,
+      "color": "#596b71"
+    },
+    "gridcolor": "#dce2df",
+    "zerolinecolor": "#dce2df",
+    "linecolor": "#dce2df"
+  },
+  "font": {
+    "family": "-apple-system,BlinkMacSystemFont,Segoe UI,Arial,sans-serif",
+    "size": 12,
+    "color": "#182d37"
+  },
+  "hoverlabel": {
+    "font": {
+      "family": "-apple-system,BlinkMacSystemFont,Segoe UI,Arial,sans-serif",
+      "size": 12,
+      "color": "#ffffff"
+    },
+    "bgcolor": "#182d37",
+    "bordercolor": "#182d37"
+  },
+  "height": 720,
+  "autosize": true,
+  "paper_bgcolor": "#ffffff",
+  "plot_bgcolor": "#ffffff"
 },
 {
   "scrollZoom": true,
@@ -2836,5 +2935,7 @@
   "responsive": true
 }
 )                };            </script>        </div>
-<footer style="font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;font-size:12px;color:#666;text-align:center;padding:8px 16px 16px">Data pulled 2026-10-25 &middot; <strong>Data sources:</strong> <a href="https://www.finra.org/investors/learn-to-invest/advanced-investing/margin-statistics" target="_blank" rel="noopener">FINRA margin statistics</a> · <a href="https://fred.stlouisfed.org/series/M2SL" target="_blank" rel="noopener">FRED M2 (M2SL)</a> · <a href="https://fred.stlouisfed.org/series/CPIAUCSL" target="_blank" rel="noopener">FRED CPI (CPIAUCSL)</a> · <a href="https://fred.stlouisfed.org/series/PPIACO" target="_blank" rel="noopener">FRED PPI (PPIACO)</a> · <a href="https://finance.yahoo.com/quote/%5EGSPC" target="_blank" rel="noopener">S&P 500 via Yahoo Finance (^GSPC)</a></footer></body>
-</html>
+</section>
+<p class="hint">Drag to zoom · Double-click to reset · Click legend entries to toggle series</p>
+<footer><details><summary>Data sources</summary><p>Data pulled 2026-10-25</p><ul><li><a href="https://www.finra.org/investors/learn-to-invest/advanced-investing/margin-statistics" target="_blank" rel="noopener">FINRA margin statistics</a></li><li><a href="https://fred.stlouisfed.org/series/M2SL" target="_blank" rel="noopener">FRED M2 (M2SL)</a></li><li><a href="https://fred.stlouisfed.org/series/CPIAUCSL" target="_blank" rel="noopener">FRED CPI (CPIAUCSL)</a></li><li><a href="https://fred.stlouisfed.org/series/PPIACO" target="_blank" rel="noopener">FRED PPI (PPIACO)</a></li><li><a href="https://finance.yahoo.com/quote/%5EGSPC" target="_blank" rel="noopener">S&amp;P 500 via Yahoo Finance (^GSPC)</a></li></ul></details></footer>
+</main></body></html>

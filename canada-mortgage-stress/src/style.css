@@ -23,8 +23,8 @@ button:focus-visible,select:focus-visible,svg:focus-visible,summary:focus-visibl
 .chart svg { display:block; width:100%; height:auto; touch-action:pan-y; }
 .gridline { stroke:var(--line); stroke-width:1; }
 .vertical-grid { stroke:var(--line); stroke-width:1; stroke-dasharray:2 4; }
-.axis { font-size:10px; fill:var(--muted); }
-.axis-title { font-size:10px; font-weight:600; fill:var(--muted); }
+.axis { font-size:11px; fill:var(--muted); }
+.axis-title { font-size:11px; font-weight:600; fill:var(--muted); }
 .bank-axis { fill:var(--bank); }.price-axis { fill:var(--price); }
 .series-line { fill:none; stroke-width:2.4; stroke-linecap:round; stroke-linejoin:round; }
 .inspection { background:var(--paper); border-radius:4px; padding:10px 13px; margin-top:10px; }

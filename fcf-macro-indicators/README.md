@@ -36,6 +36,20 @@ The chart is **three panels sharing one x-axis**:
 
 ![free cash flow vs. M2, the S&P 500, and the Treasury curve](output/fcf-macro-indicators.png)
 
+## Chart styling
+
+The HTML and PNG follow the repository's chart interface convention: a light
+page, white plotting surface, system fonts on the web, muted gridlines and a
+consistent metric palette. S&P 500 is teal and M2 is blue in both macro projects.
+The interactive page keeps its analytical controls and places the legend below
+the data, with linked sources in a collapsible footer. The Plotly runtime still
+loads from its existing CDN; the build itself remains offline.
+
+`src/chart_style.py` and `src/chart.css` are project-local copies. They never
+import another project's theme. Rebuild HTML after changing either file; the
+Makefile tracks those inputs. PNG styling uses the same palette and neutral
+colors with Matplotlib's bundled DejaVu Sans font.
+
 ## Usage
 
 Render both charts from the committed `data/series.csv` (offline):

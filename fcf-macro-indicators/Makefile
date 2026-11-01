@@ -9,8 +9,8 @@ SCRIPT := src/plot_fcf_macro.py
 
 include ../python-project.mk
 
-$(OUT): $(SCRIPT) data/series.csv $(wildcard data/generated_at.txt data/fcf_source.txt)
+$(OUT): $(SCRIPT) src/chart_style.py src/chart.css data/series.csv $(wildcard data/generated_at.txt data/fcf_source.txt)
 	$(PY) $(SCRIPT) -o $(OUT)
 
-$(OUT_PNG): $(SCRIPT) data/series.csv $(wildcard data/generated_at.txt data/fcf_source.txt)
+$(OUT_PNG): $(SCRIPT) src/chart_style.py data/series.csv $(wildcard data/generated_at.txt data/fcf_source.txt)
 	$(PY) $(SCRIPT) -o $(OUT_PNG)

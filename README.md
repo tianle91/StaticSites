@@ -22,6 +22,27 @@ so build them within the repository checkout.
 | [trca-flood-plain-map/](trca-flood-plain-map/) | TRCA riverine flood plain polygons and attributed floodline boundaries, filterable by watershed and source. |
 | [union-station-transit-isochrone/](union-station-transit-isochrone/) | The morning commute-shed of Toronto's Union Station — where you can reach Union by transit in 30 / 60 / 90 / 120 min. |
 
+## Chart interface convention
+
+Chart projects use a warm light page (`#f5f6f3`), a white chart surface, dark
+slate text (`#182d37`), muted labels (`#596b71`) and subtle gridlines (`#dce2df`).
+Use system sans-serif typography, a readable title and short subtitle above the
+plot, a 1200px maximum page width, and compact linked sources in a disclosure
+below it. Chart labels should stay legible at 11–12px. Match PNG typography,
+backgrounds and colors to the interactive version where a PNG is provided.
+
+Use consistent colors for shared metrics: S&P 500 / primary series teal
+(`#116965`), M2 blue (`#466aa0`), margin debt / secondary series rust (`#aa5633`),
+CPI purple (`#806493`) and PPI slate (`#70868b`). Keep lines about 2px wide,
+forecasts dashed, legends outside the plotted data where practical, and distinct
+units explicitly labelled. Multi-panel plots share a horizontal time scale.
+
+Keep controls that serve each chart's analysis (zoom, rebasing, scale or ratio
+selection); styling does not require adding those controls to simpler charts.
+Duplicate `src/chart_style.py` / `src/chart.css` within each Plotly project;
+the SVG chart implements the same convention locally. Projects never import a
+shared runtime theme or depend on another project's files.
+
 ## Map interface convention
 
 Map projects use a dark teal title bar, a desktop sidebar and an expandable

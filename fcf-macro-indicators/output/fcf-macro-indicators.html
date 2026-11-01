@@ -1,7 +1,35 @@
-<html>
-<head><title>Free Cash Flow vs. M2, the S&amp;P 500 &amp; the Treasury Curve</title><meta charset="utf-8" /></head>
-<body><div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;font-size:13px;color:#333;text-align:center;padding:10px 16px 0">📍 <strong>Click the chart</strong> to rebase the levels and ratio panels to that quarter &mdash; anchor: <span id="rebase-anchor-label" style="font-variant-numeric:tabular-nums">2014-12-31</span></div>
-    <div style="height:100%; width:100%;">                        <script>window.PlotlyConfig = {MathJaxConfig: 'local'};</script>
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Free Cash Flow vs. M2, the S&amp;P 500 &amp; the Treasury Curve</title><style>/* Project-local copy of the chart page convention in the repository README. */
+:root { --ink:#182d37; --muted:#596b71; --paper:#f5f6f3; --surface:#fff; --line:#dce2df; --accent:#116965; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--paper); color:var(--ink); font:14px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+main { max-width:1200px; margin:auto; padding:35px 28px; }
+header { margin-bottom:23px; }
+.eyebrow { color:var(--accent); font-size:10px; font-weight:700; letter-spacing:1.8px; margin:0 0 5px; }
+h1 { font-size:clamp(27px,3.5vw,38px); font-weight:650; letter-spacing:-1px; line-height:1.25; margin:0 0 8px; }
+.subtitle { color:var(--muted); margin:0; font-size:14px; }
+a { color:var(--accent); text-underline-offset:3px; }
+.explorer { background:var(--surface); border:1px solid var(--line); border-radius:7px; padding:20px 12px; min-width:0; }
+.chart-hint { margin:0 8px 8px; color:var(--muted); font-size:12px; }
+.chart-hint span { font-variant-numeric:tabular-nums; color:var(--ink); }
+.hint,footer { color:var(--muted); font-size:11px; margin:12px 2px 0; }
+summary { cursor:pointer; width:fit-content; }
+summary:focus-visible,a:focus-visible { outline:3px solid var(--accent); outline-offset:3px; }
+footer ul { padding-left:18px; }
+footer li { margin:5px 0; }
+@media(max-width:640px) {
+  main { padding:23px 14px; }
+  .explorer { padding:12px 0; }
+  .subtitle { font-size:12px; }
+  .chart-hint { font-size:11px; }
+}
+</style></head>
+<body><main><header><p class="eyebrow">MARKETS & LIQUIDITY</p>
+<h1>Free Cash Flow vs. M2, the S&amp;P 500 &amp; the Treasury Curve</h1><p class="subtitle">Quarterly corporate cash, liquidity, equity prices and Treasury yields. Aggregates sum 5 companies: AAPL, MSFT, GOOGL, AMZN, META</p></header>
+<section class="explorer" aria-label="Interactive chart"><p class="chart-hint"><strong>Click the chart</strong> to rebase levels and ratios to that quarter. Anchor: <span id="rebase-anchor-label">2014-12-31</span></p>
+    <div style="height:1160px; width:100%;">                        <script>window.PlotlyConfig = {MathJaxConfig: 'local'};</script>
         <script charset="utf-8" src="https://cdn.plot.ly/plotly-3.7.0.min.js" integrity="sha256-jvTGqxNp8AGWEcvNLVuKr+8j5dGe9Yw51LQkmDH+IYA=" crossorigin="anonymous"></script>                <div id="fcf-chart" class="plotly-graph-div" style="height:100%; width:100%;"></div>            <script>                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("fcf-chart")) {                    Plotly.newPlot(
 "fcf-chart",
 [
@@ -9,14 +37,14 @@
     "hovertemplate": "%{y:.1f}\u003cextra>Aggregate FCF (basket sum)\u003c/extra>",
     "legendgroup": "levels",
     "line": {
-      "color": "#d62728",
+      "color": "#b64949",
       "width": 2.6
     },
     "marker": {
       "size": 5
     },
     "mode": "lines+markers",
-    "name": "Aggregate FCF (basket sum)",
+    "name": "Aggregate FCF",
     "x": [
       "2014-12-31T00:00:00.000000",
       "2015-03-31T00:00:00.000000",
@@ -77,14 +105,14 @@
     "hovertemplate": "%{y:.1f}\u003cextra>Aggregate cash & equivalents (basket sum)\u003c/extra>",
     "legendgroup": "levels",
     "line": {
-      "color": "#ff7f0e",
+      "color": "#aa5633",
       "width": 2.6
     },
     "marker": {
       "size": 5
     },
     "mode": "lines+markers",
-    "name": "Aggregate cash & equivalents (basket sum)",
+    "name": "Aggregate cash",
     "x": [
       "2014-12-31T00:00:00.000000",
       "2015-03-31T00:00:00.000000",
@@ -145,14 +173,14 @@
     "hovertemplate": "%{y:.1f}\u003cextra>Money-market-fund assets (FRED: MMMFFAQ027S)\u003c/extra>",
     "legendgroup": "levels",
     "line": {
-      "color": "#17becf",
+      "color": "#317f98",
       "width": 1.7
     },
     "marker": {
       "size": 5
     },
     "mode": "lines+markers",
-    "name": "Money-market-fund assets (FRED: MMMFFAQ027S)",
+    "name": "Money-market funds",
     "x": [
       "2014-12-31T00:00:00.000000",
       "2015-03-31T00:00:00.000000",
@@ -213,14 +241,14 @@
     "hovertemplate": "%{y:.1f}\u003cextra>M2 money supply (FRED: M2SL)\u003c/extra>",
     "legendgroup": "levels",
     "line": {
-      "color": "#1f77b4",
+      "color": "#466aa0",
       "width": 1.7
     },
     "marker": {
       "size": 5
     },
     "mode": "lines+markers",
-    "name": "M2 money supply (FRED: M2SL)",
+    "name": "M2 money supply",
     "x": [
       "2014-12-31T00:00:00.000000",
       "2015-03-31T00:00:00.000000",
@@ -281,14 +309,14 @@
     "hovertemplate": "%{y:.1f}\u003cextra>S&P 500 (^GSPC)\u003c/extra>",
     "legendgroup": "levels",
     "line": {
-      "color": "#2ca02c",
+      "color": "#116965",
       "width": 1.7
     },
     "marker": {
       "size": 5
     },
     "mode": "lines+markers",
-    "name": "S&P 500 (^GSPC)",
+    "name": "S&P 500",
     "x": [
       "2014-12-31T00:00:00.000000",
       "2015-03-31T00:00:00.000000",
@@ -349,14 +377,14 @@
     "hovertemplate": "%{y:.2f}%\u003cextra>3M Treasury yield (FRED: DGS3MO)\u003c/extra>",
     "legendgroup": "yields",
     "line": {
-      "color": "#c5b0d5",
+      "color": "#a79bb5",
       "width": 1.7
     },
     "marker": {
       "size": 5
     },
     "mode": "lines+markers",
-    "name": "3M Treasury yield (FRED: DGS3MO)",
+    "name": "3M Treasury yield",
     "x": [
       "2014-12-31T00:00:00.000000",
       "2015-03-31T00:00:00.000000",
@@ -417,14 +445,14 @@
     "hovertemplate": "%{y:.2f}%\u003cextra>2Y Treasury yield (FRED: DGS2)\u003c/extra>",
     "legendgroup": "yields",
     "line": {
-      "color": "#9467bd",
+      "color": "#806493",
       "width": 1.7
     },
     "marker": {
       "size": 5
     },
     "mode": "lines+markers",
-    "name": "2Y Treasury yield (FRED: DGS2)",
+    "name": "2Y Treasury yield",
     "x": [
       "2014-12-31T00:00:00.000000",
       "2015-03-31T00:00:00.000000",
@@ -485,14 +513,14 @@
     "hovertemplate": "%{y:.2f}%\u003cextra>10Y Treasury yield (FRED: DGS10)\u003c/extra>",
     "legendgroup": "yields",
     "line": {
-      "color": "#6a3d9a",
+      "color": "#5f4778",
       "width": 1.7
     },
     "marker": {
       "size": 5
     },
     "mode": "lines+markers",
-    "name": "10Y Treasury yield (FRED: DGS10)",
+    "name": "10Y Treasury yield",
     "x": [
       "2014-12-31T00:00:00.000000",
       "2015-03-31T00:00:00.000000",
@@ -553,14 +581,14 @@
     "hovertemplate": "%{y:.2f}%\u003cextra>30Y Treasury yield (FRED: DGS30)\u003c/extra>",
     "legendgroup": "yields",
     "line": {
-      "color": "#3f007d",
+      "color": "#382650",
       "width": 1.7
     },
     "marker": {
       "size": 5
     },
     "mode": "lines+markers",
-    "name": "30Y Treasury yield (FRED: DGS30)",
+    "name": "30Y Treasury yield",
     "x": [
       "2014-12-31T00:00:00.000000",
       "2015-03-31T00:00:00.000000",
@@ -621,7 +649,7 @@
     "hoverinfo": "skip",
     "legendgroup": "yields",
     "marker": {
-      "color": "rgba(214,39,40,0.28)",
+      "color": "rgba(182,73,73,0.28)",
       "line": {
         "width": 0
       },
@@ -629,7 +657,7 @@
       "symbol": "square"
     },
     "mode": "markers",
-    "name": "Yield-curve inversion (10Y \u003c 2Y)",
+    "name": "10Y \u003c 2Y inversion",
     "x": [
       null
     ],
@@ -644,7 +672,7 @@
     "hovertemplate": "%{y:.1f}\u003cextra>S&P 500 ÷ M2 money supply\u003c/extra>",
     "legendgroup": "ratio",
     "line": {
-      "color": "#1f77b4",
+      "color": "#466aa0",
       "width": 2.0
     },
     "marker": {
@@ -713,7 +741,7 @@
     "hovertemplate": "%{y:.1f}\u003cextra>S&P 500 ÷ Money-market-fund assets\u003c/extra>",
     "legendgroup": "ratio",
     "line": {
-      "color": "#17becf",
+      "color": "#317f98",
       "width": 2.0
     },
     "marker": {
@@ -1566,7 +1594,21 @@
     "showticklabels": false,
     "showspikes": true,
     "spikemode": "across",
-    "spikethickness": 1
+    "spikethickness": 1,
+    "tickfont": {
+      "size": 11,
+      "color": "#596b71"
+    },
+    "title": {
+      "font": {
+        "size": 12,
+        "color": "#596b71"
+      }
+    },
+    "gridcolor": "#dce2df",
+    "zerolinecolor": "#dce2df",
+    "linecolor": "#dce2df",
+    "spikecolor": "#596b71"
   },
   "yaxis": {
     "anchor": "x",
@@ -1575,10 +1617,21 @@
       1.0
     ],
     "title": {
-      "text": "Index (100 @ 2014-12-31)"
+      "text": "Index (100 @ 2014-12-31)",
+      "font": {
+        "size": 12,
+        "color": "#596b71"
+      }
     },
     "fixedrange": false,
-    "showspikes": false
+    "showspikes": false,
+    "tickfont": {
+      "size": 11,
+      "color": "#596b71"
+    },
+    "gridcolor": "#dce2df",
+    "zerolinecolor": "#dce2df",
+    "linecolor": "#dce2df"
   },
   "xaxis2": {
     "anchor": "y2",
@@ -1590,7 +1643,21 @@
     "showticklabels": false,
     "showspikes": true,
     "spikemode": "across",
-    "spikethickness": 1
+    "spikethickness": 1,
+    "tickfont": {
+      "size": 11,
+      "color": "#596b71"
+    },
+    "title": {
+      "font": {
+        "size": 12,
+        "color": "#596b71"
+      }
+    },
+    "gridcolor": "#dce2df",
+    "zerolinecolor": "#dce2df",
+    "linecolor": "#dce2df",
+    "spikecolor": "#596b71"
   },
   "yaxis2": {
     "anchor": "x2",
@@ -1599,10 +1666,21 @@
       0.5352
     ],
     "title": {
-      "text": "Yield (%)"
+      "text": "Yield (%)",
+      "font": {
+        "size": 12,
+        "color": "#596b71"
+      }
     },
     "fixedrange": false,
-    "showspikes": false
+    "showspikes": false,
+    "tickfont": {
+      "size": 11,
+      "color": "#596b71"
+    },
+    "gridcolor": "#dce2df",
+    "zerolinecolor": "#dce2df",
+    "linecolor": "#dce2df"
   },
   "xaxis3": {
     "anchor": "y3",
@@ -1611,11 +1689,18 @@
       1.0
     ],
     "title": {
-      "text": "Quarter-end"
+      "text": "Quarter-end",
+      "font": {
+        "size": 12,
+        "color": "#596b71"
+      }
     },
     "rangeslider": {
       "visible": true,
-      "thickness": 0.05
+      "thickness": 0.05,
+      "bgcolor": "#f5f6f3",
+      "bordercolor": "#dce2df",
+      "borderwidth": 1
     },
     "showspikes": true,
     "spikemode": "across",
@@ -1644,8 +1729,24 @@
           "label": "All",
           "step": "all"
         }
-      ]
-    }
+      ],
+      "font": {
+        "size": 11,
+        "color": "#182d37"
+      },
+      "bgcolor": "#f5f6f3",
+      "activecolor": "#dce2df",
+      "bordercolor": "#dce2df",
+      "borderwidth": 1
+    },
+    "tickfont": {
+      "size": 11,
+      "color": "#596b71"
+    },
+    "gridcolor": "#dce2df",
+    "zerolinecolor": "#dce2df",
+    "linecolor": "#dce2df",
+    "spikecolor": "#596b71"
   },
   "yaxis3": {
     "anchor": "x3",
@@ -1654,15 +1755,28 @@
       0.2112
     ],
     "title": {
-      "text": "Index (100 @ 2014-12-31)"
+      "text": "Index (100 @ 2014-12-31)",
+      "font": {
+        "size": 12,
+        "color": "#596b71"
+      }
     },
     "fixedrange": false,
-    "showspikes": false
+    "showspikes": false,
+    "tickfont": {
+      "size": 11,
+      "color": "#596b71"
+    },
+    "gridcolor": "#dce2df",
+    "zerolinecolor": "#dce2df",
+    "linecolor": "#dce2df"
   },
   "annotations": [
     {
       "font": {
-        "size": 16
+        "size": 12,
+        "family": "-apple-system,BlinkMacSystemFont,Segoe UI,Arial,sans-serif",
+        "color": "#182d37"
       },
       "showarrow": false,
       "text": "Levels rebased to 100 at 2014-12-31",
@@ -1675,7 +1789,9 @@
     },
     {
       "font": {
-        "size": 16
+        "size": 12,
+        "family": "-apple-system,BlinkMacSystemFont,Segoe UI,Arial,sans-serif",
+        "color": "#182d37"
       },
       "showarrow": false,
       "text": "Treasury yields (%)",
@@ -1688,7 +1804,9 @@
     },
     {
       "font": {
-        "size": 16
+        "size": 12,
+        "family": "-apple-system,BlinkMacSystemFont,Segoe UI,Arial,sans-serif",
+        "color": "#182d37"
       },
       "showarrow": false,
       "text": "S&P 500 ÷ M2 money supply (rebased to 100)\u003cbr>\u003csup>Pro: broadest money measure, decades of history, short (~4-week) lag\u003c/sup>\u003cbr>\u003csup>Con: broad and slow; includes retail savings that don't move prices; weak short-horizon link to equities; 2020 definitional break\u003c/sup>",
@@ -1703,7 +1821,7 @@
   "shapes": [
     {
       "line": {
-        "color": "#999999",
+        "color": "#8a989b",
         "dash": "dash",
         "width": 0.8
       },
@@ -1717,7 +1835,7 @@
     },
     {
       "line": {
-        "color": "#999999",
+        "color": "#8a989b",
         "dash": "dash",
         "width": 0.8
       },
@@ -1730,7 +1848,7 @@
       "yref": "y3"
     },
     {
-      "fillcolor": "#d62728",
+      "fillcolor": "#b64949",
       "layer": "below",
       "line": {
         "width": 0
@@ -1745,7 +1863,7 @@
       "yref": "y domain"
     },
     {
-      "fillcolor": "#d62728",
+      "fillcolor": "#b64949",
       "layer": "below",
       "line": {
         "width": 0
@@ -1760,7 +1878,7 @@
       "yref": "y2 domain"
     },
     {
-      "fillcolor": "#d62728",
+      "fillcolor": "#b64949",
       "layer": "below",
       "line": {
         "width": 0
@@ -1777,7 +1895,7 @@
     {
       "layer": "above",
       "line": {
-        "color": "#111111",
+        "color": "#182d37",
         "dash": "dot",
         "width": 1.5
       },
@@ -1790,23 +1908,27 @@
       "yref": "paper"
     }
   ],
-  "title": {
-    "font": {
-      "size": 14
-    },
-    "text": "Free cash flow & money-market-fund cash vs. M2, the S&P 500, and the Treasury curve\u003cbr>\u003csup>Aggregates sum 5 companies: AAPL, MSFT, GOOGL, AMZN, META\u003c/sup>"
-  },
+  "title": {},
   "legend": {
-    "bgcolor": "rgba(255,255,255,0.8)",
+    "bgcolor": "rgba(0,0,0,0)",
     "bordercolor": "#cccccc",
-    "borderwidth": 1,
-    "groupclick": "toggleitem"
+    "borderwidth": 0,
+    "groupclick": "toggleitem",
+    "font": {
+      "size": 11,
+      "color": "#182d37"
+    },
+    "orientation": "h",
+    "x": 0,
+    "y": -0.3,
+    "xanchor": "left",
+    "yanchor": "top"
   },
   "margin": {
-    "l": 70,
+    "l": 76,
     "r": 30,
-    "t": 110,
-    "b": 60
+    "t": 95,
+    "b": 300
   },
   "hovermode": "x unified",
   "dragmode": "zoom",
@@ -1837,12 +1959,20 @@
       "type": "buttons",
       "x": 1.0,
       "xanchor": "right",
-      "y": 1.14
+      "y": 1.14,
+      "font": {
+        "family": "-apple-system,BlinkMacSystemFont,Segoe UI,Arial,sans-serif",
+        "size": 11,
+        "color": "#182d37"
+      },
+      "bgcolor": "#ffffff",
+      "bordercolor": "#dce2df",
+      "borderwidth": 1
     },
     {
       "active": 0,
-      "bgcolor": "rgba(255,255,255,0.9)",
-      "bordercolor": "#cccccc",
+      "bgcolor": "#ffffff",
+      "bordercolor": "#dce2df",
       "buttons": [
         {
           "args": [
@@ -1895,9 +2025,33 @@
       "x": 0.0,
       "xanchor": "left",
       "y": 1.14,
-      "yanchor": "top"
+      "yanchor": "top",
+      "font": {
+        "family": "-apple-system,BlinkMacSystemFont,Segoe UI,Arial,sans-serif",
+        "size": 11,
+        "color": "#182d37"
+      },
+      "borderwidth": 1
     }
-  ]
+  ],
+  "font": {
+    "family": "-apple-system,BlinkMacSystemFont,Segoe UI,Arial,sans-serif",
+    "size": 12,
+    "color": "#182d37"
+  },
+  "hoverlabel": {
+    "font": {
+      "family": "-apple-system,BlinkMacSystemFont,Segoe UI,Arial,sans-serif",
+      "size": 12,
+      "color": "#ffffff"
+    },
+    "bgcolor": "#182d37",
+    "bordercolor": "#182d37"
+  },
+  "height": 1160,
+  "autosize": true,
+  "paper_bgcolor": "#ffffff",
+  "plot_bgcolor": "#ffffff"
 },
 {
   "scrollZoom": true,
@@ -1905,7 +2059,10 @@
   "responsive": true
 }
 )                };            </script>        </div>
-<footer style="font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;font-size:12px;color:#666;text-align:center;padding:8px 16px 16px">Data pulled 2026-10-25 &middot; <strong>Data sources:</strong> <a href="https://www.sec.gov/edgar/sec-api-documentation" target="_blank" rel="noopener">Company free cash flow (OCF - CapEx) from SEC EDGAR XBRL</a> · <a href="https://fred.stlouisfed.org/series/M2SL" target="_blank" rel="noopener">FRED M2 (M2SL)</a> · <a href="https://fred.stlouisfed.org/series/DGS3MO" target="_blank" rel="noopener">FRED 3M Treasury (DGS3MO)</a> · <a href="https://fred.stlouisfed.org/series/DGS2" target="_blank" rel="noopener">FRED 2Y Treasury (DGS2)</a> · <a href="https://fred.stlouisfed.org/series/DGS10" target="_blank" rel="noopener">FRED 10Y Treasury (DGS10)</a> · <a href="https://fred.stlouisfed.org/series/DGS30" target="_blank" rel="noopener">FRED 30Y Treasury (DGS30)</a> · <a href="https://finance.yahoo.com/quote/%5EGSPC" target="_blank" rel="noopener">S&P 500 via Yahoo Finance (^GSPC)</a></footer><script type="text/javascript">(function(){var D={
+</section>
+<p class="hint">Drag to zoom · Double-click to reset · Click legend entries to toggle series</p>
+<footer><details><summary>Data sources</summary><p>Data pulled 2026-10-25</p><ul><li><a href="https://www.sec.gov/edgar/sec-api-documentation" target="_blank" rel="noopener">Company free cash flow (OCF - CapEx) from SEC EDGAR XBRL</a></li><li><a href="https://fred.stlouisfed.org/series/M2SL" target="_blank" rel="noopener">FRED M2 (M2SL)</a></li><li><a href="https://fred.stlouisfed.org/series/DGS3MO" target="_blank" rel="noopener">FRED 3M Treasury (DGS3MO)</a></li><li><a href="https://fred.stlouisfed.org/series/DGS2" target="_blank" rel="noopener">FRED 2Y Treasury (DGS2)</a></li><li><a href="https://fred.stlouisfed.org/series/DGS10" target="_blank" rel="noopener">FRED 10Y Treasury (DGS10)</a></li><li><a href="https://fred.stlouisfed.org/series/DGS30" target="_blank" rel="noopener">FRED 30Y Treasury (DGS30)</a></li><li><a href="https://finance.yahoo.com/quote/%5EGSPC" target="_blank" rel="noopener">S&amp;P 500 via Yahoo Finance (^GSPC)</a></li></ul></details></footer>
+</main><script type="text/javascript">(function(){var D={
   "dates": [
     "2014-12-31",
     "2015-03-31",
@@ -2315,5 +2472,4 @@
       ]
     }
   ]
-};var gd=document.getElementById("fcf-chart");if(!gd)return;var lbl=document.getElementById("rebase-anchor-label");var times=D.dates.map(function(s){return new Date(s).getTime();});function nearest(x){var t=(typeof x==="string")?new Date(x).getTime():+x;var bi=0,bd=Infinity;for(var i=0;i<times.length;i++){var d=Math.abs(times[i]-t);if(d<bd){bd=d;bi=i;}}return bi;}function reb(vals,b){return vals.map(function(v){return b?100*v/b:null;});}function rebase(ai){var iso=D.dates[ai];var ys=D.labels.map(function(l){var r=D.raw[l];return reb(r,r[ai]);});Plotly.restyle(gd,{y:ys},D.idx);if(D.ratio.length){var rys=D.ratio.map(function(o){return reb(o.raw,o.raw[ai]);});Plotly.restyle(gd,{y:rys},D.ratio.map(function(o){return o.idx;}));}var rl={"yaxis.title.text":"Index (100 @ "+iso+")","yaxis3.title.text":"Index (100 @ "+iso+")","annotations[0].text":"Levels rebased to 100 at "+iso};rl["shapes["+D.shape+"].x0"]=iso;rl["shapes["+D.shape+"].x1"]=iso;Plotly.relayout(gd,rl);if(lbl)lbl.textContent=iso;}gd.on("plotly_click",function(ev){if(!ev||!ev.points||!ev.points.length)return;rebase(nearest(ev.points[0].x));});gd.style.cursor="pointer";})();</script></body>
-</html>
+};var gd=document.getElementById("fcf-chart");if(!gd)return;var lbl=document.getElementById("rebase-anchor-label");var times=D.dates.map(function(s){return new Date(s).getTime();});function nearest(x){var t=(typeof x==="string")?new Date(x).getTime():+x;var bi=0,bd=Infinity;for(var i=0;i<times.length;i++){var d=Math.abs(times[i]-t);if(d<bd){bd=d;bi=i;}}return bi;}function reb(vals,b){return vals.map(function(v){return b?100*v/b:null;});}function rebase(ai){var iso=D.dates[ai];var ys=D.labels.map(function(l){var r=D.raw[l];return reb(r,r[ai]);});Plotly.restyle(gd,{y:ys},D.idx);if(D.ratio.length){var rys=D.ratio.map(function(o){return reb(o.raw,o.raw[ai]);});Plotly.restyle(gd,{y:rys},D.ratio.map(function(o){return o.idx;}));}var rl={"yaxis.title.text":"Index (100 @ "+iso+")","yaxis3.title.text":"Index (100 @ "+iso+")","annotations[0].text":"Levels rebased to 100 at "+iso};rl["shapes["+D.shape+"].x0"]=iso;rl["shapes["+D.shape+"].x1"]=iso;Plotly.relayout(gd,rl);if(lbl)lbl.textContent=iso;}gd.on("plotly_click",function(ev){if(!ev||!ev.points||!ev.points.length)return;rebase(nearest(ev.points[0].x));});gd.style.cursor="pointer";})();</script></body></html>

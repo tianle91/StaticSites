@@ -19,6 +19,8 @@ import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 import pandas as pd
 
+from chart_style import chart_page, compact_label, matplotlib_style, png_sources, plotly_style
+
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT_DIR = ROOT / "output"
 SERIES_CSV = ROOT / "data" / "series.csv"
@@ -128,11 +130,11 @@ def load_series() -> pd.DataFrame:
 
 
 SERIES_COLORS = {
-    "M2 (FRED: M2SL)": "#1f77b4",
-    "CPI (FRED: CPIAUCSL)": "#ff7f0e",
-    "PPI (FRED: PPIACO)": "#9467bd",
-    "Margin debit (FINRA, $m)": "#d62728",
-    "S&P 500 (^GSPC, month-end)": "#2ca02c",
+    "M2 (FRED: M2SL)": "#466aa0",
+    "CPI (FRED: CPIAUCSL)": "#806493",
+    "PPI (FRED: PPIACO)": "#70868b",
+    "Margin debit (FINRA, $m)": "#aa5633",
+    "S&P 500 (^GSPC, month-end)": "#116965",
 }
 
 # Data sources, shown on the rendered chart itself so a reader who only has the
@@ -183,14 +185,11 @@ def render_png(rebased: pd.DataFrame, out_path: Path) -> None:
     anchor = rebased.attrs["anchor"]
     anchor_me = rebased.attrs["anchor_month_end"]
 
-    try:
-        plt.style.use("seaborn-v0_8-whitegrid")
-    except OSError:
-        plt.style.use("ggplot")
+    matplotlib_style()
     fig, ax = plt.subplots(figsize=(14, 8), dpi=140)
 
     for col in rebased.columns:
-        ax.plot(rebased.index, rebased[col], label=col, color=SERIES_COLORS[col], linewidth=1.8)
+        ax.plot(rebased.index, rebased[col], label=compact_label(col), color=SERIES_COLORS[col], linewidth=1.8)
 
     y_min, y_max = rebased.min().min(), rebased.max().max()
     pad = (y_max - y_min) * 0.04
@@ -201,7 +200,7 @@ def render_png(rebased: pd.DataFrame, out_path: Path) -> None:
     for ev_date, label in MARKET_EVENTS:
         if not (rebased.index.min() <= pd.Timestamp(ev_date) <= rebased.index.max()):
             continue
-        ax.axvline(pd.Timestamp(ev_date), color="#7f7f7f", linewidth=0.9, alpha=0.55, zorder=1)
+        ax.axvline(pd.Timestamp(ev_date), color="#8a989b", linewidth=0.9, alpha=0.55, zorder=1)
         y_text = y_max + pad * 0.15 - span * 0.035 * (shown % 9)
         shown += 1
         ax.annotate(
@@ -213,7 +212,7 @@ def render_png(rebased: pd.DataFrame, out_path: Path) -> None:
             va="top",
             ha="right",
             fontsize=7,
-            color="#444444",
+            color="#596b71",
         )
 
     ax.set_title(
@@ -223,25 +222,19 @@ def render_png(rebased: pd.DataFrame, out_path: Path) -> None:
         pad=12,
     )
     ax.set_ylabel(
-        f"Index (100 = value on or before {_month_end(anchor):%Y-%m-%d}, by series)",
+        "Index (anchor = 100)",
         fontsize=10,
     )
     ax.set_xlabel("Month-end")
     ax.xaxis.set_major_locator(mdates.YearLocator(2))
     ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
-    ax.legend(loc="upper left", frameon=True, fontsize=9)
+    ax.legend(loc="upper left", frameon=False, fontsize=9)
     fig.autofmt_xdate()
-    fig.tight_layout(rect=(0, 0.03, 1, 1))
+    fig.tight_layout(rect=(0, 0.07, 1, 1))
 
     # Attribute the data sources on the image itself (URLs can't be clickable in a
     # PNG, but a reader with only the picture can still see where the data is from).
-    pulled = data_pulled_date()
-    fig.text(
-        0.5, 0.005,
-        (f"Data pulled {pulled} · " if pulled else "")
-        + "Data sources: " + " · ".join(f"{label} ({url})" for label, url in DATA_SOURCES),
-        ha="center", va="bottom", fontsize=6.5, color="#666666",
-    )
+    png_sources(fig, DATA_SOURCES, data_pulled_date())
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(out_path, bbox_inches="tight")
@@ -261,7 +254,7 @@ def render_html(rebased: pd.DataFrame, out_path: Path) -> None:
             go.Scatter(
                 x=rebased.index,
                 y=rebased[col],
-                name=col,
+                name=compact_label(col),
                 mode="lines",
                 line=dict(color=SERIES_COLORS[col], width=1.8),
                 hovertemplate="%{y:.1f}<extra>" + col + "</extra>",
@@ -274,10 +267,10 @@ def render_html(rebased: pd.DataFrame, out_path: Path) -> None:
             continue
         fig.add_vline(
             x=ev,
-            line=dict(color="#7f7f7f", width=0.9, dash="dot"),
+            line=dict(color="#8a989b", width=0.9, dash="dot"),
             annotation_text=label,
             annotation_position="top",
-            annotation=dict(textangle=-90, font=dict(size=9, color="#444444"), yanchor="top"),
+            annotation=dict(textangle=-90, font=dict(size=9, color="#596b71"), yanchor="top"),
         )
 
     fig.update_layout(
@@ -325,10 +318,12 @@ def render_html(rebased: pd.DataFrame, out_path: Path) -> None:
         ),
     )
     fig.update_yaxes(
-        title_text=f"Index (100 = value on or before {anchor_me:%Y-%m-%d}, by series)",
+        title_text="Index (anchor = 100)",
         fixedrange=False,
         showspikes=False,
     )
+
+    plotly_style(fig, height=720, bottom=220)
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
     html = fig.to_html(
@@ -342,21 +337,11 @@ def render_html(rebased: pd.DataFrame, out_path: Path) -> None:
     )
     # Plotly's full_html output has an empty <head> with no <title>; give the
     # page one so the browser tab/bookmark isn't blank.
-    html = html.replace("<head>", "<head><title>" + PAGE_TITLE + "</title>", 1)
-    # Append a clickable "Data sources" footer so the standalone page documents
-    # and links its provenance, not just the README.
-    links = " · ".join(
-        f'<a href="{url}" target="_blank" rel="noopener">{label}</a>'
-        for label, url in DATA_SOURCES
+    html = chart_page(
+        html, title=PAGE_TITLE,
+        subtitle=f"Monthly levels rebased to 100 using each series on or before {anchor_me:%Y-%m-%d}.",
+        sources=DATA_SOURCES, pulled=data_pulled_date(),
     )
-    pulled = data_pulled_date()
-    pulled_html = f"Data pulled {pulled} &middot; " if pulled else ""
-    footer = (
-        '<footer style="font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;'
-        'font-size:12px;color:#666;text-align:center;padding:8px 16px 16px">'
-        + pulled_html + "<strong>Data sources:</strong> " + links + "</footer>"
-    )
-    html = html.replace("</body>", footer + "</body>", 1)
     out_path.write_text(_pretty_plotly_html(html), encoding="utf-8")
 
 
