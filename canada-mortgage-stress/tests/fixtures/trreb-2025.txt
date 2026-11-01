@@ -1,0 +1,66 @@
+Toronto	Regional	Real	Estate	Board
+Historic	Annual	Statistics
+
+        Year                       Sales                       Average	Price
+
+        2013                      92,767                         $525,681
+
+        2014                      98,571                         $569,402
+
+        2015                      107,429                        $623,529
+
+        2016                      118,084                        $731,927
+        2017                      96,932                         $823,422
+
+        2018                      82,626                         $784,118
+
+        2019                      94,045                         $812,996
+                                  101,096                        $926,340
+        2020
+        2021                      127,313                       $1,098,087
+
+        2022                      79,589                        $1,193,771
+
+        2023                      69,888                        $1,131,219
+ For	historical	annual	sales	and	average	price	data	over	a	longer	time	frame,
+ https://trreb.ca/files/market-stats/market-watch/historic.pdf
+
+Monthly	Statistics	2024
+        January                     4,308                        $1,028,699
+
+       February                     5,792                        $1,114,829
+         March                      6,740                        $1,125,761
+
+         April                      7,301                        $1,155,260
+          May                       7,205                        $1,167,807
+         June                       6,397                        $1,164,491
+          July                      5,498                        $1,113,116
+        August                      5,091                        $1,077,825
+      September                     5,155                        $1,112,113
+       October                      6,784                        $1,135,694
+
+      November                      5,947                        $1,110,415
+      December                      4,056                        $1,060,496
+
+        Annual                      70,274                       $1,120,241
+Monthly	Statistics	2025
+
+        January                     3,820                        $1,041,171
+       February                     4,128                        $1,086,744
+         March                      4,957                        $1,090,326
+
+         April                      5,557                        $1,106,558
+          May                       6,197                        $1,120,711
+
+         June                       6,193                        $1,102,074
+          July                      6,050                        $1,052,052
+
+        August                      5,172                        $1,021,616
+      September                     5,554                        $1,060,178
+
+       October                      6,111                        $1,053,042
+
+      November                      4,997                        $1,039,626
+      December                      3,697                        $1,006,735
+     Year	to	Date                   62,433                       $1,067,968
+Copyright	2025	Toronto	Regional	Real	Estate	Board

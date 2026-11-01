@@ -1,5 +1,11 @@
 [
   {
+    "slug": "canada-mortgage-stress",
+    "title": "Ontario Mortgage Stress",
+    "description": "monthly Ontario bank mortgage arrears including CMHC forecasts and Toronto-area house prices, plotted over their shared available period.",
+    "output": "canada-mortgage-stress/output/canada-mortgage-stress.html"
+  },
+  {
     "slug": "fcf-macro-indicators",
     "title": "Free cash flow vs. the macro backdrop",
     "description": "quarterly free cash flow and cash balances of a basket of large public companies against M2 money supply, the S&P 500, and the 3M / 2Y / 10Y / 30Y Treasury curve, rebased to a chosen anchor date.",
