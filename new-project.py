@@ -149,6 +149,8 @@ FILES["Makefile"] = '''\
 # Shared Python/uv targets live in ../python-project.mk; build rules stay here.
 
 PROJECT := __PROJECT__
+# Map projects can opt in after copying src/snapshot_site.py locally and adding
+# Playwright as a locked dev dependency: SNAPSHOT_SCRIPT := src/snapshot_site.py
 
 include ../python-project.mk
 
@@ -357,6 +359,13 @@ fit controls. Use a desktop sidebar and an expandable mobile bottom panel.
 Copy browser helpers into this project's src/; do not import another project.
 Request location only after a click, show browser accuracy and retry messages,
 and explain what the counts and published coordinates represent.
+
+For review snapshots, copy a map project's `src/snapshot_site.py` locally, add
+`playwright>=1.50` with `uv add --dev`, and set
+`SNAPSHOT_SCRIPT := src/snapshot_site.py` before the shared Make include.
+Then `make snapshot-browser` explicitly installs headless Chromium and
+`make snapshots` rebuilds the page and captures desktop/mobile review images.
+These optional commands require network access; ordinary builds/tests stay offline.
 
 ## Usage
 

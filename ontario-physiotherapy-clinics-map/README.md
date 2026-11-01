@@ -10,11 +10,27 @@ links.
 [Desktop (1440 × 900)](tests/snapshots/desktop.jpg) ·
 [Mobile (390 × 844)](tests/snapshots/mobile.jpg)
 
-Captured on 2026-11-01 from the committed HTML in a desktop browser, using
-light appearance, the default view and layers, an empty search, and no user
-location. The mobile image shows the compact panel. These are manually captured
-visual references; browser chrome and the on-screen keyboard are excluded.
-Map tiles require internet access when recapturing.
+Regenerate both review images explicitly:
+
+```sh
+make snapshot-browser  # one-time headless Chromium download; repeat after Playwright upgrades
+make snapshots         # rebuild from committed inputs, then capture both views
+```
+
+The helper serves this project on a temporary loopback port and uses fresh,
+light-mode Chromium contexts with no search or user location. Mobile uses touch
+emulation and the compact panel; browser chrome and the on-screen keyboard are
+excluded. It waits for initialization, fonts, loaded tiles and settled map motion.
+Both captures must succeed before existing images are replaced. Images are visual
+review references, not automated pixel comparisons; upstream map tiles can change.
+
+Snapshot capture needs network access to the page's map scripts and tiles. It
+never refreshes committed data or installs browsers automatically. Ordinary
+`make`, `make test` and `make data` do not capture snapshots. Python dependencies
+remain locked in this project's environment. On Linux, install Chromium's
+[manual system prerequisites](https://playwright.dev/python/docs/browsers#install-system-dependencies)
+if required; these targets do not install OS packages. Recapture after visual
+changes and commit the reviewed images with them.
 
 ## Map controls
 

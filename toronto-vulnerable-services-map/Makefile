@@ -4,6 +4,8 @@
 
 PROJECT := toronto-vulnerable-services-map
 
+SNAPSHOT_SCRIPT := src/snapshot_site.py
+
 include ../python-project.mk
 
 $(OUT): $(wildcard src/*.html src/*.js src/*.css src/vendor/*) src/build_map.py data/services.json $(wildcard data/shelters.json data/geocode_cache.json)
