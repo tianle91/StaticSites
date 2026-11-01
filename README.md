@@ -12,8 +12,8 @@ so build them within the repository checkout.
 | Project | What it is |
 | --- | --- |
 | [canada-mortgage-stress/](canada-mortgage-stress/) | Monthly Ontario bank mortgage arrears including CMHC forecasts and Toronto-area sale prices in one plot, limited to their shared available period. |
-| [fcf-macro-indicators/](fcf-macro-indicators/) | Quarterly free cash flow and cash balances of a basket of large public companies vs. M2, the S&P 500, and the 3M / 2Y / 10Y / 30Y Treasury curve, rebased to a chosen anchor quarter. Renders a static PNG and a zoomable HTML chart. |
-| [margin-sp500-m2-visualization/](margin-sp500-m2-visualization/) | FINRA margin debt vs. S&P 500, M2, CPI, and PPI, rebased to a configurable anchor date. Renders a static PNG and a zoomable HTML chart. |
+| [fcf-macro-indicators/](fcf-macro-indicators/) | Quarterly free cash flow and cash balances of a basket of large public companies vs. M2, the S&P 500, and the 3M / 2Y / 10Y / 30Y Treasury curve, rebased to a chosen anchor quarter. Renders a static PNG and an interactive HTML chart. |
+| [margin-sp500-m2-visualization/](margin-sp500-m2-visualization/) | FINRA margin debt vs. S&P 500, M2, CPI, and PPI, rebased to a configurable anchor date. Renders a static PNG and an interactive HTML chart. |
 | [ontario-physiotherapy-clinics-map/](ontario-physiotherapy-clinics-map/) | The 255 publicly-funded (OHIP-covered) physiotherapy clinics and hospitals listed by the province, searchable by name / city / postal code. |
 | [toronto-building-permits-map/](toronto-building-permits-map/) | Toronto’s complete active building permit register, searchable by address with status, type and application-year filters. |
 | [toronto-crime-map/](toronto-crime-map/) | Toronto Police reports from 2025 onward, merged by incident ID with seven type layers, text search and approximate intersection locations. |
@@ -21,6 +21,42 @@ so build them within the repository checkout.
 | [toronto-vulnerable-services-map/](toronto-vulnerable-services-map/) | Toronto/Ontario services for vulnerable populations: shelters, warming & respite centres, drop-ins, harm reduction, housing supports. |
 | [trca-flood-plain-map/](trca-flood-plain-map/) | TRCA riverine flood plain polygons and attributed floodline boundaries, filterable by watershed and source. |
 | [union-station-transit-isochrone/](union-station-transit-isochrone/) | The morning commute-shed of Toronto's Union Station — where you can reach Union by transit in 30 / 60 / 90 / 120 min. |
+
+## Chart interface convention
+
+Chart projects use a warm light page (`#f5f6f3`), a white chart surface, dark
+slate text (`#182d37`), muted labels (`#596b71`) and subtle gridlines (`#dce2df`).
+Use system sans-serif typography, a readable title and short subtitle above the
+plot, a 1200px maximum page width, and compact linked sources in a disclosure
+below it. Chart labels should stay legible at 11–12px. Match PNG typography,
+backgrounds and colors to the interactive version where a PNG is provided.
+
+Use consistent colors for shared metrics: S&P 500 / primary series teal
+(`#116965`), M2 blue (`#466aa0`), margin debt / secondary series rust (`#aa5633`),
+CPI purple (`#806493`) and PPI slate (`#70868b`). Keep lines about 2px wide,
+forecasts dashed, legends above the plot, and distinct
+units explicitly labelled. Multi-panel plots share a horizontal time scale.
+
+Use native SVG and page components modelled on the Ontario mortgage chart:
+compact legend above, plot/panels on one time scale, inspection readout below,
+and collapsed definitions/sources. Fit the viewport without a plotting-library
+toolbar. Hover and keyboard inspection expose exact observations; legend taps
+can toggle lines. Keep only essential controls, such as the FCF ratio choice.
+Rebasing is a build-time option in the macro projects.
+
+Duplicate `src/chart_style.py`, `src/chart.css` and `src/chart.js` locally when
+starting another chart project. Do not import a shared runtime theme or another
+project's code. Native charts embed their data/scripts/styles in the HTML and
+make no external runtime requests.
+
+All three chart projects support the same review-image commands as maps:
+`make -C <project> snapshot-browser` explicitly sets up headless Chromium, then
+`make -C <project> snapshots` rebuilds and captures desktop (1440 × 900) and
+mobile (390 × 844) JPEGs in `tests/snapshots/`. Capture waits for every plot,
+readout, fonts and geometry to settle and rejects horizontal overflow or script
+errors. The chart pages are self-contained; capture blocks external requests and
+works offline after setup. Review snapshots show the initial viewport; the
+macro projects' Matplotlib PNGs remain separate static charts.
 
 ## Map interface convention
 

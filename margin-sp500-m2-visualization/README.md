@@ -7,6 +7,56 @@ market events.
 
 ![margin vs S&P 500 vs M2, rebased monthly from 2000](output/margin-sp500-m2-visualization.png)
 
+## Chart components
+
+The page follows the Ontario mortgage chart's compact native SVG layout: a
+legend above the plot, one shared time axis, a synchronized inspection readout
+below, and collapsed definitions/sources. It has no plotting runtime, CDN,
+zoom toolbar, range slider or log-scale controls. The generated HTML is fully
+self-contained, including its data, styles and JavaScript.
+
+The project-local `src/chart.js`, `src/chart.css` and `src/chart_style.py` copies
+keep projects independent. PNG exports continue to use Matplotlib with the same
+palette and neutral colors. The chart anchor remains configurable at build time
+with `--rebase-date`; there is no browser click-to-rebase control.
+
+## Visual snapshots
+
+The Matplotlib PNG in `output/` remains a separate static chart.
+
+[Desktop (1440 × 900)](tests/snapshots/desktop.jpg) ·
+[Mobile (390 × 844)](tests/snapshots/mobile.jpg)
+
+Generate review images of the actual HTML page:
+
+```sh
+make snapshot-browser  # explicit headless Chromium setup; repeat after Playwright upgrades
+make snapshots         # rebuild from committed data, then capture both views
+```
+
+Capture uses a temporary loopback server and fresh light-mode contexts. Mobile
+uses touch emulation. All plots, the inspection readout, fonts and responsive
+geometry must finish rendering before capture; page errors, external requests
+and horizontal overflow fail the command. Both captures must succeed before
+existing review images are replaced. These JPEGs show the initial viewport;
+longer pages continue below the image. They are visual review references, not
+automated pixel comparisons.
+
+The chart pages are self-contained, so capture works offline once the locked
+Python dependencies and browser are installed. Browser downloads happen only
+through `make snapshot-browser`. Ordinary builds, tests and data refreshes do
+not install browsers or capture images. Recapture after visual changes and
+commit the reviewed images. On Linux, install Chromium's
+[manual system prerequisites](https://playwright.dev/python/docs/browsers#install-system-dependencies)
+if needed; the targets do not install OS packages.
+
+Optional browser fixtures check incomplete rendering, moving paths, page errors,
+overflow and blocked external resources without live data or network assets:
+
+```sh
+.venv/bin/python -m pytest -q tests/browser_snapshots.py
+```
+
 ## Usage
 
 Render both charts from the committed `data/series.csv` (offline):
@@ -21,7 +71,7 @@ standard — see the [repo README](../README.md):
 - `make` — render `output/margin-sp500-m2-visualization.{html,png}` from `data/series.csv`
 - `make data` — refetch FINRA / FRED / Yahoo into `data/series.csv`, then re-render
 - `make test` — run the unit tests
-- `make open` — open the zoomable chart
+- `make open` — open the interactive chart
 - `make clean` — remove the generated output
 
 The output format follows the file extension, so the script can also be driven
@@ -31,16 +81,18 @@ directly:
 .venv/bin/python src/plot_macro_series.py -o output/chart.html --rebase-date 2008-09-15
 ```
 
-## Zoomable chart
+## Interactive chart
 
-`make html` writes a self-contained page (plotly from CDN). Open it in a browser
-and:
+Open the committed HTML in a browser:
 
-- **drag** a region to zoom, **scroll** to zoom, **shift-drag** to pan
-- **double-click** to reset the view
-- use the **range slider** under the axis, or the **1y / 5y / 10y / All** buttons
-- toggle **Linear / Log** on the y-axis
-- click legend entries to hide or isolate a series; hover for aligned values
+- Hover or tap any plot, or focus it and use Left/Right/Home/End, to inspect values
+  from the chart's aligned data. The browser does not interpolate new values.
+- Tap legend entries to hide/show lines. Each panel keeps at least one visible.
+- The full available history is always shown. The page fits mobile screens
+  without a separate chart toolbar or horizontal page scrolling.
+
+Optional component-model checks use Node 18+ built-ins only:
+`node tests/test_chart.cjs`. Standard `make test` remains Python-only.
 
 ## Data sources
 

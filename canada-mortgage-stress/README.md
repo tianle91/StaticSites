@@ -50,6 +50,41 @@ refresh validation. Quarterly bank history, annual prices, GTHA private-lender r
 provinces and national consumer-credit series are excluded from the plot. No
 power-of-sale or inventory history is presented.
 
+## Visual snapshots
+
+[Desktop (1440 × 900)](tests/snapshots/desktop.jpg) ·
+[Mobile (390 × 844)](tests/snapshots/mobile.jpg)
+
+Generate review images of the actual HTML page:
+
+```sh
+make snapshot-browser  # explicit headless Chromium setup; repeat after Playwright upgrades
+make snapshots         # rebuild from committed data, then capture both views
+```
+
+Capture uses a temporary loopback server and fresh light-mode contexts. Mobile
+uses touch emulation. All plots, the inspection readout, fonts and responsive
+geometry must finish rendering before capture; page errors, external requests
+and horizontal overflow fail the command. Both captures must succeed before
+existing review images are replaced. These JPEGs show the initial viewport;
+longer pages continue below the image. They are visual review references, not
+automated pixel comparisons.
+
+The chart pages are self-contained, so capture works offline once the locked
+Python dependencies and browser are installed. Browser downloads happen only
+through `make snapshot-browser`. Ordinary builds, tests and data refreshes do
+not install browsers or capture images. Recapture after visual changes and
+commit the reviewed images. On Linux, install Chromium's
+[manual system prerequisites](https://playwright.dev/python/docs/browsers#install-system-dependencies)
+if needed; the targets do not install OS packages.
+
+Optional browser fixtures check incomplete rendering, moving paths, page errors,
+overflow and blocked external resources without live data or network assets:
+
+```sh
+.venv/bin/python -m pytest -q tests/browser_snapshots.py
+```
+
 ## Build, test and refresh
 
 ```sh

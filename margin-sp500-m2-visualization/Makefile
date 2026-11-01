@@ -7,10 +7,12 @@ OUT_PNG := output/$(PROJECT).png
 OUTPUTS := output/$(PROJECT).html $(OUT_PNG)
 SCRIPT := src/plot_macro_series.py
 
+SNAPSHOT_SCRIPT := src/snapshot_site.py
+
 include ../python-project.mk
 
-$(OUT): $(SCRIPT) data/series.csv $(wildcard data/generated_at.txt data/fcf_source.txt)
+$(OUT): $(SCRIPT) src/chart_style.py src/chart.css src/chart.js data/series.csv $(wildcard data/generated_at.txt data/fcf_source.txt)
 	$(PY) $(SCRIPT) -o $(OUT)
 
-$(OUT_PNG): $(SCRIPT) data/series.csv $(wildcard data/generated_at.txt data/fcf_source.txt)
+$(OUT_PNG): $(SCRIPT) src/chart_style.py data/series.csv $(wildcard data/generated_at.txt data/fcf_source.txt)
 	$(PY) $(SCRIPT) -o $(OUT_PNG)

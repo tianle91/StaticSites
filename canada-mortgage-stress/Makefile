@@ -4,6 +4,8 @@
 
 PROJECT := canada-mortgage-stress
 
+SNAPSHOT_SCRIPT := src/snapshot_site.py
+
 include ../python-project.mk
 
 $(OUT): $(wildcard src/*.py src/*.html src/*.css src/*.js) data/series.json

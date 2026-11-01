@@ -1,2319 +1,2416 @@
-<html>
-<head><title>Free Cash Flow vs. M2, the S&amp;P 500 &amp; the Treasury Curve</title><meta charset="utf-8" /></head>
-<body><div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;font-size:13px;color:#333;text-align:center;padding:10px 16px 0">📍 <strong>Click the chart</strong> to rebase the levels and ratio panels to that quarter &mdash; anchor: <span id="rebase-anchor-label" style="font-variant-numeric:tabular-nums">2014-12-31</span></div>
-    <div style="height:100%; width:100%;">                        <script>window.PlotlyConfig = {MathJaxConfig: 'local'};</script>
-        <script charset="utf-8" src="https://cdn.plot.ly/plotly-3.7.0.min.js" integrity="sha256-jvTGqxNp8AGWEcvNLVuKr+8j5dGe9Yw51LQkmDH+IYA=" crossorigin="anonymous"></script>                <div id="fcf-chart" class="plotly-graph-div" style="height:100%; width:100%;"></div>            <script>                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("fcf-chart")) {                    Plotly.newPlot(
-"fcf-chart",
-[
-  {
-    "hovertemplate": "%{y:.1f}\u003cextra>Aggregate FCF (basket sum)\u003c/extra>",
-    "legendgroup": "levels",
-    "line": {
-      "color": "#d62728",
-      "width": 2.6
-    },
-    "marker": {
-      "size": 5
-    },
-    "mode": "lines+markers",
-    "name": "Aggregate FCF (basket sum)",
-    "x": [
-      "2014-12-31T00:00:00.000000",
-      "2015-03-31T00:00:00.000000",
-      "2015-06-30T00:00:00.000000",
-      "2015-09-30T00:00:00.000000",
-      "2015-12-31T00:00:00.000000",
-      "2016-03-31T00:00:00.000000",
-      "2016-06-30T00:00:00.000000",
-      "2016-09-30T00:00:00.000000",
-      "2016-12-31T00:00:00.000000",
-      "2017-03-31T00:00:00.000000",
-      "2017-09-30T00:00:00.000000",
-      "2017-12-31T00:00:00.000000",
-      "2018-03-31T00:00:00.000000",
-      "2018-06-30T00:00:00.000000",
-      "2018-09-30T00:00:00.000000",
-      "2018-12-31T00:00:00.000000",
-      "2019-03-31T00:00:00.000000",
-      "2019-06-30T00:00:00.000000",
-      "2019-09-30T00:00:00.000000",
-      "2019-12-31T00:00:00.000000",
-      "2020-03-31T00:00:00.000000",
-      "2020-06-30T00:00:00.000000",
-      "2020-09-30T00:00:00.000000",
-      "2020-12-31T00:00:00.000000",
-      "2021-03-31T00:00:00.000000",
-      "2021-06-30T00:00:00.000000",
-      "2021-09-30T00:00:00.000000",
-      "2021-12-31T00:00:00.000000",
-      "2022-03-31T00:00:00.000000",
-      "2022-06-30T00:00:00.000000",
-      "2022-09-30T00:00:00.000000",
-      "2022-12-31T00:00:00.000000",
-      "2023-03-31T00:00:00.000000",
-      "2023-06-30T00:00:00.000000",
-      "2023-09-30T00:00:00.000000",
-      "2023-12-31T00:00:00.000000",
-      "2024-03-31T00:00:00.000000",
-      "2024-06-30T00:00:00.000000",
-      "2024-09-30T00:00:00.000000",
-      "2024-12-31T00:00:00.000000",
-      "2025-03-31T00:00:00.000000",
-      "2025-06-30T00:00:00.000000",
-      "2025-09-30T00:00:00.000000",
-      "2025-12-31T00:00:00.000000",
-      "2026-03-31T00:00:00.000000",
-      "2026-06-30T00:00:00.000000"
-    ],
-    "y": {
-      "dtype": "f8",
-      "bdata": "AAAAAAAAWUAWAaAO+2xOQOq8cmAJS0tAEJ1ys+94SkApMK4YavxXQIx0wCGYBkhAlSicQifJS0CB0604ZVNTQOjs1z5sbllAiNngccydTEAbXIkQuo5SQE4bwl++GVxAjJsI73s7S0CQPp3iNcRQQIH3llXJOFhAIEnnICvjW0BJE7+LNTJRQGKfrXpSZFVAlHWdx5AAWUBgyrzFRndhQJS0K6gM+VJA+xKi744rXEDh5qQFBaRcQD0CKs7FsGdANJrnZA/XXEBm80kGtDRgQMWtdfxQyF5ACEoXrVETaEArmnKMp6tcQOHL/0HtEFtAU1sGnmUoW0BMxVU5OyxjQKuhc2lNJGBAfblJ+hCrZkC3BIeHYpFnQDstORm6A2pAnCzYmJ/SZEDcXx2j87xmQO3ZNU/dQmZA11DNWA3EaED652tczXRhQGiEVkfV2GFAR3G5rdlbaECpb/BfLtxuQMHkAAlEWVpABH5DCcVUVUA="
-    },
-    "type": "scatter",
-    "xaxis": "x",
-    "yaxis": "y"
-  },
-  {
-    "hovertemplate": "%{y:.1f}\u003cextra>Aggregate cash & equivalents (basket sum)\u003c/extra>",
-    "legendgroup": "levels",
-    "line": {
-      "color": "#ff7f0e",
-      "width": 2.6
-    },
-    "marker": {
-      "size": 5
-    },
-    "mode": "lines+markers",
-    "name": "Aggregate cash & equivalents (basket sum)",
-    "x": [
-      "2014-12-31T00:00:00.000000",
-      "2015-03-31T00:00:00.000000",
-      "2015-06-30T00:00:00.000000",
-      "2015-09-30T00:00:00.000000",
-      "2015-12-31T00:00:00.000000",
-      "2016-03-31T00:00:00.000000",
-      "2016-06-30T00:00:00.000000",
-      "2016-09-30T00:00:00.000000",
-      "2016-12-31T00:00:00.000000",
-      "2017-03-31T00:00:00.000000",
-      "2017-09-30T00:00:00.000000",
-      "2017-12-31T00:00:00.000000",
-      "2018-03-31T00:00:00.000000",
-      "2018-06-30T00:00:00.000000",
-      "2018-09-30T00:00:00.000000",
-      "2018-12-31T00:00:00.000000",
-      "2019-03-31T00:00:00.000000",
-      "2019-06-30T00:00:00.000000",
-      "2019-09-30T00:00:00.000000",
-      "2019-12-31T00:00:00.000000",
-      "2020-03-31T00:00:00.000000",
-      "2020-06-30T00:00:00.000000",
-      "2020-09-30T00:00:00.000000",
-      "2020-12-31T00:00:00.000000",
-      "2021-03-31T00:00:00.000000",
-      "2021-06-30T00:00:00.000000",
-      "2021-09-30T00:00:00.000000",
-      "2021-12-31T00:00:00.000000",
-      "2022-03-31T00:00:00.000000",
-      "2022-06-30T00:00:00.000000",
-      "2022-09-30T00:00:00.000000",
-      "2022-12-31T00:00:00.000000",
-      "2023-03-31T00:00:00.000000",
-      "2023-06-30T00:00:00.000000",
-      "2023-09-30T00:00:00.000000",
-      "2023-12-31T00:00:00.000000",
-      "2024-03-31T00:00:00.000000",
-      "2024-06-30T00:00:00.000000",
-      "2024-09-30T00:00:00.000000",
-      "2024-12-31T00:00:00.000000",
-      "2025-03-31T00:00:00.000000",
-      "2025-06-30T00:00:00.000000",
-      "2025-09-30T00:00:00.000000",
-      "2025-12-31T00:00:00.000000",
-      "2026-03-31T00:00:00.000000",
-      "2026-06-30T00:00:00.000000"
-    ],
-    "y": {
-      "dtype": "f8",
-      "bdata": "AAAAAAAAWUAkEUpTfc5UQNY2db76r1VAMxe4kHSeV0CvTT89NnZYQEBFnwjG9lhA2OK2Y1dcVkByHzID5FZZQD2yQQPPdFpAqqNPacscWUCiikOGWlVXQGzkLwWbEGBA2nShr5JNZEBG5JbuRtphQA8eRIxC3WBAbe5+CgzdZUDqtiYyxr5kQM84mFYIKGdANJdPreaLZ0DMpdXob7JoQPY+GfV/22hAoHcYNTTNaEAOVA7huY1nQPzDuYHfg2tAGtoaMfyIakDfEzQtcr1pQFtxiysVdGhA0JN7w81wakDxj7RSrZVmQApRhnuiAGZAtcz3QXKhZ0C8kAhAQZ1pQDNJ5Tjh5mtA37nDeWjFcEDeY1XbCql2QMb882UftnNAcUge9/kvckA67bZVa2pxQLl6hMLnInNAsaWTTgu0c0CMtL4LkLZxQLjFMKIY4m9ATeLYvtpVcECs3r3FjhR2QIQJkq0mJXhAawwOqJbMdEA="
-    },
-    "type": "scatter",
-    "xaxis": "x",
-    "yaxis": "y"
-  },
-  {
-    "hovertemplate": "%{y:.1f}\u003cextra>Money-market-fund assets (FRED: MMMFFAQ027S)\u003c/extra>",
-    "legendgroup": "levels",
-    "line": {
-      "color": "#17becf",
-      "width": 1.7
-    },
-    "marker": {
-      "size": 5
-    },
-    "mode": "lines+markers",
-    "name": "Money-market-fund assets (FRED: MMMFFAQ027S)",
-    "x": [
-      "2014-12-31T00:00:00.000000",
-      "2015-03-31T00:00:00.000000",
-      "2015-06-30T00:00:00.000000",
-      "2015-09-30T00:00:00.000000",
-      "2015-12-31T00:00:00.000000",
-      "2016-03-31T00:00:00.000000",
-      "2016-06-30T00:00:00.000000",
-      "2016-09-30T00:00:00.000000",
-      "2016-12-31T00:00:00.000000",
-      "2017-03-31T00:00:00.000000",
-      "2017-09-30T00:00:00.000000",
-      "2017-12-31T00:00:00.000000",
-      "2018-03-31T00:00:00.000000",
-      "2018-06-30T00:00:00.000000",
-      "2018-09-30T00:00:00.000000",
-      "2018-12-31T00:00:00.000000",
-      "2019-03-31T00:00:00.000000",
-      "2019-06-30T00:00:00.000000",
-      "2019-09-30T00:00:00.000000",
-      "2019-12-31T00:00:00.000000",
-      "2020-03-31T00:00:00.000000",
-      "2020-06-30T00:00:00.000000",
-      "2020-09-30T00:00:00.000000",
-      "2020-12-31T00:00:00.000000",
-      "2021-03-31T00:00:00.000000",
-      "2021-06-30T00:00:00.000000",
-      "2021-09-30T00:00:00.000000",
-      "2021-12-31T00:00:00.000000",
-      "2022-03-31T00:00:00.000000",
-      "2022-06-30T00:00:00.000000",
-      "2022-09-30T00:00:00.000000",
-      "2022-12-31T00:00:00.000000",
-      "2023-03-31T00:00:00.000000",
-      "2023-06-30T00:00:00.000000",
-      "2023-09-30T00:00:00.000000",
-      "2023-12-31T00:00:00.000000",
-      "2024-03-31T00:00:00.000000",
-      "2024-06-30T00:00:00.000000",
-      "2024-09-30T00:00:00.000000",
-      "2024-12-31T00:00:00.000000",
-      "2025-03-31T00:00:00.000000",
-      "2025-06-30T00:00:00.000000",
-      "2025-09-30T00:00:00.000000",
-      "2025-12-31T00:00:00.000000",
-      "2026-03-31T00:00:00.000000",
-      "2026-06-30T00:00:00.000000"
-    ],
-    "y": {
-      "dtype": "f8",
-      "bdata": "AAAAAAAAWUBHMP+N7mxYQPX8IpGVD1hA2TK1fe+IWEBB8+SV5gpZQNXUCPdJ7lhAoWzibWEoWEBE6EdUL/NXQJ4gsfTFClhAtfsfCEfPV0A69WIdVaZYQN84Fu0OY1lAWqNKxpf1WECnIgQc4idZQJBEpRDTkllA4z9w6lnDWkCZDE+3eFdcQJy1LtuCS11A+pAT4f8wX0C1Kh9c60dgQKXuQiiXOmNA01N0a+axZECfORJrMrdjQFTmX9TuYmNAaUi6RtxBZEC0IKgHuWZkQEbX94G1amRAMQlHKqMsZUB8qHxbJbVkQH7N9CB4eGRAJbTM5mmuZEDh0NKd+D5lQCjJJ7LiJ2dA2Km9LPYRaED48Qke5vxoQGyspclb3GlAEur02vEyakBZ+GP+C6NqQOCgqA7E0WtA+Gou+Zh2bUBP/gzztxduQHLE/Xd9bm5AFtLor2qfb0CQDaqgZqhwQFiO7/oe3HBAYpL/QSkrcUA="
-    },
-    "type": "scatter",
-    "xaxis": "x",
-    "yaxis": "y"
-  },
-  {
-    "hovertemplate": "%{y:.1f}\u003cextra>M2 money supply (FRED: M2SL)\u003c/extra>",
-    "legendgroup": "levels",
-    "line": {
-      "color": "#1f77b4",
-      "width": 1.7
-    },
-    "marker": {
-      "size": 5
-    },
-    "mode": "lines+markers",
-    "name": "M2 money supply (FRED: M2SL)",
-    "x": [
-      "2014-12-31T00:00:00.000000",
-      "2015-03-31T00:00:00.000000",
-      "2015-06-30T00:00:00.000000",
-      "2015-09-30T00:00:00.000000",
-      "2015-12-31T00:00:00.000000",
-      "2016-03-31T00:00:00.000000",
-      "2016-06-30T00:00:00.000000",
-      "2016-09-30T00:00:00.000000",
-      "2016-12-31T00:00:00.000000",
-      "2017-03-31T00:00:00.000000",
-      "2017-09-30T00:00:00.000000",
-      "2017-12-31T00:00:00.000000",
-      "2018-03-31T00:00:00.000000",
-      "2018-06-30T00:00:00.000000",
-      "2018-09-30T00:00:00.000000",
-      "2018-12-31T00:00:00.000000",
-      "2019-03-31T00:00:00.000000",
-      "2019-06-30T00:00:00.000000",
-      "2019-09-30T00:00:00.000000",
-      "2019-12-31T00:00:00.000000",
-      "2020-03-31T00:00:00.000000",
-      "2020-06-30T00:00:00.000000",
-      "2020-09-30T00:00:00.000000",
-      "2020-12-31T00:00:00.000000",
-      "2021-03-31T00:00:00.000000",
-      "2021-06-30T00:00:00.000000",
-      "2021-09-30T00:00:00.000000",
-      "2021-12-31T00:00:00.000000",
-      "2022-03-31T00:00:00.000000",
-      "2022-06-30T00:00:00.000000",
-      "2022-09-30T00:00:00.000000",
-      "2022-12-31T00:00:00.000000",
-      "2023-03-31T00:00:00.000000",
-      "2023-06-30T00:00:00.000000",
-      "2023-09-30T00:00:00.000000",
-      "2023-12-31T00:00:00.000000",
-      "2024-03-31T00:00:00.000000",
-      "2024-06-30T00:00:00.000000",
-      "2024-09-30T00:00:00.000000",
-      "2024-12-31T00:00:00.000000",
-      "2025-03-31T00:00:00.000000",
-      "2025-06-30T00:00:00.000000",
-      "2025-09-30T00:00:00.000000",
-      "2025-12-31T00:00:00.000000",
-      "2026-03-31T00:00:00.000000",
-      "2026-06-30T00:00:00.000000"
-    ],
-    "y": {
-      "dtype": "f8",
-      "bdata": "AAAAAAAAWUCZaF2kDmxZQNP4slako1lAWcitFIf2WUCqZwqvJG9aQGdaDNbNAVtAK1kn2PZnW0BVIgpIBtdbQEZ+Rh2fPVxAombECe63XEC8Dh8L8U9dQMQUwW27nl1AOvN5jy/kXUC6U/CN/yReQIAQGU1xYV5AGZGZ2k6yXkAjJQMoxA1fQGwjX7ptkF9Ax1IrpwcMYEAQu4RRG19gQFfilIKLGWFA8vJZeFBjY0DzP9jpV9djQPrCPpDHY2RArHaQ2O0xZUCfaepQPtVlQKd5/SY3YWZAYYtCeXjuZkA9wW84XDxnQJF4Ya3WFWdAWV2VQfv4ZkDB3S9vP7VmQNC7qt9yVWZANn0clUwuZkBB33uL7iFmQMlK8KkcKWZAHdrWSeRbZkDsMODOgHhmQNrcwFxxsGZAPZaFI1LqZkADGfec9x9nQDp2tUuKZmdAn4OKt0mmZ0D3RiMWNtdnQFo7ut0EJWhAtdBC4JamaEA="
-    },
-    "type": "scatter",
-    "xaxis": "x",
-    "yaxis": "y"
-  },
-  {
-    "hovertemplate": "%{y:.1f}\u003cextra>S&P 500 (^GSPC)\u003c/extra>",
-    "legendgroup": "levels",
-    "line": {
-      "color": "#2ca02c",
-      "width": 1.7
-    },
-    "marker": {
-      "size": 5
-    },
-    "mode": "lines+markers",
-    "name": "S&P 500 (^GSPC)",
-    "x": [
-      "2014-12-31T00:00:00.000000",
-      "2015-03-31T00:00:00.000000",
-      "2015-06-30T00:00:00.000000",
-      "2015-09-30T00:00:00.000000",
-      "2015-12-31T00:00:00.000000",
-      "2016-03-31T00:00:00.000000",
-      "2016-06-30T00:00:00.000000",
-      "2016-09-30T00:00:00.000000",
-      "2016-12-31T00:00:00.000000",
-      "2017-03-31T00:00:00.000000",
-      "2017-09-30T00:00:00.000000",
-      "2017-12-31T00:00:00.000000",
-      "2018-03-31T00:00:00.000000",
-      "2018-06-30T00:00:00.000000",
-      "2018-09-30T00:00:00.000000",
-      "2018-12-31T00:00:00.000000",
-      "2019-03-31T00:00:00.000000",
-      "2019-06-30T00:00:00.000000",
-      "2019-09-30T00:00:00.000000",
-      "2019-12-31T00:00:00.000000",
-      "2020-03-31T00:00:00.000000",
-      "2020-06-30T00:00:00.000000",
-      "2020-09-30T00:00:00.000000",
-      "2020-12-31T00:00:00.000000",
-      "2021-03-31T00:00:00.000000",
-      "2021-06-30T00:00:00.000000",
-      "2021-09-30T00:00:00.000000",
-      "2021-12-31T00:00:00.000000",
-      "2022-03-31T00:00:00.000000",
-      "2022-06-30T00:00:00.000000",
-      "2022-09-30T00:00:00.000000",
-      "2022-12-31T00:00:00.000000",
-      "2023-03-31T00:00:00.000000",
-      "2023-06-30T00:00:00.000000",
-      "2023-09-30T00:00:00.000000",
-      "2023-12-31T00:00:00.000000",
-      "2024-03-31T00:00:00.000000",
-      "2024-06-30T00:00:00.000000",
-      "2024-09-30T00:00:00.000000",
-      "2024-12-31T00:00:00.000000",
-      "2025-03-31T00:00:00.000000",
-      "2025-06-30T00:00:00.000000",
-      "2025-09-30T00:00:00.000000",
-      "2025-12-31T00:00:00.000000",
-      "2026-03-31T00:00:00.000000",
-      "2026-06-30T00:00:00.000000"
-    ],
-    "y": {
-      "dtype": "f8",
-      "bdata": "AAAAAAAAWUBr8N/q8RtZQDFeNlUWDVlAN5h2P1RQV0A6tOJjf9FYQMX7KIOcAllACfBa7DZ8WUBfbMHi+FNaQInyJBhOL1tA565FTmmwXEAvBPABUpdeQO+phFxmO2BAodMwsoMIYEDkmqyU94BgQL76oUz9sGFAeKCJ+25wXkC3t8fJTTVhQITZzXsq3GFA8IvPZogSYkBvazF1Xp1jQEhuTboVYl9AmXkbyo7SYkBbcnB03mpkQFaERBzKzWZAC7cY5sYeaECIMb+KSxdqQIk/8UvmJmpAVZWWILvvbEB3/dhjSoFrQPWZIPhX+2ZAuTjfE9/EZUCgmRNpdU9nQCcVYBTO8mhAo+QMwecEa0Cdi8p5mwhqQJin8Ftn9WxAknDYVnXmb0DcDuZkapNwQHAkTqIafnFArY8idbLacUDnpEclDAlxQFLBkC/01XJAnTvaMbJNdEDvkF/tu8d0QIBQXY1n0XNAmIhsltvDdkA="
-    },
-    "type": "scatter",
-    "xaxis": "x",
-    "yaxis": "y"
-  },
-  {
-    "hovertemplate": "%{y:.2f}%\u003cextra>3M Treasury yield (FRED: DGS3MO)\u003c/extra>",
-    "legendgroup": "yields",
-    "line": {
-      "color": "#c5b0d5",
-      "width": 1.7
-    },
-    "marker": {
-      "size": 5
-    },
-    "mode": "lines+markers",
-    "name": "3M Treasury yield (FRED: DGS3MO)",
-    "x": [
-      "2014-12-31T00:00:00.000000",
-      "2015-03-31T00:00:00.000000",
-      "2015-06-30T00:00:00.000000",
-      "2015-09-30T00:00:00.000000",
-      "2015-12-31T00:00:00.000000",
-      "2016-03-31T00:00:00.000000",
-      "2016-06-30T00:00:00.000000",
-      "2016-09-30T00:00:00.000000",
-      "2016-12-31T00:00:00.000000",
-      "2017-03-31T00:00:00.000000",
-      "2017-09-30T00:00:00.000000",
-      "2017-12-31T00:00:00.000000",
-      "2018-03-31T00:00:00.000000",
-      "2018-06-30T00:00:00.000000",
-      "2018-09-30T00:00:00.000000",
-      "2018-12-31T00:00:00.000000",
-      "2019-03-31T00:00:00.000000",
-      "2019-06-30T00:00:00.000000",
-      "2019-09-30T00:00:00.000000",
-      "2019-12-31T00:00:00.000000",
-      "2020-03-31T00:00:00.000000",
-      "2020-06-30T00:00:00.000000",
-      "2020-09-30T00:00:00.000000",
-      "2020-12-31T00:00:00.000000",
-      "2021-03-31T00:00:00.000000",
-      "2021-06-30T00:00:00.000000",
-      "2021-09-30T00:00:00.000000",
-      "2021-12-31T00:00:00.000000",
-      "2022-03-31T00:00:00.000000",
-      "2022-06-30T00:00:00.000000",
-      "2022-09-30T00:00:00.000000",
-      "2022-12-31T00:00:00.000000",
-      "2023-03-31T00:00:00.000000",
-      "2023-06-30T00:00:00.000000",
-      "2023-09-30T00:00:00.000000",
-      "2023-12-31T00:00:00.000000",
-      "2024-03-31T00:00:00.000000",
-      "2024-06-30T00:00:00.000000",
-      "2024-09-30T00:00:00.000000",
-      "2024-12-31T00:00:00.000000",
-      "2025-03-31T00:00:00.000000",
-      "2025-06-30T00:00:00.000000",
-      "2025-09-30T00:00:00.000000",
-      "2025-12-31T00:00:00.000000",
-      "2026-03-31T00:00:00.000000",
-      "2026-06-30T00:00:00.000000"
-    ],
-    "y": {
-      "dtype": "f8",
-      "bdata": "exSuR+F6pD+4HoXrUbieP3sUrkfheoQ/AAAAAAAAAAB7FK5H4XrEP+F6FK5H4co/pHA9Ctej0D+PwvUoXI/SP1K4HoXrUeA/UrgehetR6D/2KFyPwvXwPz0K16NwPfY/rkfhehSu+z/hehSuR+H+P4XrUbgehQFAmpmZmZmZA0AzMzMzMzMDQPYoXI/C9QBAFK5H4XoU/j/NzMzMzMz4Pylcj8L1KLw/exSuR+F6xD+amZmZmZm5PwrXo3A9Crc/uB6F61G4nj+amZmZmZmpP3sUrkfheqQ/uB6F61G4rj+kcD0K16PgP4XrUbgehfs/pHA9CtejCkCuR+F6FK4RQGZmZmZmZhNAuB6F61G4FUAzMzMzMzMWQJqZmZmZmRVA16NwPQrXFUDsUbgehesVQOxRuB6F6xJAexSuR+F6EUBI4XoUrkcRQKRwPQrXoxFAFK5H4XoUEEBcj8L1KFwNQJqZmZmZmQ1A9ihcj8L1DkA="
-    },
-    "type": "scatter",
-    "xaxis": "x2",
-    "yaxis": "y2"
-  },
-  {
-    "hovertemplate": "%{y:.2f}%\u003cextra>2Y Treasury yield (FRED: DGS2)\u003c/extra>",
-    "legendgroup": "yields",
-    "line": {
-      "color": "#9467bd",
-      "width": 1.7
-    },
-    "marker": {
-      "size": 5
-    },
-    "mode": "lines+markers",
-    "name": "2Y Treasury yield (FRED: DGS2)",
-    "x": [
-      "2014-12-31T00:00:00.000000",
-      "2015-03-31T00:00:00.000000",
-      "2015-06-30T00:00:00.000000",
-      "2015-09-30T00:00:00.000000",
-      "2015-12-31T00:00:00.000000",
-      "2016-03-31T00:00:00.000000",
-      "2016-06-30T00:00:00.000000",
-      "2016-09-30T00:00:00.000000",
-      "2016-12-31T00:00:00.000000",
-      "2017-03-31T00:00:00.000000",
-      "2017-09-30T00:00:00.000000",
-      "2017-12-31T00:00:00.000000",
-      "2018-03-31T00:00:00.000000",
-      "2018-06-30T00:00:00.000000",
-      "2018-09-30T00:00:00.000000",
-      "2018-12-31T00:00:00.000000",
-      "2019-03-31T00:00:00.000000",
-      "2019-06-30T00:00:00.000000",
-      "2019-09-30T00:00:00.000000",
-      "2019-12-31T00:00:00.000000",
-      "2020-03-31T00:00:00.000000",
-      "2020-06-30T00:00:00.000000",
-      "2020-09-30T00:00:00.000000",
-      "2020-12-31T00:00:00.000000",
-      "2021-03-31T00:00:00.000000",
-      "2021-06-30T00:00:00.000000",
-      "2021-09-30T00:00:00.000000",
-      "2021-12-31T00:00:00.000000",
-      "2022-03-31T00:00:00.000000",
-      "2022-06-30T00:00:00.000000",
-      "2022-09-30T00:00:00.000000",
-      "2022-12-31T00:00:00.000000",
-      "2023-03-31T00:00:00.000000",
-      "2023-06-30T00:00:00.000000",
-      "2023-09-30T00:00:00.000000",
-      "2023-12-31T00:00:00.000000",
-      "2024-03-31T00:00:00.000000",
-      "2024-06-30T00:00:00.000000",
-      "2024-09-30T00:00:00.000000",
-      "2024-12-31T00:00:00.000000",
-      "2025-03-31T00:00:00.000000",
-      "2025-06-30T00:00:00.000000",
-      "2025-09-30T00:00:00.000000",
-      "2025-12-31T00:00:00.000000",
-      "2026-03-31T00:00:00.000000",
-      "2026-06-30T00:00:00.000000"
-    ],
-    "y": {
-      "dtype": "f8",
-      "bdata": "cT0K16Nw5T/sUbgehevhP3sUrkfheuQ/exSuR+F65D/2KFyPwvXwP1yPwvUoXOc/j8L1KFyP4j+kcD0K16PoPzMzMzMzM/M/UrgehetR9D+F61G4HoX3Pz0K16NwPf4/KVyPwvUoAkApXI/C9SgEQHsUrkfhegZA16NwPQrXA0ApXI/C9SgCQAAAAAAAAPw/FK5H4XoU+j9I4XoUrkf5P3E9CtejcM0/exSuR+F6xD+kcD0K16PAP6RwPQrXo8A/exSuR+F6xD8AAAAAAADQP+xRuB6F69E/XI/C9Shc5z89CtejcD0CQFyPwvUoXAdA4XoUrkfhEECkcD0K16MRQD0K16NwPRBAexSuR+F6E0AfhetRuB4UQOxRuB6F6xBAXI/C9ShcEkDXo3A9CtcSQEjhehSuRw1AAAAAAAAAEUAfhetRuB4PQMP1KFyPwg1AzczMzMzMDEDD9Shcj8ILQFK4HoXrUQ5Aj8L1KFyPEEA="
-    },
-    "type": "scatter",
-    "xaxis": "x2",
-    "yaxis": "y2"
-  },
-  {
-    "hovertemplate": "%{y:.2f}%\u003cextra>10Y Treasury yield (FRED: DGS10)\u003c/extra>",
-    "legendgroup": "yields",
-    "line": {
-      "color": "#6a3d9a",
-      "width": 1.7
-    },
-    "marker": {
-      "size": 5
-    },
-    "mode": "lines+markers",
-    "name": "10Y Treasury yield (FRED: DGS10)",
-    "x": [
-      "2014-12-31T00:00:00.000000",
-      "2015-03-31T00:00:00.000000",
-      "2015-06-30T00:00:00.000000",
-      "2015-09-30T00:00:00.000000",
-      "2015-12-31T00:00:00.000000",
-      "2016-03-31T00:00:00.000000",
-      "2016-06-30T00:00:00.000000",
-      "2016-09-30T00:00:00.000000",
-      "2016-12-31T00:00:00.000000",
-      "2017-03-31T00:00:00.000000",
-      "2017-09-30T00:00:00.000000",
-      "2017-12-31T00:00:00.000000",
-      "2018-03-31T00:00:00.000000",
-      "2018-06-30T00:00:00.000000",
-      "2018-09-30T00:00:00.000000",
-      "2018-12-31T00:00:00.000000",
-      "2019-03-31T00:00:00.000000",
-      "2019-06-30T00:00:00.000000",
-      "2019-09-30T00:00:00.000000",
-      "2019-12-31T00:00:00.000000",
-      "2020-03-31T00:00:00.000000",
-      "2020-06-30T00:00:00.000000",
-      "2020-09-30T00:00:00.000000",
-      "2020-12-31T00:00:00.000000",
-      "2021-03-31T00:00:00.000000",
-      "2021-06-30T00:00:00.000000",
-      "2021-09-30T00:00:00.000000",
-      "2021-12-31T00:00:00.000000",
-      "2022-03-31T00:00:00.000000",
-      "2022-06-30T00:00:00.000000",
-      "2022-09-30T00:00:00.000000",
-      "2022-12-31T00:00:00.000000",
-      "2023-03-31T00:00:00.000000",
-      "2023-06-30T00:00:00.000000",
-      "2023-09-30T00:00:00.000000",
-      "2023-12-31T00:00:00.000000",
-      "2024-03-31T00:00:00.000000",
-      "2024-06-30T00:00:00.000000",
-      "2024-09-30T00:00:00.000000",
-      "2024-12-31T00:00:00.000000",
-      "2025-03-31T00:00:00.000000",
-      "2025-06-30T00:00:00.000000",
-      "2025-09-30T00:00:00.000000",
-      "2025-12-31T00:00:00.000000",
-      "2026-03-31T00:00:00.000000",
-      "2026-06-30T00:00:00.000000"
-    ],
-    "y": {
-      "dtype": "f8",
-      "bdata": "XI/C9ShcAUAK16NwPQr/P83MzMzMzAJAexSuR+F6AEApXI/C9SgCQHsUrkfhevw/16NwPQrX9z+amZmZmZn5P5qZmZmZmQNAMzMzMzMzA0CkcD0K16MCQDMzMzMzMwNA7FG4HoXrBUDNzMzMzMwGQGZmZmZmZghAhetRuB6FBUBI4XoUrkcDQAAAAAAAAABA4XoUrkfh+j+4HoXrUbj+P2ZmZmZmZuY/H4XrUbge5T8UrkfhehTmP8P1KFyPwu0/16NwPQrX+z8zMzMzMzP3P1K4HoXrUfg/UrgehetR+D+PwvUoXI8CQNejcD0K1wdApHA9CtejDkAK16NwPQoPQNejcD0K1wtAexSuR+F6DkBcj8L1KFwSQArXo3A9Cg9AzczMzMzMEEBxPQrXo3ARQHsUrkfheg5AUrgehetREkDsUbgehesQQPYoXI/C9RBApHA9CtejEEC4HoXrUbgQQDMzMzMzMxFAw/UoXI/CEUA="
-    },
-    "type": "scatter",
-    "xaxis": "x2",
-    "yaxis": "y2"
-  },
-  {
-    "hovertemplate": "%{y:.2f}%\u003cextra>30Y Treasury yield (FRED: DGS30)\u003c/extra>",
-    "legendgroup": "yields",
-    "line": {
-      "color": "#3f007d",
-      "width": 1.7
-    },
-    "marker": {
-      "size": 5
-    },
-    "mode": "lines+markers",
-    "name": "30Y Treasury yield (FRED: DGS30)",
-    "x": [
-      "2014-12-31T00:00:00.000000",
-      "2015-03-31T00:00:00.000000",
-      "2015-06-30T00:00:00.000000",
-      "2015-09-30T00:00:00.000000",
-      "2015-12-31T00:00:00.000000",
-      "2016-03-31T00:00:00.000000",
-      "2016-06-30T00:00:00.000000",
-      "2016-09-30T00:00:00.000000",
-      "2016-12-31T00:00:00.000000",
-      "2017-03-31T00:00:00.000000",
-      "2017-09-30T00:00:00.000000",
-      "2017-12-31T00:00:00.000000",
-      "2018-03-31T00:00:00.000000",
-      "2018-06-30T00:00:00.000000",
-      "2018-09-30T00:00:00.000000",
-      "2018-12-31T00:00:00.000000",
-      "2019-03-31T00:00:00.000000",
-      "2019-06-30T00:00:00.000000",
-      "2019-09-30T00:00:00.000000",
-      "2019-12-31T00:00:00.000000",
-      "2020-03-31T00:00:00.000000",
-      "2020-06-30T00:00:00.000000",
-      "2020-09-30T00:00:00.000000",
-      "2020-12-31T00:00:00.000000",
-      "2021-03-31T00:00:00.000000",
-      "2021-06-30T00:00:00.000000",
-      "2021-09-30T00:00:00.000000",
-      "2021-12-31T00:00:00.000000",
-      "2022-03-31T00:00:00.000000",
-      "2022-06-30T00:00:00.000000",
-      "2022-09-30T00:00:00.000000",
-      "2022-12-31T00:00:00.000000",
-      "2023-03-31T00:00:00.000000",
-      "2023-06-30T00:00:00.000000",
-      "2023-09-30T00:00:00.000000",
-      "2023-12-31T00:00:00.000000",
-      "2024-03-31T00:00:00.000000",
-      "2024-06-30T00:00:00.000000",
-      "2024-09-30T00:00:00.000000",
-      "2024-12-31T00:00:00.000000",
-      "2025-03-31T00:00:00.000000",
-      "2025-06-30T00:00:00.000000",
-      "2025-09-30T00:00:00.000000",
-      "2025-12-31T00:00:00.000000",
-      "2026-03-31T00:00:00.000000",
-      "2026-06-30T00:00:00.000000"
-    ],
-    "y": {
-      "dtype": "f8",
-      "bdata": "AAAAAAAABkBSuB6F61EEQOF6FK5H4QhA9ihcj8L1BkAUrkfhehQIQOF6FK5H4QRAZmZmZmZmAkCPwvUoXI8CQHsUrkfheghAKVyPwvUoCEDhehSuR+EGQOxRuB6F6wVAw/UoXI/CB0DXo3A9CtcHQIXrUbgehQlAKVyPwvUoCEB7FK5H4XoGQClcj8L1KARA9ihcj8L1AEAfhetRuB4DQJqZmZmZmfU/j8L1KFyP9j9cj8L1KFz3P2ZmZmZmZvo/SOF6FK5HA0B7FK5H4XoAQKRwPQrXowBAZmZmZmZm/j+F61G4HoUDQB+F61G4HglAUrgehetRDkDD9Shcj8IPQFyPwvUoXA1AzczMzMzMDkDsUbgehesSQB+F61G4HhBAXI/C9ShcEUAK16NwPQoSQI/C9ShcjxBAH4XrUbgeE0Bcj8L1KFwSQB+F61G4HhNA7FG4HoXrEkBcj8L1KFwTQIXrUbgehRNApHA9CtejE0A="
-    },
-    "type": "scatter",
-    "xaxis": "x2",
-    "yaxis": "y2"
-  },
-  {
-    "hoverinfo": "skip",
-    "legendgroup": "yields",
-    "marker": {
-      "color": "rgba(214,39,40,0.28)",
-      "line": {
-        "width": 0
-      },
-      "size": 12,
-      "symbol": "square"
-    },
-    "mode": "markers",
-    "name": "Yield-curve inversion (10Y \u003c 2Y)",
-    "x": [
-      null
-    ],
-    "y": [
-      null
-    ],
-    "type": "scatter",
-    "xaxis": "x2",
-    "yaxis": "y2"
-  },
-  {
-    "hovertemplate": "%{y:.1f}\u003cextra>S&P 500 ÷ M2 money supply\u003c/extra>",
-    "legendgroup": "ratio",
-    "line": {
-      "color": "#1f77b4",
-      "width": 2.0
-    },
-    "marker": {
-      "size": 5
-    },
-    "mode": "lines+markers",
-    "name": "S&P 500 ÷ M2 money supply",
-    "visible": true,
-    "x": [
-      "2014-12-31T00:00:00.000000",
-      "2015-03-31T00:00:00.000000",
-      "2015-06-30T00:00:00.000000",
-      "2015-09-30T00:00:00.000000",
-      "2015-12-31T00:00:00.000000",
-      "2016-03-31T00:00:00.000000",
-      "2016-06-30T00:00:00.000000",
-      "2016-09-30T00:00:00.000000",
-      "2016-12-31T00:00:00.000000",
-      "2017-03-31T00:00:00.000000",
-      "2017-09-30T00:00:00.000000",
-      "2017-12-31T00:00:00.000000",
-      "2018-03-31T00:00:00.000000",
-      "2018-06-30T00:00:00.000000",
-      "2018-09-30T00:00:00.000000",
-      "2018-12-31T00:00:00.000000",
-      "2019-03-31T00:00:00.000000",
-      "2019-06-30T00:00:00.000000",
-      "2019-09-30T00:00:00.000000",
-      "2019-12-31T00:00:00.000000",
-      "2020-03-31T00:00:00.000000",
-      "2020-06-30T00:00:00.000000",
-      "2020-09-30T00:00:00.000000",
-      "2020-12-31T00:00:00.000000",
-      "2021-03-31T00:00:00.000000",
-      "2021-06-30T00:00:00.000000",
-      "2021-09-30T00:00:00.000000",
-      "2021-12-31T00:00:00.000000",
-      "2022-03-31T00:00:00.000000",
-      "2022-06-30T00:00:00.000000",
-      "2022-09-30T00:00:00.000000",
-      "2022-12-31T00:00:00.000000",
-      "2023-03-31T00:00:00.000000",
-      "2023-06-30T00:00:00.000000",
-      "2023-09-30T00:00:00.000000",
-      "2023-12-31T00:00:00.000000",
-      "2024-03-31T00:00:00.000000",
-      "2024-06-30T00:00:00.000000",
-      "2024-09-30T00:00:00.000000",
-      "2024-12-31T00:00:00.000000",
-      "2025-03-31T00:00:00.000000",
-      "2025-06-30T00:00:00.000000",
-      "2025-09-30T00:00:00.000000",
-      "2025-12-31T00:00:00.000000",
-      "2026-03-31T00:00:00.000000",
-      "2026-06-30T00:00:00.000000"
-    ],
-    "y": {
-      "dtype": "f8",
-      "bdata": "////////WEB66EzLN7FYQK0VPugybVhAERez5fRyVkCzsiXSy3hXQPi9jgXMJldArdHrXWw/V0AZFrVCbqRXQKdMFwO0EFhAbKuCe3T5WEBGWcxqNxdaQKKxhneBZltAzEu9+7jRWkAfMywG2l9bQBltM26+HV1Aoj+gpVnKWECV6CdcBrVbQDvFp6WmSlxAcDGz0cknXEAdQ+Gc2PNdQLzX2WHx8FZA7W9skVdFWECrDI4L4rlZQM0bNc++9VtA+VkjO0hzXEAqoQ68K+BdQGQlfXC/Nl1AudxateyLX0CHmpG76ZddQGWzH7xO41hAmyJqtLKwV0Af/rGhxqlZQB2jXahD7VtAUQV+1Ad0XkAi7pjpD2hdQBy9rvCiVWBAR2HZr4rVYUCfncYDDXFiQIrkE3gsRmNAyd17SoJ6Y0DGrqAGrGpiQCABoB2KH2RAinDlt352ZUCXy/10bMplQPqCnBslhWRAF3QDzG0WZ0A="
-    },
-    "type": "scatter",
-    "xaxis": "x3",
-    "yaxis": "y3"
-  },
-  {
-    "hovertemplate": "%{y:.1f}\u003cextra>S&P 500 ÷ Money-market-fund assets\u003c/extra>",
-    "legendgroup": "ratio",
-    "line": {
-      "color": "#17becf",
-      "width": 2.0
-    },
-    "marker": {
-      "size": 5
-    },
-    "mode": "lines+markers",
-    "name": "S&P 500 ÷ Money-market-fund assets",
-    "visible": false,
-    "x": [
-      "2014-12-31T00:00:00.000000",
-      "2015-03-31T00:00:00.000000",
-      "2015-06-30T00:00:00.000000",
-      "2015-09-30T00:00:00.000000",
-      "2015-12-31T00:00:00.000000",
-      "2016-03-31T00:00:00.000000",
-      "2016-06-30T00:00:00.000000",
-      "2016-09-30T00:00:00.000000",
-      "2016-12-31T00:00:00.000000",
-      "2017-03-31T00:00:00.000000",
-      "2017-09-30T00:00:00.000000",
-      "2017-12-31T00:00:00.000000",
-      "2018-03-31T00:00:00.000000",
-      "2018-06-30T00:00:00.000000",
-      "2018-09-30T00:00:00.000000",
-      "2018-12-31T00:00:00.000000",
-      "2019-03-31T00:00:00.000000",
-      "2019-06-30T00:00:00.000000",
-      "2019-09-30T00:00:00.000000",
-      "2019-12-31T00:00:00.000000",
-      "2020-03-31T00:00:00.000000",
-      "2020-06-30T00:00:00.000000",
-      "2020-09-30T00:00:00.000000",
-      "2020-12-31T00:00:00.000000",
-      "2021-03-31T00:00:00.000000",
-      "2021-06-30T00:00:00.000000",
-      "2021-09-30T00:00:00.000000",
-      "2021-12-31T00:00:00.000000",
-      "2022-03-31T00:00:00.000000",
-      "2022-06-30T00:00:00.000000",
-      "2022-09-30T00:00:00.000000",
-      "2022-12-31T00:00:00.000000",
-      "2023-03-31T00:00:00.000000",
-      "2023-06-30T00:00:00.000000",
-      "2023-09-30T00:00:00.000000",
-      "2023-12-31T00:00:00.000000",
-      "2024-03-31T00:00:00.000000",
-      "2024-06-30T00:00:00.000000",
-      "2024-09-30T00:00:00.000000",
-      "2024-12-31T00:00:00.000000",
-      "2025-03-31T00:00:00.000000",
-      "2025-06-30T00:00:00.000000",
-      "2025-09-30T00:00:00.000000",
-      "2025-12-31T00:00:00.000000",
-      "2026-03-31T00:00:00.000000",
-      "2026-06-30T00:00:00.000000"
-    ],
-    "y": {
-      "dtype": "f8",
-      "bdata": "////////WEB1PNAhIbNZQIaTKcNlB1pAFaukuHfBV0CbnKDKscZYQFHKD/xgFFlAJCLxrK5fWkBQg0ucentbQE32V0eWRFxAwJLRBJUfXkBitkm9mQZfQCW1O34g+F9APv+zIDMPYEA8juEbzWZgQCeLyilrS2FA8mxpARZvXECz0oxLxlteQMD2Bv+re15AmQyDzlv4XEAYo3QsgR5eQAVyL9arZlRAG4QnL/G8VkD/Flxh1ONZQLERGhkuaF1AIGHmUXLEXUDdUSef5/hfQJxAdoniAmBAeS0WyQ0VYUAmopkfbZpgQACzOakeEVxAHQPzCZtQWkAWyu0Z3m1bQO+oRhx471pAxME1fBsQXECSbQmV1gtaQDsoVxGm/ltA2JET+rdwXkAIMWSESx1fQCLusimHcF9Aveqb9plMXkDxImK6CE5cQOlnCvqb8l5Aysv8jCUNYEBvgXBE1y9fQDfHSOToYl1AErUKuhuTYEA="
-    },
-    "type": "scatter",
-    "xaxis": "x3",
-    "yaxis": "y3"
-  }
-],
-{
-  "template": {
-    "data": {
-      "barpolar": [
-        {
-          "marker": {
-            "line": {
-              "color": "white",
-              "width": 0.5
-            },
-            "pattern": {
-              "fillmode": "overlay",
-              "size": 10,
-              "solidity": 0.2
-            }
-          },
-          "type": "barpolar"
-        }
-      ],
-      "bar": [
-        {
-          "error_x": {
-            "color": "#2a3f5f"
-          },
-          "error_y": {
-            "color": "#2a3f5f"
-          },
-          "marker": {
-            "line": {
-              "color": "white",
-              "width": 0.5
-            },
-            "pattern": {
-              "fillmode": "overlay",
-              "size": 10,
-              "solidity": 0.2
-            }
-          },
-          "type": "bar"
-        }
-      ],
-      "carpet": [
-        {
-          "aaxis": {
-            "endlinecolor": "#2a3f5f",
-            "gridcolor": "#C8D4E3",
-            "linecolor": "#C8D4E3",
-            "minorgridcolor": "#C8D4E3",
-            "startlinecolor": "#2a3f5f"
-          },
-          "baxis": {
-            "endlinecolor": "#2a3f5f",
-            "gridcolor": "#C8D4E3",
-            "linecolor": "#C8D4E3",
-            "minorgridcolor": "#C8D4E3",
-            "startlinecolor": "#2a3f5f"
-          },
-          "type": "carpet"
-        }
-      ],
-      "choropleth": [
-        {
-          "colorbar": {
-            "outlinewidth": 0,
-            "ticks": ""
-          },
-          "type": "choropleth"
-        }
-      ],
-      "contourcarpet": [
-        {
-          "colorbar": {
-            "outlinewidth": 0,
-            "ticks": ""
-          },
-          "type": "contourcarpet"
-        }
-      ],
-      "contour": [
-        {
-          "colorbar": {
-            "outlinewidth": 0,
-            "ticks": ""
-          },
-          "colorscale": [
-            [
-              0.0,
-              "#0d0887"
-            ],
-            [
-              0.1111111111111111,
-              "#46039f"
-            ],
-            [
-              0.2222222222222222,
-              "#7201a8"
-            ],
-            [
-              0.3333333333333333,
-              "#9c179e"
-            ],
-            [
-              0.4444444444444444,
-              "#bd3786"
-            ],
-            [
-              0.5555555555555556,
-              "#d8576b"
-            ],
-            [
-              0.6666666666666666,
-              "#ed7953"
-            ],
-            [
-              0.7777777777777778,
-              "#fb9f3a"
-            ],
-            [
-              0.8888888888888888,
-              "#fdca26"
-            ],
-            [
-              1.0,
-              "#f0f921"
-            ]
-          ],
-          "type": "contour"
-        }
-      ],
-      "heatmap": [
-        {
-          "colorbar": {
-            "outlinewidth": 0,
-            "ticks": ""
-          },
-          "colorscale": [
-            [
-              0.0,
-              "#0d0887"
-            ],
-            [
-              0.1111111111111111,
-              "#46039f"
-            ],
-            [
-              0.2222222222222222,
-              "#7201a8"
-            ],
-            [
-              0.3333333333333333,
-              "#9c179e"
-            ],
-            [
-              0.4444444444444444,
-              "#bd3786"
-            ],
-            [
-              0.5555555555555556,
-              "#d8576b"
-            ],
-            [
-              0.6666666666666666,
-              "#ed7953"
-            ],
-            [
-              0.7777777777777778,
-              "#fb9f3a"
-            ],
-            [
-              0.8888888888888888,
-              "#fdca26"
-            ],
-            [
-              1.0,
-              "#f0f921"
-            ]
-          ],
-          "type": "heatmap"
-        }
-      ],
-      "histogram2dcontour": [
-        {
-          "colorbar": {
-            "outlinewidth": 0,
-            "ticks": ""
-          },
-          "colorscale": [
-            [
-              0.0,
-              "#0d0887"
-            ],
-            [
-              0.1111111111111111,
-              "#46039f"
-            ],
-            [
-              0.2222222222222222,
-              "#7201a8"
-            ],
-            [
-              0.3333333333333333,
-              "#9c179e"
-            ],
-            [
-              0.4444444444444444,
-              "#bd3786"
-            ],
-            [
-              0.5555555555555556,
-              "#d8576b"
-            ],
-            [
-              0.6666666666666666,
-              "#ed7953"
-            ],
-            [
-              0.7777777777777778,
-              "#fb9f3a"
-            ],
-            [
-              0.8888888888888888,
-              "#fdca26"
-            ],
-            [
-              1.0,
-              "#f0f921"
-            ]
-          ],
-          "type": "histogram2dcontour"
-        }
-      ],
-      "histogram2d": [
-        {
-          "colorbar": {
-            "outlinewidth": 0,
-            "ticks": ""
-          },
-          "colorscale": [
-            [
-              0.0,
-              "#0d0887"
-            ],
-            [
-              0.1111111111111111,
-              "#46039f"
-            ],
-            [
-              0.2222222222222222,
-              "#7201a8"
-            ],
-            [
-              0.3333333333333333,
-              "#9c179e"
-            ],
-            [
-              0.4444444444444444,
-              "#bd3786"
-            ],
-            [
-              0.5555555555555556,
-              "#d8576b"
-            ],
-            [
-              0.6666666666666666,
-              "#ed7953"
-            ],
-            [
-              0.7777777777777778,
-              "#fb9f3a"
-            ],
-            [
-              0.8888888888888888,
-              "#fdca26"
-            ],
-            [
-              1.0,
-              "#f0f921"
-            ]
-          ],
-          "type": "histogram2d"
-        }
-      ],
-      "histogram": [
-        {
-          "marker": {
-            "pattern": {
-              "fillmode": "overlay",
-              "size": 10,
-              "solidity": 0.2
-            }
-          },
-          "type": "histogram"
-        }
-      ],
-      "mesh3d": [
-        {
-          "colorbar": {
-            "outlinewidth": 0,
-            "ticks": ""
-          },
-          "type": "mesh3d"
-        }
-      ],
-      "parcoords": [
-        {
-          "line": {
-            "colorbar": {
-              "outlinewidth": 0,
-              "ticks": ""
-            }
-          },
-          "type": "parcoords"
-        }
-      ],
-      "pie": [
-        {
-          "automargin": true,
-          "type": "pie"
-        }
-      ],
-      "scatter3d": [
-        {
-          "line": {
-            "colorbar": {
-              "outlinewidth": 0,
-              "ticks": ""
-            }
-          },
-          "marker": {
-            "colorbar": {
-              "outlinewidth": 0,
-              "ticks": ""
-            }
-          },
-          "type": "scatter3d"
-        }
-      ],
-      "scattercarpet": [
-        {
-          "marker": {
-            "colorbar": {
-              "outlinewidth": 0,
-              "ticks": ""
-            }
-          },
-          "type": "scattercarpet"
-        }
-      ],
-      "scattergeo": [
-        {
-          "marker": {
-            "colorbar": {
-              "outlinewidth": 0,
-              "ticks": ""
-            }
-          },
-          "type": "scattergeo"
-        }
-      ],
-      "scattergl": [
-        {
-          "marker": {
-            "colorbar": {
-              "outlinewidth": 0,
-              "ticks": ""
-            }
-          },
-          "type": "scattergl"
-        }
-      ],
-      "scattermapbox": [
-        {
-          "marker": {
-            "colorbar": {
-              "outlinewidth": 0,
-              "ticks": ""
-            }
-          },
-          "type": "scattermapbox"
-        }
-      ],
-      "scattermap": [
-        {
-          "marker": {
-            "colorbar": {
-              "outlinewidth": 0,
-              "ticks": ""
-            }
-          },
-          "type": "scattermap"
-        }
-      ],
-      "scatterpolargl": [
-        {
-          "marker": {
-            "colorbar": {
-              "outlinewidth": 0,
-              "ticks": ""
-            }
-          },
-          "type": "scatterpolargl"
-        }
-      ],
-      "scatterpolar": [
-        {
-          "marker": {
-            "colorbar": {
-              "outlinewidth": 0,
-              "ticks": ""
-            }
-          },
-          "type": "scatterpolar"
-        }
-      ],
-      "scatter": [
-        {
-          "fillpattern": {
-            "fillmode": "overlay",
-            "size": 10,
-            "solidity": 0.2
-          },
-          "type": "scatter"
-        }
-      ],
-      "scatterternary": [
-        {
-          "marker": {
-            "colorbar": {
-              "outlinewidth": 0,
-              "ticks": ""
-            }
-          },
-          "type": "scatterternary"
-        }
-      ],
-      "surface": [
-        {
-          "colorbar": {
-            "outlinewidth": 0,
-            "ticks": ""
-          },
-          "colorscale": [
-            [
-              0.0,
-              "#0d0887"
-            ],
-            [
-              0.1111111111111111,
-              "#46039f"
-            ],
-            [
-              0.2222222222222222,
-              "#7201a8"
-            ],
-            [
-              0.3333333333333333,
-              "#9c179e"
-            ],
-            [
-              0.4444444444444444,
-              "#bd3786"
-            ],
-            [
-              0.5555555555555556,
-              "#d8576b"
-            ],
-            [
-              0.6666666666666666,
-              "#ed7953"
-            ],
-            [
-              0.7777777777777778,
-              "#fb9f3a"
-            ],
-            [
-              0.8888888888888888,
-              "#fdca26"
-            ],
-            [
-              1.0,
-              "#f0f921"
-            ]
-          ],
-          "type": "surface"
-        }
-      ],
-      "table": [
-        {
-          "cells": {
-            "fill": {
-              "color": "#EBF0F8"
-            },
-            "line": {
-              "color": "white"
-            }
-          },
-          "header": {
-            "fill": {
-              "color": "#C8D4E3"
-            },
-            "line": {
-              "color": "white"
-            }
-          },
-          "type": "table"
-        }
-      ]
-    },
-    "layout": {
-      "annotationdefaults": {
-        "arrowcolor": "#2a3f5f",
-        "arrowhead": 0,
-        "arrowwidth": 1
-      },
-      "autotypenumbers": "strict",
-      "coloraxis": {
-        "colorbar": {
-          "outlinewidth": 0,
-          "ticks": ""
-        }
-      },
-      "colorscale": {
-        "diverging": [
-          [
-            0,
-            "#8e0152"
-          ],
-          [
-            0.1,
-            "#c51b7d"
-          ],
-          [
-            0.2,
-            "#de77ae"
-          ],
-          [
-            0.3,
-            "#f1b6da"
-          ],
-          [
-            0.4,
-            "#fde0ef"
-          ],
-          [
-            0.5,
-            "#f7f7f7"
-          ],
-          [
-            0.6,
-            "#e6f5d0"
-          ],
-          [
-            0.7,
-            "#b8e186"
-          ],
-          [
-            0.8,
-            "#7fbc41"
-          ],
-          [
-            0.9,
-            "#4d9221"
-          ],
-          [
-            1,
-            "#276419"
-          ]
-        ],
-        "sequential": [
-          [
-            0.0,
-            "#0d0887"
-          ],
-          [
-            0.1111111111111111,
-            "#46039f"
-          ],
-          [
-            0.2222222222222222,
-            "#7201a8"
-          ],
-          [
-            0.3333333333333333,
-            "#9c179e"
-          ],
-          [
-            0.4444444444444444,
-            "#bd3786"
-          ],
-          [
-            0.5555555555555556,
-            "#d8576b"
-          ],
-          [
-            0.6666666666666666,
-            "#ed7953"
-          ],
-          [
-            0.7777777777777778,
-            "#fb9f3a"
-          ],
-          [
-            0.8888888888888888,
-            "#fdca26"
-          ],
-          [
-            1.0,
-            "#f0f921"
-          ]
-        ],
-        "sequentialminus": [
-          [
-            0.0,
-            "#0d0887"
-          ],
-          [
-            0.1111111111111111,
-            "#46039f"
-          ],
-          [
-            0.2222222222222222,
-            "#7201a8"
-          ],
-          [
-            0.3333333333333333,
-            "#9c179e"
-          ],
-          [
-            0.4444444444444444,
-            "#bd3786"
-          ],
-          [
-            0.5555555555555556,
-            "#d8576b"
-          ],
-          [
-            0.6666666666666666,
-            "#ed7953"
-          ],
-          [
-            0.7777777777777778,
-            "#fb9f3a"
-          ],
-          [
-            0.8888888888888888,
-            "#fdca26"
-          ],
-          [
-            1.0,
-            "#f0f921"
-          ]
-        ]
-      },
-      "colorway": [
-        "#636efa",
-        "#EF553B",
-        "#00cc96",
-        "#ab63fa",
-        "#FFA15A",
-        "#19d3f3",
-        "#FF6692",
-        "#B6E880",
-        "#FF97FF",
-        "#FECB52"
-      ],
-      "font": {
-        "color": "#2a3f5f"
-      },
-      "geo": {
-        "bgcolor": "white",
-        "lakecolor": "white",
-        "landcolor": "white",
-        "showlakes": true,
-        "showland": true,
-        "subunitcolor": "#C8D4E3"
-      },
-      "hoverlabel": {
-        "align": "left"
-      },
-      "hovermode": "closest",
-      "mapbox": {
-        "style": "light"
-      },
-      "paper_bgcolor": "white",
-      "plot_bgcolor": "white",
-      "polar": {
-        "angularaxis": {
-          "gridcolor": "#EBF0F8",
-          "linecolor": "#EBF0F8",
-          "ticks": ""
-        },
-        "bgcolor": "white",
-        "radialaxis": {
-          "gridcolor": "#EBF0F8",
-          "linecolor": "#EBF0F8",
-          "ticks": ""
-        }
-      },
-      "scene": {
-        "xaxis": {
-          "backgroundcolor": "white",
-          "gridcolor": "#DFE8F3",
-          "gridwidth": 2,
-          "linecolor": "#EBF0F8",
-          "showbackground": true,
-          "ticks": "",
-          "zerolinecolor": "#EBF0F8"
-        },
-        "yaxis": {
-          "backgroundcolor": "white",
-          "gridcolor": "#DFE8F3",
-          "gridwidth": 2,
-          "linecolor": "#EBF0F8",
-          "showbackground": true,
-          "ticks": "",
-          "zerolinecolor": "#EBF0F8"
-        },
-        "zaxis": {
-          "backgroundcolor": "white",
-          "gridcolor": "#DFE8F3",
-          "gridwidth": 2,
-          "linecolor": "#EBF0F8",
-          "showbackground": true,
-          "ticks": "",
-          "zerolinecolor": "#EBF0F8"
-        }
-      },
-      "shapedefaults": {
-        "line": {
-          "color": "#2a3f5f"
-        }
-      },
-      "ternary": {
-        "aaxis": {
-          "gridcolor": "#DFE8F3",
-          "linecolor": "#A2B1C6",
-          "ticks": ""
-        },
-        "baxis": {
-          "gridcolor": "#DFE8F3",
-          "linecolor": "#A2B1C6",
-          "ticks": ""
-        },
-        "bgcolor": "white",
-        "caxis": {
-          "gridcolor": "#DFE8F3",
-          "linecolor": "#A2B1C6",
-          "ticks": ""
-        }
-      },
-      "title": {
-        "x": 0.05
-      },
-      "xaxis": {
-        "automargin": true,
-        "gridcolor": "#EBF0F8",
-        "linecolor": "#EBF0F8",
-        "ticks": "",
-        "title": {
-          "standoff": 15
-        },
-        "zerolinecolor": "#EBF0F8",
-        "zerolinewidth": 2
-      },
-      "yaxis": {
-        "automargin": true,
-        "gridcolor": "#EBF0F8",
-        "linecolor": "#EBF0F8",
-        "ticks": "",
-        "title": {
-          "standoff": 15
-        },
-        "zerolinecolor": "#EBF0F8",
-        "zerolinewidth": 2
-      }
-    }
-  },
-  "xaxis": {
-    "anchor": "y",
-    "domain": [
-      0.0,
-      1.0
-    ],
-    "matches": "x3",
-    "showticklabels": false,
-    "showspikes": true,
-    "spikemode": "across",
-    "spikethickness": 1
-  },
-  "yaxis": {
-    "anchor": "x",
-    "domain": [
-      0.5952,
-      1.0
-    ],
-    "title": {
-      "text": "Index (100 @ 2014-12-31)"
-    },
-    "fixedrange": false,
-    "showspikes": false
-  },
-  "xaxis2": {
-    "anchor": "y2",
-    "domain": [
-      0.0,
-      1.0
-    ],
-    "matches": "x3",
-    "showticklabels": false,
-    "showspikes": true,
-    "spikemode": "across",
-    "spikethickness": 1
-  },
-  "yaxis2": {
-    "anchor": "x2",
-    "domain": [
-      0.2712,
-      0.5352
-    ],
-    "title": {
-      "text": "Yield (%)"
-    },
-    "fixedrange": false,
-    "showspikes": false
-  },
-  "xaxis3": {
-    "anchor": "y3",
-    "domain": [
-      0.0,
-      1.0
-    ],
-    "title": {
-      "text": "Quarter-end"
-    },
-    "rangeslider": {
-      "visible": true,
-      "thickness": 0.05
-    },
-    "showspikes": true,
-    "spikemode": "across",
-    "spikethickness": 1,
-    "rangeselector": {
-      "buttons": [
-        {
-          "count": 3,
-          "label": "3y",
-          "step": "year",
-          "stepmode": "backward"
-        },
-        {
-          "count": 5,
-          "label": "5y",
-          "step": "year",
-          "stepmode": "backward"
-        },
-        {
-          "count": 10,
-          "label": "10y",
-          "step": "year",
-          "stepmode": "backward"
-        },
-        {
-          "label": "All",
-          "step": "all"
-        }
-      ]
-    }
-  },
-  "yaxis3": {
-    "anchor": "x3",
-    "domain": [
-      0.0,
-      0.2112
-    ],
-    "title": {
-      "text": "Index (100 @ 2014-12-31)"
-    },
-    "fixedrange": false,
-    "showspikes": false
-  },
-  "annotations": [
-    {
-      "font": {
-        "size": 16
-      },
-      "showarrow": false,
-      "text": "Levels rebased to 100 at 2014-12-31",
-      "x": 0.5,
-      "xanchor": "center",
-      "xref": "paper",
-      "y": 1.0,
-      "yanchor": "bottom",
-      "yref": "paper"
-    },
-    {
-      "font": {
-        "size": 16
-      },
-      "showarrow": false,
-      "text": "Treasury yields (%)",
-      "x": 0.5,
-      "xanchor": "center",
-      "xref": "paper",
-      "y": 0.5352,
-      "yanchor": "bottom",
-      "yref": "paper"
-    },
-    {
-      "font": {
-        "size": 16
-      },
-      "showarrow": false,
-      "text": "S&P 500 ÷ M2 money supply (rebased to 100)\u003cbr>\u003csup>Pro: broadest money measure, decades of history, short (~4-week) lag\u003c/sup>\u003cbr>\u003csup>Con: broad and slow; includes retail savings that don't move prices; weak short-horizon link to equities; 2020 definitional break\u003c/sup>",
-      "x": 0.5,
-      "xanchor": "center",
-      "xref": "paper",
-      "y": 0.2112,
-      "yanchor": "bottom",
-      "yref": "paper"
-    }
-  ],
-  "shapes": [
-    {
-      "line": {
-        "color": "#999999",
-        "dash": "dash",
-        "width": 0.8
-      },
-      "type": "line",
-      "x0": 0,
-      "x1": 1,
-      "xref": "x domain",
-      "y0": 100.0,
-      "y1": 100.0,
-      "yref": "y"
-    },
-    {
-      "line": {
-        "color": "#999999",
-        "dash": "dash",
-        "width": 0.8
-      },
-      "type": "line",
-      "x0": 0,
-      "x1": 1,
-      "xref": "x3 domain",
-      "y0": 100.0,
-      "y1": 100.0,
-      "yref": "y3"
-    },
-    {
-      "fillcolor": "#d62728",
-      "layer": "below",
-      "line": {
-        "width": 0
-      },
-      "opacity": 0.09,
-      "type": "rect",
-      "x0": "2022-08-15T00:00:00",
-      "x1": "2024-08-15T00:00:00",
-      "xref": "x",
-      "y0": 0,
-      "y1": 1,
-      "yref": "y domain"
-    },
-    {
-      "fillcolor": "#d62728",
-      "layer": "below",
-      "line": {
-        "width": 0
-      },
-      "opacity": 0.09,
-      "type": "rect",
-      "x0": "2022-08-15T00:00:00",
-      "x1": "2024-08-15T00:00:00",
-      "xref": "x2",
-      "y0": 0,
-      "y1": 1,
-      "yref": "y2 domain"
-    },
-    {
-      "fillcolor": "#d62728",
-      "layer": "below",
-      "line": {
-        "width": 0
-      },
-      "opacity": 0.09,
-      "type": "rect",
-      "x0": "2022-08-15T00:00:00",
-      "x1": "2024-08-15T00:00:00",
-      "xref": "x3",
-      "y0": 0,
-      "y1": 1,
-      "yref": "y3 domain"
-    },
-    {
-      "layer": "above",
-      "line": {
-        "color": "#111111",
-        "dash": "dot",
-        "width": 1.5
-      },
-      "type": "line",
-      "x0": "2014-12-31T00:00:00",
-      "x1": "2014-12-31T00:00:00",
-      "xref": "x",
-      "y0": 0,
-      "y1": 1,
-      "yref": "paper"
-    }
-  ],
-  "title": {
-    "font": {
-      "size": 14
-    },
-    "text": "Free cash flow & money-market-fund cash vs. M2, the S&P 500, and the Treasury curve\u003cbr>\u003csup>Aggregates sum 5 companies: AAPL, MSFT, GOOGL, AMZN, META\u003c/sup>"
-  },
-  "legend": {
-    "bgcolor": "rgba(255,255,255,0.8)",
-    "bordercolor": "#cccccc",
-    "borderwidth": 1,
-    "groupclick": "toggleitem"
-  },
-  "margin": {
-    "l": 70,
-    "r": 30,
-    "t": 110,
-    "b": 60
-  },
-  "hovermode": "x unified",
-  "dragmode": "zoom",
-  "updatemenus": [
-    {
-      "buttons": [
-        {
-          "args": [
-            {
-              "yaxis.type": "linear"
-            }
-          ],
-          "label": "Levels: Linear",
-          "method": "relayout"
-        },
-        {
-          "args": [
-            {
-              "yaxis.type": "log"
-            }
-          ],
-          "label": "Levels: Log",
-          "method": "relayout"
-        }
-      ],
-      "direction": "right",
-      "showactive": true,
-      "type": "buttons",
-      "x": 1.0,
-      "xanchor": "right",
-      "y": 1.14
-    },
-    {
-      "active": 0,
-      "bgcolor": "rgba(255,255,255,0.9)",
-      "bordercolor": "#cccccc",
-      "buttons": [
-        {
-          "args": [
-            {
-              "visible": [
-                true,
-                false
-              ]
-            },
-            {
-              "annotations[2].text": "S&P 500 ÷ M2 money supply (rebased to 100)\u003cbr>\u003csup>Pro: broadest money measure, decades of history, short (~4-week) lag\u003c/sup>\u003cbr>\u003csup>Con: broad and slow; includes retail savings that don't move prices; weak short-horizon link to equities; 2020 definitional break\u003c/sup>"
-            },
-            [
-              10,
-              11
-            ]
-          ],
-          "label": "Ratio ÷ M2 money supply",
-          "method": "update"
-        },
-        {
-          "args": [
-            {
-              "visible": [
-                false,
-                true
-              ]
-            },
-            {
-              "annotations[2].text": "S&P 500 ÷ Money-market-fund assets (rebased to 100)\u003cbr>\u003csup>Pro: “cash on the sidelines” that can rotate into stocks; at record highs\u003c/sup>\u003cbr>\u003csup>Con: ~10-week Z.1 lag; ambiguous sign (dry powder vs. risk-off flight); driven heavily by the level of short rates\u003c/sup>"
-            },
-            [
-              10,
-              11
-            ]
-          ],
-          "label": "Ratio ÷ Money-market-fund assets",
-          "method": "update"
-        }
-      ],
-      "direction": "down",
-      "pad": {
-        "b": 2,
-        "l": 4,
-        "r": 4,
-        "t": 2
-      },
-      "showactive": true,
-      "type": "dropdown",
-      "x": 0.0,
-      "xanchor": "left",
-      "y": 1.14,
-      "yanchor": "top"
-    }
-  ]
-},
-{
-  "scrollZoom": true,
-  "displaylogo": false,
-  "responsive": true
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Free Cash Flow vs. M2, the S&amp;P 500 &amp; the Treasury Curve</title><style>/* Project-local native chart/page components, following the Ontario chart. */
+:root { --ink:#182d37; --muted:#596b71; --paper:#f5f6f3; --surface:#fff; --line:#dce2df; --accent:#116965; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--paper); color:var(--ink); font:14px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+main { max-width:1200px; margin:auto; padding:35px 28px; }
+header { margin-bottom:23px; }
+.eyebrow { color:var(--accent); font-size:10px; font-weight:700; letter-spacing:1.8px; margin:0 0 5px; }
+h1 { font-size:clamp(27px,3.5vw,38px); font-weight:650; letter-spacing:-1px; line-height:1.25; margin:0 0 8px; }
+.subtitle { color:var(--muted); margin:0; font-size:14px; }
+a { color:var(--accent); text-underline-offset:3px; }
+.explorer { background:var(--surface); border:1px solid var(--line); border-radius:7px; padding:20px; min-width:0; }
+.legend { display:flex; flex-wrap:wrap; gap:6px 20px; margin:0 0 9px; }
+.legend-item { display:inline-flex; align-items:center; gap:6px; border:0; background:none; color:var(--ink); font-family:inherit; font-size:12px; font-weight:600; line-height:1.5; padding:3px 0; cursor:pointer; }
+.legend-item i { display:inline-block; width:19px; height:3px; flex-shrink:0; }
+.legend-item[aria-pressed=false] { opacity:.4; text-decoration:line-through; }
+.legend-item:disabled { cursor:default; }
+button:focus-visible,select:focus-visible,.chart:focus-visible,summary:focus-visible,a:focus-visible { outline:3px solid var(--accent); outline-offset:3px; }
+.series-description { color:var(--muted); font-size:11px; margin:0 0 10px; }
+.chart-choices:empty { display:none; }
+.chart-choices { margin:12px 0; }
+label { font-size:11px; font-weight:600; color:var(--muted); }
+select { display:block; font-family:inherit; font-size:12px; line-height:1.5; color:var(--ink); background:var(--surface); border:1px solid var(--line); border-radius:4px; padding:7px 26px 7px 9px; margin-top:4px; max-width:100%; }
+.chart svg { display:block; width:100%; height:auto; touch-action:pan-y; }
+.plot-panel+.plot-panel { margin-top:14px; border-top:1px solid var(--line); padding-top:14px; }
+.plot-panel h2 { font-size:14px; font-weight:600; margin:4px 0; }
+.panel-description { color:var(--muted); font-size:11px; margin:4px 0 8px; max-width:950px; }
+.gridline { stroke:var(--line); stroke-width:1; }
+.vertical-grid { stroke:var(--line); stroke-width:1; stroke-dasharray:2 4; }
+.axis { font-size:11px; fill:var(--muted); }
+.axis-title { font-size:11px; font-weight:600; fill:var(--muted); }
+.series-line { fill:none; stroke-width:2.4; stroke-linejoin:round; stroke-linecap:round; }
+.inspection { background:var(--paper); border-radius:4px; padding:10px 13px; margin-top:10px; }
+#inspect-period { margin:0 0 4px; color:var(--muted); font-size:10px; }
+.readout { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:7px 22px; }
+.readout-row { display:flex; align-items:center; justify-content:space-between; gap:10px; font-size:11px; }
+.readout-value { text-align:right; flex-shrink:0; }
+.readout-value strong { display:block; font-size:14px; font-variant-numeric:tabular-nums; }
+.readout-unit { display:block; font-size:10px; color:var(--muted); }
+.hint { color:var(--muted); font-size:10px; margin:7px 0 0; }
+footer { color:var(--muted); font-size:11px; margin:15px 2px 0; }
+summary { cursor:pointer; width:fit-content; }
+footer ul { padding-left:18px; } footer li { margin:5px 0; }
+@media(max-width:800px) { .readout { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+@media(max-width:640px) {
+  main { padding:23px 14px; }
+  .explorer { padding:14px; }
+  .subtitle { font-size:12px; }
+  .legend { gap:4px 14px; }
+  .legend-item { font-size:11px; min-height:36px; }
+  select { font-size:16px; min-height:44px; }
+  .readout { grid-template-columns:1fr; gap:6px; }
+  .readout-row+.readout-row { border-top:1px solid var(--line); padding-top:6px; }
 }
-)                };            </script>        </div>
-<footer style="font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;font-size:12px;color:#666;text-align:center;padding:8px 16px 16px">Data pulled 2026-10-25 &middot; <strong>Data sources:</strong> <a href="https://www.sec.gov/edgar/sec-api-documentation" target="_blank" rel="noopener">Company free cash flow (OCF - CapEx) from SEC EDGAR XBRL</a> · <a href="https://fred.stlouisfed.org/series/M2SL" target="_blank" rel="noopener">FRED M2 (M2SL)</a> · <a href="https://fred.stlouisfed.org/series/DGS3MO" target="_blank" rel="noopener">FRED 3M Treasury (DGS3MO)</a> · <a href="https://fred.stlouisfed.org/series/DGS2" target="_blank" rel="noopener">FRED 2Y Treasury (DGS2)</a> · <a href="https://fred.stlouisfed.org/series/DGS10" target="_blank" rel="noopener">FRED 10Y Treasury (DGS10)</a> · <a href="https://fred.stlouisfed.org/series/DGS30" target="_blank" rel="noopener">FRED 30Y Treasury (DGS30)</a> · <a href="https://finance.yahoo.com/quote/%5EGSPC" target="_blank" rel="noopener">S&P 500 via Yahoo Finance (^GSPC)</a></footer><script type="text/javascript">(function(){var D={
-  "dates": [
+</style></head>
+<body><main><header><p class="eyebrow">MARKETS & LIQUIDITY</p>
+<h1>Free Cash Flow vs. M2, the S&amp;P 500 &amp; the Treasury Curve</h1><p class="subtitle">Quarterly corporate cash, liquidity, equity prices and Treasury yields. Basket: AAPL, MSFT, GOOGL, AMZN, META.</p></header>
+<section class="explorer" aria-label="Chart">
+<div id="chart-legend" class="legend" aria-label="Toggle chart series"></div>
+<p class="series-description">Levels and ratios indexed to 100 at 2014-12-31; yields are raw percentages. Shading marks 10Y &lt; 2Y inversion.</p><div id="chart-choices" class="chart-choices"></div>
+<div id="chart" class="chart" tabindex="0" role="group" aria-label="Chart. Use arrow keys to inspect observations."></div>
+<div class="inspection"><p id="inspect-period"></p><div id="readout" class="readout" aria-live="polite" aria-atomic="true"></div></div>
+<p class="hint">Hover, tap the plot or use arrow keys to inspect · Tap legend entries to toggle series</p></section>
+<footer><details><summary>Definitions & data sources</summary><p>Data pulled 2026-10-25</p><p>Levels and ratios indexed to 100 at 2014-12-31; yields are raw percentages. Shading marks 10Y &lt; 2Y inversion.</p><ul><li><a href="https://www.sec.gov/edgar/sec-api-documentation" target="_blank" rel="noopener">Company free cash flow (OCF - CapEx) from SEC EDGAR XBRL</a></li><li><a href="https://fred.stlouisfed.org/series/M2SL" target="_blank" rel="noopener">FRED M2 (M2SL)</a></li><li><a href="https://fred.stlouisfed.org/series/DGS3MO" target="_blank" rel="noopener">FRED 3M Treasury (DGS3MO)</a></li><li><a href="https://fred.stlouisfed.org/series/DGS2" target="_blank" rel="noopener">FRED 2Y Treasury (DGS2)</a></li><li><a href="https://fred.stlouisfed.org/series/DGS10" target="_blank" rel="noopener">FRED 10Y Treasury (DGS10)</a></li><li><a href="https://fred.stlouisfed.org/series/DGS30" target="_blank" rel="noopener">FRED 30Y Treasury (DGS30)</a></li><li><a href="https://finance.yahoo.com/quote/%5EGSPC" target="_blank" rel="noopener">S&amp;P 500 via Yahoo Finance (^GSPC)</a></li></ul></details></footer>
+</main><script id="chart-data" type="application/json">{
+  "domain": [
     "2014-12-31",
-    "2015-03-31",
-    "2015-06-30",
-    "2015-09-30",
-    "2015-12-31",
-    "2016-03-31",
-    "2016-06-30",
-    "2016-09-30",
-    "2016-12-31",
-    "2017-03-31",
-    "2017-09-30",
-    "2017-12-31",
-    "2018-03-31",
-    "2018-06-30",
-    "2018-09-30",
-    "2018-12-31",
-    "2019-03-31",
-    "2019-06-30",
-    "2019-09-30",
-    "2019-12-31",
-    "2020-03-31",
-    "2020-06-30",
-    "2020-09-30",
-    "2020-12-31",
-    "2021-03-31",
-    "2021-06-30",
-    "2021-09-30",
-    "2021-12-31",
-    "2022-03-31",
-    "2022-06-30",
-    "2022-09-30",
-    "2022-12-31",
-    "2023-03-31",
-    "2023-06-30",
-    "2023-09-30",
-    "2023-12-31",
-    "2024-03-31",
-    "2024-06-30",
-    "2024-09-30",
-    "2024-12-31",
-    "2025-03-31",
-    "2025-06-30",
-    "2025-09-30",
-    "2025-12-31",
-    "2026-03-31",
     "2026-06-30"
   ],
-  "labels": [
-    "Aggregate FCF (basket sum)",
-    "Aggregate cash & equivalents (basket sum)",
-    "Money-market-fund assets (FRED: MMMFFAQ027S)",
-    "M2 money supply (FRED: M2SL)",
-    "S&P 500 (^GSPC)"
-  ],
-  "raw": {
-    "Aggregate FCF (basket sum)": [
-      45266000000.0,
-      27545000000.0,
-      24709000000.0,
-      23966000000.0,
-      43430000000.0,
-      21751000000.0,
-      25155000000.0,
-      34992000000.0,
-      46047000000.0,
-      25907000000.0,
-      33601000000.0,
-      50880000000.0,
-      24654000000.0,
-      30358000000.0,
-      43857000000.0,
-      50494000000.0,
-      31136000000.0,
-      38733000000.0,
-      45270000000.0,
-      63249000000.0,
-      34353000000.0,
-      51006000000.0,
-      51858000000.0,
-      85790000000.0,
-      52219000000.0,
-      58686000000.0,
-      55736000000.0,
-      87184000000.0,
-      51912000000.0,
-      49007000000.0,
-      49173000000.0,
-      69430000000.0,
-      58454000000.0,
-      82088000000.0,
-      85346000000.0,
-      94206000000.0,
-      75405000000.0,
-      82341000000.0,
-      80614000000.0,
-      89684000000.0,
-      63214000000.0,
-      64629000000.0,
-      88210000000.0,
-      111753000000.0,
-      47708000000.0,
-      38623000000.0
-    ],
-    "Aggregate cash & equivalents (basket sum)": [
-      63123000000.0,
-      52535000000.0,
-      54759000000.0,
-      59636000000.0,
-      61764000000.0,
-      63032000000.0,
-      56459000000.0,
-      63980000000.0,
-      66800000000.0,
-      63407000000.0,
-      58915000000.0,
-      81125000000.0,
-      102527000000.0,
-      90153000000.0,
-      85162000000.0,
-      110407000000.0,
-      104760000000.0,
-      116936000000.0,
-      118906000000.0,
-      124716000000.0,
-      125526000000.0,
-      125244000000.0,
-      118942000000.0,
-      138947000000.0,
-      133998000000.0,
-      129983000000.0,
-      123486000000.0,
-      133521000000.0,
-      114049000000.0,
-      111109000000.0,
-      119331000000.0,
-      129348000000.0,
-      140900000000.0,
-      169383000000.0,
-      228862000000.0,
-      199079000000.0,
-      183687000000.0,
-      175893000000.0,
-      193271000000.0,
-      198997000000.0,
-      178897000000.0,
-      161005000000.0,
-      164982000000.0,
-      223004000000.0,
-      243858000000.0,
-      210065000000.0
-    ],
-    "Money-market-fund assets (FRED: MMMFFAQ027S)": [
-      3072970.0,
-      3002355.0,
-      2957534.0,
-      3015801.0,
-      3078204.0,
-      3064466.0,
-      2969440.0,
-      2943898.0,
-      2955224.0,
-      2926657.0,
-      3029916.0,
-      3120533.0,
-      3067973.0,
-      3092120.0,
-      3143468.0,
-      3289687.0,
-      3483726.0,
-      3600902.0,
-      3834010.0,
-      4002466.0,
-      4727179.0,
-      5087590.0,
-      4846839.0,
-      4765920.0,
-      4979998.0,
-      5015397.0,
-      5019225.0,
-      5205455.0,
-      5090707.0,
-      5032439.0,
-      5084242.0,
-      5223061.0,
-      5692567.0,
-      5917351.0,
-      6142962.0,
-      6357551.0,
-      6440700.0,
-      6548352.0,
-      6839054.0,
-      7243180.0,
-      7397905.0,
-      7481232.0,
-      7774054.0,
-      8190235.0,
-      8289569.0,
-      8441374.0
-    ],
-    "M2 money supply (FRED: M2SL)": [
-      11721.2,
-      11919.1,
-      12020.9,
-      12172.7,
-      12393.6,
-      12662.2,
-      12849.3,
-      13052.7,
-      13240.6,
-      13464.6,
-      13743.0,
-      13887.3,
-      14014.5,
-      14133.2,
-      14243.9,
-      14392.0,
-      14559.5,
-      14798.8,
-      15047.2,
-      15351.5,
-      16034.4,
-      18180.0,
-      18605.0,
-      19119.4,
-      19874.5,
-      20472.7,
-      20985.4,
-      21502.8,
-      21788.1,
-      21647.0,
-      21541.3,
-      21293.2,
-      20942.3,
-      20798.9,
-      20753.6,
-      20779.9,
-      20965.9,
-      21070.7,
-      21275.6,
-      21487.6,
-      21684.1,
-      21942.6,
-      22176.1,
-      22355.3,
-      22640.3,
-      23114.9
-    ],
-    "S&P 500 (^GSPC)": [
-      2058.89990234375,
-      2067.889892578125,
-      2063.110107421875,
-      1920.030029296875,
-      2043.93994140625,
-      2059.739990234375,
-      2098.860107421875,
-      2168.27001953125,
-      2238.830078125,
-      2362.719970703125,
-      2519.360107421875,
-      2673.610107421875,
-      2640.8701171875,
-      2718.3701171875,
-      2913.97998046875,
-      2506.85009765625,
-      2834.39990234375,
-      2941.760009765625,
-      2976.739990234375,
-      3230.780029296875,
-      2584.590087890625,
-      3100.2900390625,
-      3363.0,
-      3756.070068359375,
-      3972.889892578125,
-      4297.5,
-      4307.5400390625,
-      4766.18017578125,
-      4530.41015625,
-      3785.3798828125,
-      3585.6201171875,
-      3839.5,
-      4109.31005859375,
-      4450.3798828125,
-      4288.0498046875,
-      4769.830078125,
-      5254.35009765625,
-      5460.47998046875,
-      5762.47998046875,
-      5881.6298828125,
-      5611.85009765625,
-      6204.9501953125,
-      6688.4599609375,
-      6845.5,
-      6528.52001953125,
-      7499.35986328125
-    ]
-  },
-  "idx": [
-    0,
-    1,
-    2,
-    3,
-    4
-  ],
-  "shape": 5,
-  "ratio": [
+  "anchor": "2014-12-31",
+  "panels": [
     {
-      "idx": 10,
-      "raw": [
-        0.17565606783808396,
-        0.1734937950498045,
-        0.17162692539010183,
-        0.1577324693204363,
-        0.16491898571893962,
-        0.16266841388024,
-        0.16334431505388428,
-        0.16611659040131543,
-        0.1690882647406462,
-        0.17547643232648016,
-        0.18331951592970058,
-        0.19252195224571192,
-        0.18843841144439688,
-        0.19233932281348173,
-        0.204577396672874,
-        0.174183580993347,
-        0.19467700829999313,
-        0.19878368582355496,
-        0.1978268375667483,
-        0.21045370350108294,
-        0.161190321302364,
-        0.1705330054489824,
-        0.1807578607901102,
-        0.19645334416139495,
-        0.19989885997525095,
-        0.20991368993830808,
-        0.20526366135801555,
-        0.22165393231491945,
-        0.2079304829815358,
-        0.17486856759885896,
-        0.16645328356169312,
-        0.18031578156406738,
-        0.19622057073930516,
-        0.2139718871100154,
-        0.20661715580369192,
-        0.22954056940240328,
-        0.2506140970650556,
-        0.2591503832558363,
-        0.27084923482622114,
-        0.2737220481958199,
-        0.2588002313979483,
-        0.2827809920115438,
-        0.3016066829125726,
-        0.3062137390238556,
-        0.2883583706722636,
-        0.3244383433751065
+      "id": "levels",
+      "title": "Corporate cash & the macro backdrop",
+      "unit": "index",
+      "axis": "Index (100 = 2014-12-31)",
+      "reference": 100,
+      "series": [
+        {
+          "id": "Aggregate FCF (basket sum)",
+          "name": "Aggregate FCF",
+          "color": "#b64949",
+          "points": [
+            {
+              "date": "2014-12-31",
+              "value": 100.0
+            },
+            {
+              "date": "2015-03-31",
+              "value": 60.85141165554721
+            },
+            {
+              "date": "2015-06-30",
+              "value": 54.58622365572394
+            },
+            {
+              "date": "2015-09-30",
+              "value": 52.944815093005786
+            },
+            {
+              "date": "2015-12-31",
+              "value": 95.94397561083373
+            },
+            {
+              "date": "2016-03-31",
+              "value": 48.05151769540052
+            },
+            {
+              "date": "2016-06-30",
+              "value": 55.571510626076964
+            },
+            {
+              "date": "2016-09-30",
+              "value": 77.30305306410993
+            },
+            {
+              "date": "2016-12-31",
+              "value": 101.72535677992312
+            },
+            {
+              "date": "2017-03-31",
+              "value": 57.232801661291035
+            },
+            {
+              "date": "2017-09-30",
+              "value": 74.23010648168604
+            },
+            {
+              "date": "2017-12-31",
+              "value": 112.40224451022843
+            },
+            {
+              "date": "2018-03-31",
+              "value": 54.464719657137806
+            },
+            {
+              "date": "2018-06-30",
+              "value": 67.06578889232537
+            },
+            {
+              "date": "2018-09-30",
+              "value": 96.88728847258427
+            },
+            {
+              "date": "2018-12-31",
+              "value": 111.54950735651482
+            },
+            {
+              "date": "2019-03-31",
+              "value": 68.78451818141652
+            },
+            {
+              "date": "2019-06-30",
+              "value": 85.56753413157779
+            },
+            {
+              "date": "2019-09-30",
+              "value": 100.00883665444263
+            },
+            {
+              "date": "2019-12-31",
+              "value": 139.72738921044493
+            },
+            {
+              "date": "2020-03-31",
+              "value": 75.8913975169001
+            },
+            {
+              "date": "2020-06-30",
+              "value": 112.68059912517121
+            },
+            {
+              "date": "2020-09-30",
+              "value": 114.56280652145098
+            },
+            {
+              "date": "2020-12-31",
+              "value": 189.52414615826447
+            },
+            {
+              "date": "2021-03-31",
+              "value": 115.36031458489816
+            },
+            {
+              "date": "2021-06-30",
+              "value": 129.646975655017
+            },
+            {
+              "date": "2021-09-30",
+              "value": 123.12994300357884
+            },
+            {
+              "date": "2021-12-31",
+              "value": 192.60372023152036
+            },
+            {
+              "date": "2022-03-31",
+              "value": 114.68210135642646
+            },
+            {
+              "date": "2022-06-30",
+              "value": 108.26448106746786
+            },
+            {
+              "date": "2022-09-30",
+              "value": 108.63120222683692
+            },
+            {
+              "date": "2022-12-31",
+              "value": 153.38222948791588
+            },
+            {
+              "date": "2023-03-31",
+              "value": 129.1344496973446
+            },
+            {
+              "date": "2023-06-30",
+              "value": 181.34582247161225
+            },
+            {
+              "date": "2023-09-30",
+              "value": 188.54327751513276
+            },
+            {
+              "date": "2023-12-31",
+              "value": 208.11646710555382
+            },
+            {
+              "date": "2024-03-31",
+              "value": 166.58198206159148
+            },
+            {
+              "date": "2024-06-30",
+              "value": 181.90474086510847
+            },
+            {
+              "date": "2024-09-30",
+              "value": 178.0895153095038
+            },
+            {
+              "date": "2024-12-31",
+              "value": 198.12662925816286
+            },
+            {
+              "date": "2025-03-31",
+              "value": 139.65006848407194
+            },
+            {
+              "date": "2025-06-30",
+              "value": 142.7760349931516
+            },
+            {
+              "date": "2025-09-30",
+              "value": 194.87032209605442
+            },
+            {
+              "date": "2025-12-31",
+              "value": 246.8806609817523
+            },
+            {
+              "date": "2026-03-31",
+              "value": 105.39477753722441
+            },
+            {
+              "date": "2026-06-30",
+              "value": 85.32452613440552
+            }
+          ]
+        },
+        {
+          "id": "Aggregate cash & equivalents (basket sum)",
+          "name": "Aggregate cash",
+          "color": "#aa5633",
+          "points": [
+            {
+              "date": "2014-12-31",
+              "value": 100.0
+            },
+            {
+              "date": "2015-03-31",
+              "value": 83.22639925225354
+            },
+            {
+              "date": "2015-06-30",
+              "value": 86.74967919775676
+            },
+            {
+              "date": "2015-09-30",
+              "value": 94.47586458184814
+            },
+            {
+              "date": "2015-12-31",
+              "value": 97.84706050092676
+            },
+            {
+              "date": "2016-03-31",
+              "value": 99.85583701661835
+            },
+            {
+              "date": "2016-06-30",
+              "value": 89.44283383235904
+            },
+            {
+              "date": "2016-09-30",
+              "value": 101.35766677756126
+            },
+            {
+              "date": "2016-12-31",
+              "value": 105.82513505378388
+            },
+            {
+              "date": "2017-03-31",
+              "value": 100.44991524483945
+            },
+            {
+              "date": "2017-09-30",
+              "value": 93.33365017505506
+            },
+            {
+              "date": "2017-12-31",
+              "value": 128.5189233718296
+            },
+            {
+              "date": "2018-03-31",
+              "value": 162.42415601286376
+            },
+            {
+              "date": "2018-06-30",
+              "value": 142.82115869017633
+            },
+            {
+              "date": "2018-09-30",
+              "value": 134.91437352470572
+            },
+            {
+              "date": "2018-12-31",
+              "value": 174.90771984854965
+            },
+            {
+              "date": "2019-03-31",
+              "value": 165.9616938358443
+            },
+            {
+              "date": "2019-06-30",
+              "value": 185.251017854031
+            },
+            {
+              "date": "2019-09-30",
+              "value": 188.37190881295248
+            },
+            {
+              "date": "2019-12-31",
+              "value": 197.57616082885795
+            },
+            {
+              "date": "2020-03-31",
+              "value": 198.8593698018155
+            },
+            {
+              "date": "2020-06-30",
+              "value": 198.41262297419325
+            },
+            {
+              "date": "2020-09-30",
+              "value": 188.4289403228617
+            },
+            {
+              "date": "2020-12-31",
+              "value": 220.12103353769623
+            },
+            {
+              "date": "2021-03-31",
+              "value": 212.28078513378642
+            },
+            {
+              "date": "2021-06-30",
+              "value": 205.92018757029925
+            },
+            {
+              "date": "2021-09-30",
+              "value": 195.62758424029275
+            },
+            {
+              "date": "2021-12-31",
+              "value": 211.52511762748918
+            },
+            {
+              "date": "2022-03-31",
+              "value": 180.6774076010329
+            },
+            {
+              "date": "2022-06-30",
+              "value": 176.01983429177955
+            },
+            {
+              "date": "2022-09-30",
+              "value": 189.04519747160307
+            },
+            {
+              "date": "2022-12-31",
+              "value": 204.91421510384487
+            },
+            {
+              "date": "2023-03-31",
+              "value": 223.2149929502717
+            },
+            {
+              "date": "2023-06-30",
+              "value": 268.3380067487287
+            },
+            {
+              "date": "2023-09-30",
+              "value": 362.5651505790282
+            },
+            {
+              "date": "2023-12-31",
+              "value": 315.38266558940484
+            },
+            {
+              "date": "2024-03-31",
+              "value": 290.998526685994
+            },
+            {
+              "date": "2024-06-30",
+              "value": 278.65120479064683
+            },
+            {
+              "date": "2024-09-30",
+              "value": 306.18158199071655
+            },
+            {
+              "date": "2024-12-31",
+              "value": 315.2527604835005
+            },
+            {
+              "date": "2025-03-31",
+              "value": 283.41016745084994
+            },
+            {
+              "date": "2025-06-30",
+              "value": 255.0655070259652
+            },
+            {
+              "date": "2025-09-30",
+              "value": 261.36590466232593
+            },
+            {
+              "date": "2025-12-31",
+              "value": 353.2848565499105
+            },
+            {
+              "date": "2026-03-31",
+              "value": 386.3219428734376
+            },
+            {
+              "date": "2026-06-30",
+              "value": 332.7867813633699
+            }
+          ]
+        },
+        {
+          "id": "Money-market-fund assets (FRED: MMMFFAQ027S)",
+          "name": "Money-market funds",
+          "color": "#317f98",
+          "points": [
+            {
+              "date": "2014-12-31",
+              "value": 100.0
+            },
+            {
+              "date": "2015-03-31",
+              "value": 97.70206022187004
+            },
+            {
+              "date": "2015-06-30",
+              "value": 96.24350384156044
+            },
+            {
+              "date": "2015-09-30",
+              "value": 98.1396173734205
+            },
+            {
+              "date": "2015-12-31",
+              "value": 100.17032382353229
+            },
+            {
+              "date": "2016-03-31",
+              "value": 99.72326446402015
+            },
+            {
+              "date": "2016-06-30",
+              "value": 96.63094660865546
+            },
+            {
+              "date": "2016-09-30",
+              "value": 95.79976374647327
+            },
+            {
+              "date": "2016-12-31",
+              "value": 96.16833226487731
+            },
+            {
+              "date": "2017-03-31",
+              "value": 95.23871043322909
+            },
+            {
+              "date": "2017-09-30",
+              "value": 98.59894499458179
+            },
+            {
+              "date": "2017-12-31",
+              "value": 101.54778601808674
+            },
+            {
+              "date": "2018-03-31",
+              "value": 99.83738858498455
+            },
+            {
+              "date": "2018-06-30",
+              "value": 100.62317562488407
+            },
+            {
+              "date": "2018-09-30",
+              "value": 102.29413238658367
+            },
+            {
+              "date": "2018-12-31",
+              "value": 107.0523630233943
+            },
+            {
+              "date": "2019-03-31",
+              "value": 113.36674292297029
+            },
+            {
+              "date": "2019-06-30",
+              "value": 117.17986182748285
+            },
+            {
+              "date": "2019-09-30",
+              "value": 124.7656176272466
+            },
+            {
+              "date": "2019-12-31",
+              "value": 130.2474804505088
+            },
+            {
+              "date": "2020-03-31",
+              "value": 153.83095181534478
+            },
+            {
+              "date": "2020-06-30",
+              "value": 165.55937741012767
+            },
+            {
+              "date": "2020-09-30",
+              "value": 157.7249045711478
+            },
+            {
+              "date": "2020-12-31",
+              "value": 155.0916540024797
+            },
+            {
+              "date": "2021-03-31",
+              "value": 162.05813919432993
+            },
+            {
+              "date": "2021-06-30",
+              "value": 163.21008665883494
+            },
+            {
+              "date": "2021-09-30",
+              "value": 163.33465670019558
+            },
+            {
+              "date": "2021-12-31",
+              "value": 169.39491762041283
+            },
+            {
+              "date": "2022-03-31",
+              "value": 165.66081022593778
+            },
+            {
+              "date": "2022-06-30",
+              "value": 163.76466415226963
+            },
+            {
+              "date": "2022-09-30",
+              "value": 165.45042743664922
+            },
+            {
+              "date": "2022-12-31",
+              "value": 169.9678486936091
+            },
+            {
+              "date": "2023-03-31",
+              "value": 185.24642284174593
+            },
+            {
+              "date": "2023-06-30",
+              "value": 192.56130063098567
+            },
+            {
+              "date": "2023-09-30",
+              "value": 199.9030904955141
+            },
+            {
+              "date": "2023-12-31",
+              "value": 206.88620455129728
+            },
+            {
+              "date": "2024-03-31",
+              "value": 209.5920233520015
+            },
+            {
+              "date": "2024-06-30",
+              "value": 213.09521407628452
+            },
+            {
+              "date": "2024-09-30",
+              "value": 222.55518277106512
+            },
+            {
+              "date": "2024-12-31",
+              "value": 235.70617350641237
+            },
+            {
+              "date": "2025-03-31",
+              "value": 240.74120476281902
+            },
+            {
+              "date": "2025-06-30",
+              "value": 243.45281600536288
+            },
+            {
+              "date": "2025-09-30",
+              "value": 252.98177333328994
+            },
+            {
+              "date": "2025-12-31",
+              "value": 266.52505556513734
+            },
+            {
+              "date": "2026-03-31",
+              "value": 269.75756352974486
+            },
+            {
+              "date": "2026-06-30",
+              "value": 274.69757270653474
+            }
+          ]
+        },
+        {
+          "id": "M2 money supply (FRED: M2SL)",
+          "name": "M2 money supply",
+          "color": "#466aa0",
+          "points": [
+            {
+              "date": "2014-12-31",
+              "value": 100.0
+            },
+            {
+              "date": "2015-03-31",
+              "value": 101.688393679828
+            },
+            {
+              "date": "2015-06-30",
+              "value": 102.55690543630344
+            },
+            {
+              "date": "2015-09-30",
+              "value": 103.851994676313
+            },
+            {
+              "date": "2015-12-31",
+              "value": 105.7366139985667
+            },
+            {
+              "date": "2016-03-31",
+              "value": 108.02818824011193
+            },
+            {
+              "date": "2016-06-30",
+              "value": 109.62444118349656
+            },
+            {
+              "date": "2016-09-30",
+              "value": 111.35975838651332
+            },
+            {
+              "date": "2016-12-31",
+              "value": 112.9628365696345
+            },
+            {
+              "date": "2017-03-31",
+              "value": 114.87390369586731
+            },
+            {
+              "date": "2017-09-30",
+              "value": 117.24908712418522
+            },
+            {
+              "date": "2017-12-31",
+              "value": 118.48018974166467
+            },
+            {
+              "date": "2018-03-31",
+              "value": 119.56540285977545
+            },
+            {
+              "date": "2018-06-30",
+              "value": 120.57809780568542
+            },
+            {
+              "date": "2018-09-30",
+              "value": 121.52254035422993
+            },
+            {
+              "date": "2018-12-31",
+              "value": 122.78606286045796
+            },
+            {
+              "date": "2019-03-31",
+              "value": 124.21509743029723
+            },
+            {
+              "date": "2019-06-30",
+              "value": 126.25669726649147
+            },
+            {
+              "date": "2019-09-30",
+              "value": 128.37593420468895
+            },
+            {
+              "date": "2019-12-31",
+              "value": 130.97208476947753
+            },
+            {
+              "date": "2020-03-31",
+              "value": 136.7982800395864
+            },
+            {
+              "date": "2020-06-30",
+              "value": 155.10357301300206
+            },
+            {
+              "date": "2020-09-30",
+              "value": 158.729481623042
+            },
+            {
+              "date": "2020-12-31",
+              "value": 163.11811077364092
+            },
+            {
+              "date": "2021-03-31",
+              "value": 169.56028392997302
+            },
+            {
+              "date": "2021-06-30",
+              "value": 174.66385694297512
+            },
+            {
+              "date": "2021-09-30",
+              "value": 179.03798245913387
+            },
+            {
+              "date": "2021-12-31",
+              "value": 183.45220625874484
+            },
+            {
+              "date": "2022-03-31",
+              "value": 185.88625737979046
+            },
+            {
+              "date": "2022-06-30",
+              "value": 184.68245572125718
+            },
+            {
+              "date": "2022-09-30",
+              "value": 183.7806709210661
+            },
+            {
+              "date": "2022-12-31",
+              "value": 181.66399344776985
+            },
+            {
+              "date": "2023-03-31",
+              "value": 178.67027266832747
+            },
+            {
+              "date": "2023-06-30",
+              "value": 177.44684844555167
+            },
+            {
+              "date": "2023-09-30",
+              "value": 177.06036924546973
+            },
+            {
+              "date": "2023-12-31",
+              "value": 177.2847490018087
+            },
+            {
+              "date": "2024-03-31",
+              "value": 178.8716172405556
+            },
+            {
+              "date": "2024-06-30",
+              "value": 179.76572364604306
+            },
+            {
+              "date": "2024-09-30",
+              "value": 181.51383817356583
+            },
+            {
+              "date": "2024-12-31",
+              "value": 183.32252670375047
+            },
+            {
+              "date": "2025-03-31",
+              "value": 184.99897621403952
+            },
+            {
+              "date": "2025-06-30",
+              "value": 187.20438180391085
+            },
+            {
+              "date": "2025-09-30",
+              "value": 189.19649865201515
+            },
+            {
+              "date": "2025-12-31",
+              "value": 190.7253523530014
+            },
+            {
+              "date": "2026-03-31",
+              "value": 193.1568440091458
+            },
+            {
+              "date": "2026-06-30",
+              "value": 197.20591748285156
+            }
+          ]
+        },
+        {
+          "id": "S&P 500 (^GSPC)",
+          "name": "S&P 500",
+          "color": "#116965",
+          "points": [
+            {
+              "date": "2014-12-31",
+              "value": 100.0
+            },
+            {
+              "date": "2015-03-31",
+              "value": 100.43664047116333
+            },
+            {
+              "date": "2015-06-30",
+              "value": 100.20448808965081
+            },
+            {
+              "date": "2015-09-30",
+              "value": 93.2551420839453
+            },
+            {
+              "date": "2015-12-31",
+              "value": 99.27340027941764
+            },
+            {
+              "date": "2016-03-31",
+              "value": 100.0408027553777
+            },
+            {
+              "date": "2016-06-30",
+              "value": 101.94085224991444
+            },
+            {
+              "date": "2016-09-30",
+              "value": 105.31206578148839
+            },
+            {
+              "date": "2016-12-31",
+              "value": 108.73914149864335
+            },
+            {
+              "date": "2017-03-31",
+              "value": 114.75642735295297
+            },
+            {
+              "date": "2017-09-30",
+              "value": 122.36438034476372
+            },
+            {
+              "date": "2017-12-31",
+              "value": 129.85624528799914
+            },
+            {
+              "date": "2018-03-31",
+              "value": 128.26607617889843
+            },
+            {
+              "date": "2018-06-30",
+              "value": 132.03022226058886
+            },
+            {
+              "date": "2018-09-30",
+              "value": 141.53092033039678
+            },
+            {
+              "date": "2018-12-31",
+              "value": 121.75677383842583
+            },
+            {
+              "date": "2019-03-31",
+              "value": 137.66574563033438
+            },
+            {
+              "date": "2019-06-30",
+              "value": 142.88018598752035
+            },
+            {
+              "date": "2019-09-30",
+              "value": 144.57915058647586
+            },
+            {
+              "date": "2019-12-31",
+              "value": 156.9177804913738
+            },
+            {
+              "date": "2020-03-31",
+              "value": 125.53257615625
+            },
+            {
+              "date": "2020-06-30",
+              "value": 150.57993035665712
+            },
+            {
+              "date": "2020-09-30",
+              "value": 163.33965513193365
+            },
+            {
+              "date": "2020-12-31",
+              "value": 182.43092168218817
+            },
+            {
+              "date": "2021-03-31",
+              "value": 192.96177964045668
+            },
+            {
+              "date": "2021-06-30",
+              "value": 208.72797143309094
+            },
+            {
+              "date": "2021-09-30",
+              "value": 209.21561238402163
+            },
+            {
+              "date": "2021-12-31",
+              "value": 231.49159268770987
+            },
+            {
+              "date": "2022-03-31",
+              "value": 220.0403308141792
+            },
+            {
+              "date": "2022-06-30",
+              "value": 183.85448843352756
+            },
+            {
+              "date": "2022-09-30",
+              "value": 174.15223115537609
+            },
+            {
+              "date": "2022-12-31",
+              "value": 186.48308233097214
+            },
+            {
+              "date": "2023-03-31",
+              "value": 199.587656200086
+            },
+            {
+              "date": "2023-06-30",
+              "value": 216.15329029577433
+            },
+            {
+              "date": "2023-09-30",
+              "value": 208.26897897300378
+            },
+            {
+              "date": "2023-12-31",
+              "value": 231.66886708262314
+            },
+            {
+              "date": "2024-03-31",
+              "value": 255.20182363770851
+            },
+            {
+              "date": "2024-06-30",
+              "value": 265.21347513071464
+            },
+            {
+              "date": "2024-09-30",
+              "value": 279.88150244259214
+            },
+            {
+              "date": "2024-12-31",
+              "value": 285.66856873989565
+            },
+            {
+              "date": "2025-03-31",
+              "value": 272.56546524034496
+            },
+            {
+              "date": "2025-06-30",
+              "value": 301.37211567444785
+            },
+            {
+              "date": "2025-09-30",
+              "value": 324.8560045742723
+            },
+            {
+              "date": "2025-12-31",
+              "value": 332.4833806736996
+            },
+            {
+              "date": "2026-03-31",
+              "value": 317.08778130007704
+            },
+            {
+              "date": "2026-06-30",
+              "value": 364.2411102523415
+            }
+          ]
+        }
       ]
     },
     {
-      "idx": 11,
-      "raw": [
-        0.0006700032549435075,
-        0.0006887559574327903,
-        0.0006975778156470475,
-        0.0006366567387227722,
-        0.00066400405606849,
-        0.0006721366757648396,
-        0.0007068201773472019,
-        0.0007365302804415269,
-        0.0007575838847156764,
-        0.0008073101735882015,
-        0.0008314950339949606,
-        0.0008567799499065945,
-        0.0008607866226943652,
-        0.0008791282735429091,
-        0.0009269952741585885,
-        0.000762033013370649,
-        0.0008136116050297153,
-        0.000816950866689964,
-        0.0007764038148659954,
-        0.000807197370145524,
-        0.0005467510512909761,
-        0.0006093828392347851,
-        0.0006938542831730123,
-        0.0007881101798518176,
-        0.0007977693751238705,
-        0.0008568613810631541,
-        0.0008582081972939049,
-        0.0009156125978961013,
-        0.0008899373223110268,
-        0.0007521958801313836,
-        0.0007052418270388192,
-        0.0007351053338262754,
-        0.0007218729368655213,
-        0.0007520898934020476,
-        0.0006980427039411118,
-        0.0007502621808499845,
-        0.0008158041979375301,
-        0.0008338708701775272,
-        0.0008425843662688948,
-        0.0008120231559636099,
-        0.0007585728794376583,
-        0.00082940218874545,
-        0.0008603567663586463,
-        0.0008358124034292056,
-        0.00078755843874769,
-        0.0008884051178494461
+      "id": "yields",
+      "title": "Treasury yields",
+      "unit": "%",
+      "axis": "Treasury yield (%)",
+      "zero": true,
+      "series": [
+        {
+          "id": "3M Treasury yield (FRED: DGS3MO)",
+          "name": "3M Treasury yield",
+          "color": "#a79bb5",
+          "points": [
+            {
+              "date": "2014-12-31",
+              "value": 0.04
+            },
+            {
+              "date": "2015-03-31",
+              "value": 0.03
+            },
+            {
+              "date": "2015-06-30",
+              "value": 0.01
+            },
+            {
+              "date": "2015-09-30",
+              "value": 0.0
+            },
+            {
+              "date": "2015-12-31",
+              "value": 0.16
+            },
+            {
+              "date": "2016-03-31",
+              "value": 0.21
+            },
+            {
+              "date": "2016-06-30",
+              "value": 0.26
+            },
+            {
+              "date": "2016-09-30",
+              "value": 0.29
+            },
+            {
+              "date": "2016-12-31",
+              "value": 0.51
+            },
+            {
+              "date": "2017-03-31",
+              "value": 0.76
+            },
+            {
+              "date": "2017-09-30",
+              "value": 1.06
+            },
+            {
+              "date": "2017-12-31",
+              "value": 1.39
+            },
+            {
+              "date": "2018-03-31",
+              "value": 1.73
+            },
+            {
+              "date": "2018-06-30",
+              "value": 1.93
+            },
+            {
+              "date": "2018-09-30",
+              "value": 2.19
+            },
+            {
+              "date": "2018-12-31",
+              "value": 2.45
+            },
+            {
+              "date": "2019-03-31",
+              "value": 2.4
+            },
+            {
+              "date": "2019-06-30",
+              "value": 2.12
+            },
+            {
+              "date": "2019-09-30",
+              "value": 1.88
+            },
+            {
+              "date": "2019-12-31",
+              "value": 1.55
+            },
+            {
+              "date": "2020-03-31",
+              "value": 0.11
+            },
+            {
+              "date": "2020-06-30",
+              "value": 0.16
+            },
+            {
+              "date": "2020-09-30",
+              "value": 0.1
+            },
+            {
+              "date": "2020-12-31",
+              "value": 0.09
+            },
+            {
+              "date": "2021-03-31",
+              "value": 0.03
+            },
+            {
+              "date": "2021-06-30",
+              "value": 0.05
+            },
+            {
+              "date": "2021-09-30",
+              "value": 0.04
+            },
+            {
+              "date": "2021-12-31",
+              "value": 0.06
+            },
+            {
+              "date": "2022-03-31",
+              "value": 0.52
+            },
+            {
+              "date": "2022-06-30",
+              "value": 1.72
+            },
+            {
+              "date": "2022-09-30",
+              "value": 3.33
+            },
+            {
+              "date": "2022-12-31",
+              "value": 4.42
+            },
+            {
+              "date": "2023-03-31",
+              "value": 4.85
+            },
+            {
+              "date": "2023-06-30",
+              "value": 5.43
+            },
+            {
+              "date": "2023-09-30",
+              "value": 5.55
+            },
+            {
+              "date": "2023-12-31",
+              "value": 5.4
+            },
+            {
+              "date": "2024-03-31",
+              "value": 5.46
+            },
+            {
+              "date": "2024-06-30",
+              "value": 5.48
+            },
+            {
+              "date": "2024-09-30",
+              "value": 4.73
+            },
+            {
+              "date": "2024-12-31",
+              "value": 4.37
+            },
+            {
+              "date": "2025-03-31",
+              "value": 4.32
+            },
+            {
+              "date": "2025-06-30",
+              "value": 4.41
+            },
+            {
+              "date": "2025-09-30",
+              "value": 4.02
+            },
+            {
+              "date": "2025-12-31",
+              "value": 3.67
+            },
+            {
+              "date": "2026-03-31",
+              "value": 3.7
+            },
+            {
+              "date": "2026-06-30",
+              "value": 3.87
+            }
+          ]
+        },
+        {
+          "id": "2Y Treasury yield (FRED: DGS2)",
+          "name": "2Y Treasury yield",
+          "color": "#806493",
+          "points": [
+            {
+              "date": "2014-12-31",
+              "value": 0.67
+            },
+            {
+              "date": "2015-03-31",
+              "value": 0.56
+            },
+            {
+              "date": "2015-06-30",
+              "value": 0.64
+            },
+            {
+              "date": "2015-09-30",
+              "value": 0.64
+            },
+            {
+              "date": "2015-12-31",
+              "value": 1.06
+            },
+            {
+              "date": "2016-03-31",
+              "value": 0.73
+            },
+            {
+              "date": "2016-06-30",
+              "value": 0.58
+            },
+            {
+              "date": "2016-09-30",
+              "value": 0.77
+            },
+            {
+              "date": "2016-12-31",
+              "value": 1.2
+            },
+            {
+              "date": "2017-03-31",
+              "value": 1.27
+            },
+            {
+              "date": "2017-09-30",
+              "value": 1.47
+            },
+            {
+              "date": "2017-12-31",
+              "value": 1.89
+            },
+            {
+              "date": "2018-03-31",
+              "value": 2.27
+            },
+            {
+              "date": "2018-06-30",
+              "value": 2.52
+            },
+            {
+              "date": "2018-09-30",
+              "value": 2.81
+            },
+            {
+              "date": "2018-12-31",
+              "value": 2.48
+            },
+            {
+              "date": "2019-03-31",
+              "value": 2.27
+            },
+            {
+              "date": "2019-06-30",
+              "value": 1.75
+            },
+            {
+              "date": "2019-09-30",
+              "value": 1.63
+            },
+            {
+              "date": "2019-12-31",
+              "value": 1.58
+            },
+            {
+              "date": "2020-03-31",
+              "value": 0.23
+            },
+            {
+              "date": "2020-06-30",
+              "value": 0.16
+            },
+            {
+              "date": "2020-09-30",
+              "value": 0.13
+            },
+            {
+              "date": "2020-12-31",
+              "value": 0.13
+            },
+            {
+              "date": "2021-03-31",
+              "value": 0.16
+            },
+            {
+              "date": "2021-06-30",
+              "value": 0.25
+            },
+            {
+              "date": "2021-09-30",
+              "value": 0.28
+            },
+            {
+              "date": "2021-12-31",
+              "value": 0.73
+            },
+            {
+              "date": "2022-03-31",
+              "value": 2.28
+            },
+            {
+              "date": "2022-06-30",
+              "value": 2.92
+            },
+            {
+              "date": "2022-09-30",
+              "value": 4.22
+            },
+            {
+              "date": "2022-12-31",
+              "value": 4.41
+            },
+            {
+              "date": "2023-03-31",
+              "value": 4.06
+            },
+            {
+              "date": "2023-06-30",
+              "value": 4.87
+            },
+            {
+              "date": "2023-09-30",
+              "value": 5.03
+            },
+            {
+              "date": "2023-12-31",
+              "value": 4.23
+            },
+            {
+              "date": "2024-03-31",
+              "value": 4.59
+            },
+            {
+              "date": "2024-06-30",
+              "value": 4.71
+            },
+            {
+              "date": "2024-09-30",
+              "value": 3.66
+            },
+            {
+              "date": "2024-12-31",
+              "value": 4.25
+            },
+            {
+              "date": "2025-03-31",
+              "value": 3.89
+            },
+            {
+              "date": "2025-06-30",
+              "value": 3.72
+            },
+            {
+              "date": "2025-09-30",
+              "value": 3.6
+            },
+            {
+              "date": "2025-12-31",
+              "value": 3.47
+            },
+            {
+              "date": "2026-03-31",
+              "value": 3.79
+            },
+            {
+              "date": "2026-06-30",
+              "value": 4.14
+            }
+          ]
+        },
+        {
+          "id": "10Y Treasury yield (FRED: DGS10)",
+          "name": "10Y Treasury yield",
+          "color": "#5f4778",
+          "points": [
+            {
+              "date": "2014-12-31",
+              "value": 2.17
+            },
+            {
+              "date": "2015-03-31",
+              "value": 1.94
+            },
+            {
+              "date": "2015-06-30",
+              "value": 2.35
+            },
+            {
+              "date": "2015-09-30",
+              "value": 2.06
+            },
+            {
+              "date": "2015-12-31",
+              "value": 2.27
+            },
+            {
+              "date": "2016-03-31",
+              "value": 1.78
+            },
+            {
+              "date": "2016-06-30",
+              "value": 1.49
+            },
+            {
+              "date": "2016-09-30",
+              "value": 1.6
+            },
+            {
+              "date": "2016-12-31",
+              "value": 2.45
+            },
+            {
+              "date": "2017-03-31",
+              "value": 2.4
+            },
+            {
+              "date": "2017-09-30",
+              "value": 2.33
+            },
+            {
+              "date": "2017-12-31",
+              "value": 2.4
+            },
+            {
+              "date": "2018-03-31",
+              "value": 2.74
+            },
+            {
+              "date": "2018-06-30",
+              "value": 2.85
+            },
+            {
+              "date": "2018-09-30",
+              "value": 3.05
+            },
+            {
+              "date": "2018-12-31",
+              "value": 2.69
+            },
+            {
+              "date": "2019-03-31",
+              "value": 2.41
+            },
+            {
+              "date": "2019-06-30",
+              "value": 2.0
+            },
+            {
+              "date": "2019-09-30",
+              "value": 1.68
+            },
+            {
+              "date": "2019-12-31",
+              "value": 1.92
+            },
+            {
+              "date": "2020-03-31",
+              "value": 0.7
+            },
+            {
+              "date": "2020-06-30",
+              "value": 0.66
+            },
+            {
+              "date": "2020-09-30",
+              "value": 0.69
+            },
+            {
+              "date": "2020-12-31",
+              "value": 0.93
+            },
+            {
+              "date": "2021-03-31",
+              "value": 1.74
+            },
+            {
+              "date": "2021-06-30",
+              "value": 1.45
+            },
+            {
+              "date": "2021-09-30",
+              "value": 1.52
+            },
+            {
+              "date": "2021-12-31",
+              "value": 1.52
+            },
+            {
+              "date": "2022-03-31",
+              "value": 2.32
+            },
+            {
+              "date": "2022-06-30",
+              "value": 2.98
+            },
+            {
+              "date": "2022-09-30",
+              "value": 3.83
+            },
+            {
+              "date": "2022-12-31",
+              "value": 3.88
+            },
+            {
+              "date": "2023-03-31",
+              "value": 3.48
+            },
+            {
+              "date": "2023-06-30",
+              "value": 3.81
+            },
+            {
+              "date": "2023-09-30",
+              "value": 4.59
+            },
+            {
+              "date": "2023-12-31",
+              "value": 3.88
+            },
+            {
+              "date": "2024-03-31",
+              "value": 4.2
+            },
+            {
+              "date": "2024-06-30",
+              "value": 4.36
+            },
+            {
+              "date": "2024-09-30",
+              "value": 3.81
+            },
+            {
+              "date": "2024-12-31",
+              "value": 4.58
+            },
+            {
+              "date": "2025-03-31",
+              "value": 4.23
+            },
+            {
+              "date": "2025-06-30",
+              "value": 4.24
+            },
+            {
+              "date": "2025-09-30",
+              "value": 4.16
+            },
+            {
+              "date": "2025-12-31",
+              "value": 4.18
+            },
+            {
+              "date": "2026-03-31",
+              "value": 4.3
+            },
+            {
+              "date": "2026-06-30",
+              "value": 4.44
+            }
+          ]
+        },
+        {
+          "id": "30Y Treasury yield (FRED: DGS30)",
+          "name": "30Y Treasury yield",
+          "color": "#382650",
+          "points": [
+            {
+              "date": "2014-12-31",
+              "value": 2.75
+            },
+            {
+              "date": "2015-03-31",
+              "value": 2.54
+            },
+            {
+              "date": "2015-06-30",
+              "value": 3.11
+            },
+            {
+              "date": "2015-09-30",
+              "value": 2.87
+            },
+            {
+              "date": "2015-12-31",
+              "value": 3.01
+            },
+            {
+              "date": "2016-03-31",
+              "value": 2.61
+            },
+            {
+              "date": "2016-06-30",
+              "value": 2.3
+            },
+            {
+              "date": "2016-09-30",
+              "value": 2.32
+            },
+            {
+              "date": "2016-12-31",
+              "value": 3.06
+            },
+            {
+              "date": "2017-03-31",
+              "value": 3.02
+            },
+            {
+              "date": "2017-09-30",
+              "value": 2.86
+            },
+            {
+              "date": "2017-12-31",
+              "value": 2.74
+            },
+            {
+              "date": "2018-03-31",
+              "value": 2.97
+            },
+            {
+              "date": "2018-06-30",
+              "value": 2.98
+            },
+            {
+              "date": "2018-09-30",
+              "value": 3.19
+            },
+            {
+              "date": "2018-12-31",
+              "value": 3.02
+            },
+            {
+              "date": "2019-03-31",
+              "value": 2.81
+            },
+            {
+              "date": "2019-06-30",
+              "value": 2.52
+            },
+            {
+              "date": "2019-09-30",
+              "value": 2.12
+            },
+            {
+              "date": "2019-12-31",
+              "value": 2.39
+            },
+            {
+              "date": "2020-03-31",
+              "value": 1.35
+            },
+            {
+              "date": "2020-06-30",
+              "value": 1.41
+            },
+            {
+              "date": "2020-09-30",
+              "value": 1.46
+            },
+            {
+              "date": "2020-12-31",
+              "value": 1.65
+            },
+            {
+              "date": "2021-03-31",
+              "value": 2.41
+            },
+            {
+              "date": "2021-06-30",
+              "value": 2.06
+            },
+            {
+              "date": "2021-09-30",
+              "value": 2.08
+            },
+            {
+              "date": "2021-12-31",
+              "value": 1.9
+            },
+            {
+              "date": "2022-03-31",
+              "value": 2.44
+            },
+            {
+              "date": "2022-06-30",
+              "value": 3.14
+            },
+            {
+              "date": "2022-09-30",
+              "value": 3.79
+            },
+            {
+              "date": "2022-12-31",
+              "value": 3.97
+            },
+            {
+              "date": "2023-03-31",
+              "value": 3.67
+            },
+            {
+              "date": "2023-06-30",
+              "value": 3.85
+            },
+            {
+              "date": "2023-09-30",
+              "value": 4.73
+            },
+            {
+              "date": "2023-12-31",
+              "value": 4.03
+            },
+            {
+              "date": "2024-03-31",
+              "value": 4.34
+            },
+            {
+              "date": "2024-06-30",
+              "value": 4.51
+            },
+            {
+              "date": "2024-09-30",
+              "value": 4.14
+            },
+            {
+              "date": "2024-12-31",
+              "value": 4.78
+            },
+            {
+              "date": "2025-03-31",
+              "value": 4.59
+            },
+            {
+              "date": "2025-06-30",
+              "value": 4.78
+            },
+            {
+              "date": "2025-09-30",
+              "value": 4.73
+            },
+            {
+              "date": "2025-12-31",
+              "value": 4.84
+            },
+            {
+              "date": "2026-03-31",
+              "value": 4.88
+            },
+            {
+              "date": "2026-06-30",
+              "value": 4.91
+            }
+          ]
+        }
       ]
+    },
+    {
+      "id": "ratio",
+      "title": "Equities relative to liquidity",
+      "unit": "index",
+      "axis": "Index (100 = 2014-12-31)",
+      "reference": 100,
+      "choices": [
+        {
+          "key": "m2",
+          "label": "M2 money supply",
+          "description": "Pro: broadest money measure, decades of history, short (~4-week) lag. Limitation: broad and slow; includes retail savings that don't move prices; weak short-horizon link to equities; 2020 definitional break.",
+          "series": [
+            {
+              "id": "ratio-m2",
+              "name": "S&P 500 ÷ M2 money supply",
+              "color": "#466aa0",
+              "points": [
+                {
+                  "date": "2014-12-31",
+                  "value": 99.99999999999999
+                },
+                {
+                  "date": "2015-03-31",
+                  "value": 98.76903040419157
+                },
+                {
+                  "date": "2015-06-30",
+                  "value": 97.70623212874371
+                },
+                {
+                  "date": "2015-09-30",
+                  "value": 89.79619734277027
+                },
+                {
+                  "date": "2015-12-31",
+                  "value": 93.8874402397294
+                },
+                {
+                  "date": "2016-03-31",
+                  "value": 92.6062024969068
+                },
+                {
+                  "date": "2016-06-30",
+                  "value": 92.99098918942646
+                },
+                {
+                  "date": "2016-09-30",
+                  "value": 94.5692297714635
+                },
+                {
+                  "date": "2016-12-31",
+                  "value": 96.26098706508002
+                },
+                {
+                  "date": "2017-03-31",
+                  "value": 99.8977345253058
+                },
+                {
+                  "date": "2017-09-30",
+                  "value": 104.36275739627771
+                },
+                {
+                  "date": "2017-12-31",
+                  "value": 109.60165203241061
+                },
+                {
+                  "date": "2018-03-31",
+                  "value": 107.27691548810907
+                },
+                {
+                  "date": "2018-06-30",
+                  "value": 109.49768213573815
+                },
+                {
+                  "date": "2018-09-30",
+                  "value": 116.46474795362555
+                },
+                {
+                  "date": "2018-12-31",
+                  "value": 99.16172161721491
+                },
+                {
+                  "date": "2019-03-31",
+                  "value": 110.82851318261449
+                },
+                {
+                  "date": "2019-06-30",
+                  "value": 113.16642133125144
+                },
+                {
+                  "date": "2019-09-30",
+                  "value": 112.62169306277588
+                },
+                {
+                  "date": "2019-12-31",
+                  "value": 119.81009599684008
+                },
+                {
+                  "date": "2020-03-31",
+                  "value": 91.76473280214026
+                },
+                {
+                  "date": "2020-06-30",
+                  "value": 97.08346973027774
+                },
+                {
+                  "date": "2020-09-30",
+                  "value": 102.90442170021076
+                },
+                {
+                  "date": "2020-12-31",
+                  "value": 111.83977108179461
+                },
+                {
+                  "date": "2021-03-31",
+                  "value": 113.80128363086978
+                },
+                {
+                  "date": "2021-06-30",
+                  "value": 119.50266934803645
+                },
+                {
+                  "date": "2021-09-30",
+                  "value": 116.85543453427596
+                },
+                {
+                  "date": "2021-12-31",
+                  "value": 126.18632253525983
+                },
+                {
+                  "date": "2022-03-31",
+                  "value": 118.37364091128448
+                },
+                {
+                  "date": "2022-06-30",
+                  "value": 99.551680594404
+                },
+                {
+                  "date": "2022-09-30",
+                  "value": 94.76090727200283
+                },
+                {
+                  "date": "2022-12-31",
+                  "value": 102.65274851209732
+                },
+                {
+                  "date": "2023-03-31",
+                  "value": 111.70725449699644
+                },
+                {
+                  "date": "2023-06-30",
+                  "value": 121.8129779081985
+                },
+                {
+                  "date": "2023-09-30",
+                  "value": 117.62597122130003
+                },
+                {
+                  "date": "2023-12-31",
+                  "value": 130.67614015701918
+                },
+                {
+                  "date": "2024-03-31",
+                  "value": 142.67317955452947
+                },
+                {
+                  "date": "2024-06-30",
+                  "value": 147.53283871452456
+                },
+                {
+                  "date": "2024-09-30",
+                  "value": 154.19292835126208
+                },
+                {
+                  "date": "2024-12-31",
+                  "value": 155.82840465729376
+                },
+                {
+                  "date": "2025-03-31",
+                  "value": 147.33349925406782
+                },
+                {
+                  "date": "2025-06-30",
+                  "value": 160.985609829434
+                },
+                {
+                  "date": "2025-09-30",
+                  "value": 171.70296854793952
+                },
+                {
+                  "date": "2025-12-31",
+                  "value": 174.32573937959089
+                },
+                {
+                  "date": "2026-03-31",
+                  "value": 164.1607797676914
+                },
+                {
+                  "date": "2026-06-30",
+                  "value": 184.70090294527537
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "key": "mmf",
+          "label": "Money-market-fund assets",
+          "description": "Pro: “cash on the sidelines” that can rotate into stocks; at record highs. Limitation: ~10-week Z.1 lag; ambiguous sign (dry powder vs. risk-off flight); driven heavily by the level of short rates.",
+          "series": [
+            {
+              "id": "ratio-mmf",
+              "name": "S&P 500 ÷ Money-market-fund assets",
+              "color": "#317f98",
+              "points": [
+                {
+                  "date": "2014-12-31",
+                  "value": 99.99999999999999
+                },
+                {
+                  "date": "2015-03-31",
+                  "value": 102.7988972219044
+                },
+                {
+                  "date": "2015-06-30",
+                  "value": 104.11558608112509
+                },
+                {
+                  "date": "2015-09-30",
+                  "value": 95.0229322059716
+                },
+                {
+                  "date": "2015-12-31",
+                  "value": 99.10460153279057
+                },
+                {
+                  "date": "2016-03-31",
+                  "value": 100.3184194711878
+                },
+                {
+                  "date": "2016-06-30",
+                  "value": 105.49503634975605
+                },
+                {
+                  "date": "2016-09-30",
+                  "value": 109.92935855268775
+                },
+                {
+                  "date": "2016-12-31",
+                  "value": 113.07167228307772
+                },
+                {
+                  "date": "2017-03-31",
+                  "value": 120.49347038713586
+                },
+                {
+                  "date": "2017-09-30",
+                  "value": 124.10313350866775
+                },
+                {
+                  "date": "2017-12-31",
+                  "value": 127.876983221348
+                },
+                {
+                  "date": "2018-03-31",
+                  "value": 128.47499117999718
+                },
+                {
+                  "date": "2018-06-30",
+                  "value": 131.21253770879582
+                },
+                {
+                  "date": "2018-09-30",
+                  "value": 138.35683145102777
+                },
+                {
+                  "date": "2018-12-31",
+                  "value": 113.73571811004129
+                },
+                {
+                  "date": "2019-03-31",
+                  "value": 121.43397797348261
+                },
+                {
+                  "date": "2019-06-30",
+                  "value": 121.93237281494203
+                },
+                {
+                  "date": "2019-09-30",
+                  "value": 115.88060343549513
+                },
+                {
+                  "date": "2019-12-31",
+                  "value": 120.47663413420048
+                },
+                {
+                  "date": "2020-03-31",
+                  "value": 81.60423807748164
+                },
+                {
+                  "date": "2020-06-30",
+                  "value": 90.95222071513165
+                },
+                {
+                  "date": "2020-09-30",
+                  "value": 103.55983766549251
+                },
+                {
+                  "date": "2020-12-31",
+                  "value": 117.62781360193073
+                },
+                {
+                  "date": "2021-03-31",
+                  "value": 119.06947753427494
+                },
+                {
+                  "date": "2021-06-30",
+                  "value": 127.88913706626722
+                },
+                {
+                  "date": "2021-09-30",
+                  "value": 128.0901534375779
+                },
+                {
+                  "date": "2021-12-31",
+                  "value": 136.65793279964035
+                },
+                {
+                  "date": "2022-03-31",
+                  "value": 132.8258207321789
+                },
+                {
+                  "date": "2022-06-30",
+                  "value": 112.26749640116395
+                },
+                {
+                  "date": "2022-09-30",
+                  "value": 105.25946282130867
+                },
+                {
+                  "date": "2022-12-31",
+                  "value": 109.71668098661061
+                },
+                {
+                  "date": "2023-03-31",
+                  "value": 107.74170596027737
+                },
+                {
+                  "date": "2023-06-30",
+                  "value": 112.25167756318757
+                },
+                {
+                  "date": "2023-09-30",
+                  "value": 104.1849720565863
+                },
+                {
+                  "date": "2023-12-31",
+                  "value": 111.97888597022477
+                },
+                {
+                  "date": "2024-03-31",
+                  "value": 121.76122905646423
+                },
+                {
+                  "date": "2024-06-30",
+                  "value": 124.45773420128182
+                },
+                {
+                  "date": "2024-09-30",
+                  "value": 125.75824968789723
+                },
+                {
+                  "date": "2024-12-31",
+                  "value": 121.19689717508568
+                },
+                {
+                  "date": "2025-03-31",
+                  "value": 113.21928271850244
+                },
+                {
+                  "date": "2025-06-30",
+                  "value": 123.79077006355477
+                },
+                {
+                  "date": "2025-09-30",
+                  "value": 128.410833829634
+                },
+                {
+                  "date": "2025-12-31",
+                  "value": 124.74751387583613
+                },
+                {
+                  "date": "2026-03-31",
+                  "value": 117.545464583466
+                },
+                {
+                  "date": "2026-06-30",
+                  "value": 132.59713461009284
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "defaultChoice": "m2"
+    }
+  ],
+  "bands": [
+    {
+      "from": "2022-08-15",
+      "to": "2024-08-15",
+      "label": "Yield-curve inversion (10Y \u003c 2Y)",
+      "color": "#b64949"
     }
   ]
-};var gd=document.getElementById("fcf-chart");if(!gd)return;var lbl=document.getElementById("rebase-anchor-label");var times=D.dates.map(function(s){return new Date(s).getTime();});function nearest(x){var t=(typeof x==="string")?new Date(x).getTime():+x;var bi=0,bd=Infinity;for(var i=0;i<times.length;i++){var d=Math.abs(times[i]-t);if(d<bd){bd=d;bi=i;}}return bi;}function reb(vals,b){return vals.map(function(v){return b?100*v/b:null;});}function rebase(ai){var iso=D.dates[ai];var ys=D.labels.map(function(l){var r=D.raw[l];return reb(r,r[ai]);});Plotly.restyle(gd,{y:ys},D.idx);if(D.ratio.length){var rys=D.ratio.map(function(o){return reb(o.raw,o.raw[ai]);});Plotly.restyle(gd,{y:rys},D.ratio.map(function(o){return o.idx;}));}var rl={"yaxis.title.text":"Index (100 @ "+iso+")","yaxis3.title.text":"Index (100 @ "+iso+")","annotations[0].text":"Levels rebased to 100 at "+iso};rl["shapes["+D.shape+"].x0"]=iso;rl["shapes["+D.shape+"].x1"]=iso;Plotly.relayout(gd,rl);if(lbl)lbl.textContent=iso;}gd.on("plotly_click",function(ev){if(!ev||!ev.points||!ev.points.length)return;rebase(nearest(ev.points[0].x));});gd.style.cursor="pointer";})();</script></body>
-</html>
+}</script><script>/* Native SVG chart components, copied locally to keep each project independent. */
+(function (root) {
+  'use strict';
+  const model = {
+    panels(spec, choices) {
+      return spec.panels.map(panel => panel.choices ? {...panel, ...panel.choices.find(choice =>
+        choice.key === (choices[panel.id] || panel.defaultChoice))} : panel);
+    },
+    dates(spec) {
+      return [...new Set(spec.panels.flatMap(panel => (panel.choices || [panel]).flatMap(choice =>
+        choice.series.flatMap(series => series.points.map(point => point.date)))))].sort();
+    },
+    nearest(dates, value) {
+      const target = Date.parse(value);
+      return dates.reduce((best, date) => Math.abs(Date.parse(date)-target) < Math.abs(Date.parse(best)-target) ? date : best);
+    },
+    segments(points) {
+      const result = [];
+      let segment = null;
+      for (const point of points) {
+        if (point.value === null) { segment = null; continue; }
+        const status = point.status || 'observed';
+        if (!segment || segment.status !== status) {
+          const previous = segment?.points.at(-1);
+          segment = {status, points: previous ? [previous, point] : [point]};
+          result.push(segment);
+        } else segment.points.push(point);
+      }
+      return result;
+    },
+  };
+  if (typeof module !== 'undefined' && module.exports) { module.exports = model; return; }
+  root.ChartModel = model;
+  const spec = JSON.parse(document.getElementById('chart-data').textContent);
+  const $ = id => document.getElementById(id);
+  const hidden = new Set();
+  const choices = {};
+  const dates = model.dates(spec);
+  const start = Date.parse(spec.domain[0]), end = Date.parse(spec.domain[1]);
+  let current = dates.at(-1);
+  let panels = [];
+  let width = 900, left = 76, right = 24;
+  function text(tag, value, className) {
+    const el = document.createElement(tag);
+    el.textContent = value;
+    if (className) el.className = className;
+    return el;
+  }
+  function svg(tag, attributes = {}, value) {
+    const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+    for (const [key, val] of Object.entries(attributes)) el.setAttribute(key, String(val));
+    if (value !== undefined) el.textContent = value;
+    return el;
+  }
+  function x(value) { return left + (Date.parse(value)-start)/(end-start)*(width-left-right); }
+  function format(value, unit) { return unit === '%' ? value.toFixed(2)+'%' : value.toFixed(1); }
+  function ticks() {
+    const first = new Date(start).getUTCFullYear(), last = new Date(end).getUTCFullYear();
+    const step = [1,2,5,10,20].find(step => step >= (last-first)/Math.max(2,Math.floor((width-left-right)/80))) || 20;
+    const result = [{date:spec.domain[0],label:String(first)}];
+    for (let year = Math.ceil(first/step)*step; year <= last; year += step) {
+      const date = year+'-01-01';
+      if (Date.parse(date)>start && Date.parse(date)<end && x(date)-left>45) result.push({date,label:String(year)});
+    }
+    return result;
+  }
+  function inspect(date) {
+    current = model.nearest(dates,date);
+    $('inspect-period').textContent = 'Inspecting '+current+' · aligned observations';
+    $('readout').replaceChildren();
+    for (const panel of panels) for (const series of panel.series) {
+      if (hidden.has(series.id)) continue;
+      const point = series.points.find(point => point.date === current);
+      const row = text('div','','readout-row');
+      row.append(text('span',series.name));
+      const value = text('span','','readout-value');
+      if (point && point.value !== null) {
+        value.append(text('strong',format(point.value,panel.unit)),text('span',panel.unit === '%'?'yield':'index','readout-unit'));
+      } else value.append(text('span','No observation','readout-unit'));
+      row.append(value); $('readout').append(row);
+    }
+    document.querySelectorAll('.inspection-cursor').forEach(cursor => {
+      cursor.setAttribute('x1',x(current));cursor.setAttribute('x2',x(current));
+    });
+  }
+  function legend() {
+    $('chart-legend').replaceChildren();
+    for (const panel of panels) for (const series of panel.series) {
+      const button = text('button','','legend-item');
+      const swatch = text('i',''); swatch.style.background = series.color;
+      button.type = 'button'; button.append(swatch,document.createTextNode(series.name));
+      button.setAttribute('aria-pressed',String(!hidden.has(series.id)));
+      button.disabled = !hidden.has(series.id) && panel.series.filter(series => !hidden.has(series.id)).length === 1;
+      button.onclick = () => { hidden.has(series.id)?hidden.delete(series.id):hidden.add(series.id);render(); };
+      $('chart-legend').append(button);
+    }
+  }
+  function draw(panel, target, index) {
+    const height = panels.length === 1 ? (width<480?330:390) : 210;
+    const top = 28, bottom = height-12;
+    const visible = panel.series.filter(series => !hidden.has(series.id));
+    const values = visible.flatMap(series => series.points.filter(point => point.value !== null).map(point => point.value));
+    const minimum = Math.min(...values), maximum = Math.max(...values);
+    const padding = (maximum-minimum || Math.max(1,Math.abs(maximum)))*.09;
+    const low = panel.zero ? Math.min(0,minimum) : minimum-padding;
+    const high = maximum+padding;
+    const y = value => bottom-(value-low)/(high-low)*(bottom-top);
+    const graphic = svg('svg',{viewBox:`0 0 ${width} ${height}`,role:'img',
+      'aria-label':panel.title+'. '+panel.axis+'. '+spec.domain.join(' through '),
+      'data-domain-start':spec.domain[0],'data-domain-end':spec.domain[1]});
+    const clip = 'plot-clip-'+index;
+    const defs = svg('defs');const clipPath = svg('clipPath',{id:clip});
+    clipPath.append(svg('rect',{x:left,y:top,width:width-left-right,height:bottom-top}));defs.append(clipPath);graphic.append(defs);
+    graphic.append(svg('text',{x:left,y:15,class:'axis-title'},panel.axis));
+    for (const tick of ticks()) graphic.append(svg('line',{x1:x(tick.date),x2:x(tick.date),y1:top,y2:bottom,class:'vertical-grid'}));
+    for (let i=0;i<=4;i++) {
+      const value=low+(high-low)*i/4;
+      graphic.append(svg('line',{x1:left,x2:width-right,y1:y(value),y2:y(value),class:'gridline'}));
+      const label=panel.unit === '%' ? value.toFixed(1)+'%' : value.toFixed(0);
+      graphic.append(svg('text',{x:left-9,y:y(value)+4,'text-anchor':'end',class:'axis'},label));
+    }
+    const plot=svg('g',{'clip-path':`url(#${clip})`});graphic.append(plot);
+    for (const band of spec.bands || []) {
+      const rect=svg('rect',{x:x(band.from),y:top,width:x(band.to)-x(band.from),height:bottom-top,fill:band.color,opacity:.09});
+      rect.append(svg('title',{},band.label));plot.append(rect);
+    }
+    for (const event of spec.events || []) {
+      if (Date.parse(event.date)<start || Date.parse(event.date)>end) continue;
+      const line=svg('line',{x1:x(event.date),x2:x(event.date),y1:top,y2:bottom,stroke:'var(--muted)','stroke-dasharray':'2 5',opacity:.45});
+      line.append(svg('title',{},event.date+' · '+event.label));plot.append(line);
+    }
+    if (panel.reference !== undefined && panel.reference>=low && panel.reference<=high) {
+      plot.append(svg('line',{x1:left,x2:width-right,y1:y(panel.reference),y2:y(panel.reference),stroke:'var(--muted)','stroke-dasharray':'4 4'}));
+    }
+    if (spec.anchor) plot.append(svg('line',{x1:x(spec.anchor),x2:x(spec.anchor),y1:top,y2:bottom,stroke:'var(--ink)','stroke-dasharray':'2 4'}));
+    for (const series of visible) {
+      for (const segment of model.segments(series.points)) {
+        if (segment.points.length<2) continue;
+        const d=segment.points.map((point,i)=>(i?'L':'M')+x(point.date).toFixed(2)+','+y(point.value).toFixed(2)).join(' ');
+        plot.append(svg('path',{d,stroke:series.color,class:'series-line',...(segment.status==='forecast'?{'stroke-dasharray':'6 5'}:{})}));
+      }
+      if (spec.markers !== false) for (const point of series.points) {
+        if (point.value === null) continue;
+        const marker=svg('circle',{cx:x(point.date),cy:y(point.value),r:2.4,fill:series.color});
+        marker.append(svg('title',{},series.name+' · '+point.date+' · '+format(point.value,panel.unit)));plot.append(marker);
+      }
+    }
+    graphic.append(svg('line',{x1:x(current),x2:x(current),y1:top,y2:bottom,stroke:'var(--ink)','stroke-dasharray':'2 3',class:'inspection-cursor'}));
+    const overlay=svg('rect',{x:left,y:top,width:width-left-right,height:bottom-top,fill:'transparent'});graphic.append(overlay);
+    const inspectPointer = event=>{
+      const bounds=graphic.getBoundingClientRect();
+      const px=(event.clientX-bounds.left)/bounds.width*width;
+      const date=new Date(start+Math.max(0,Math.min(1,(px-left)/(width-left-right)))*(end-start)).toISOString().slice(0,10);
+      inspect(date);
+    };
+    overlay.addEventListener('pointermove',inspectPointer);
+    overlay.addEventListener('pointerdown',inspectPointer);
+    target.append(graphic);
+  }
+  function render() {
+    panels=model.panels(spec,choices);legend();
+    $('chart').replaceChildren();width=Math.max(240,$('chart').clientWidth);left=width<480?58:76;right=24;
+    panels.forEach((panel,index)=>{
+      const section=text('section','','plot-panel');
+      if (panels.length>1) section.append(text('h2',panel.title));
+      if (panel.description) section.append(text('p',panel.description,'panel-description'));
+      $('chart').append(section);draw(panel,section,index);
+    });
+    const axis=svg('svg',{viewBox:`0 0 ${width} 47`,role:'img','aria-label':'Shared calendar time axis'});
+    for (const tick of ticks()) axis.append(svg('text',{x:x(tick.date),y:15,'text-anchor':tick.date===spec.domain[0]?'start':'middle',class:'axis'},tick.label));
+    axis.append(svg('text',{x:left+(width-left-right)/2,y:37,'text-anchor':'middle',class:'axis-title'},'Calendar time'));
+    $('chart').append(axis);inspect(current);
+  }
+  const options=$('chart-choices');
+  for (const panel of spec.panels.filter(panel=>panel.choices?.length>1)) {
+    const field=text('label','Liquidity denominator');
+    const select=document.createElement('select');
+    for (const choice of panel.choices) {const option=text('option',choice.label);option.value=choice.key;select.append(option);}
+    select.value=panel.defaultChoice;
+    select.onchange=()=>{choices[panel.id]=select.value;render();};field.append(select);options.append(field);
+  }
+  $('chart').addEventListener('keydown',event=>{
+    if (!['ArrowLeft','ArrowRight','Home','End'].includes(event.key)) return;
+    event.preventDefault();const index=dates.indexOf(current);
+    const next=event.key==='Home'?0:event.key==='End'?dates.length-1:Math.max(0,Math.min(dates.length-1,index+(event.key==='ArrowLeft'?-1:1)));
+    inspect(dates[next]);
+  });
+  let resizeTimer;window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(render,100);});
+  render();
+})(typeof globalThis==='undefined'?this:globalThis);
+</script></body></html>

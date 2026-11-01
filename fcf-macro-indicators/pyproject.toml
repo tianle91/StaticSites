@@ -10,13 +10,15 @@ dependencies = [
     "numpy>=1.26",             # snap XBRL fiscal dates to calendar quarter ends
     "pandas>=2.1",             # align every series on one quarterly grid
     "pandas-datareader>=0.11", # keyless FRED pulls (M2, Treasury yields)
-    "plotly>=5.20",            # zoomable/pannable HTML chart
     "requests>=2.31",          # SEC EDGAR XBRL API over HTTP
     "yfinance>=0.2",           # S&P 500 level (^GSPC); keyless, deep history
 ]
 
 [dependency-groups]
-dev = ["pytest>=8.0"]
+dev = [
+    "playwright>=1.50",  # explicit desktop/mobile review captures via make snapshots
+    "pytest>=8.0",
+]
 
 [tool.uv]
 # This project is an environment, not a distributable package -- nothing to build.
