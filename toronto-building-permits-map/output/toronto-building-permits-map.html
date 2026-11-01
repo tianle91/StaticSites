@@ -4,6 +4,112 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Toronto building permits</title>
+    <meta name="permits-build" content="9d89ea66d75b" />
+    <script>/* Installed before external scripts and the large payload: even an early load
+ * failure must leave a useful screen on a phone without a developer console. */
+const PermitStartup = (() => {
+  let phase = "Loading page",
+    failure = null,
+    ready = false,
+    snapshot = null;
+  const history = [];
+  function diagnostics() {
+    const viewport = window.visualViewport;
+    return JSON.stringify({
+      build: document.querySelector('meta[name="permits-build"]').content,
+      phase,
+      ready,
+      snapshot,
+      browser: navigator.userAgent,
+      viewport: {
+        width: window.innerWidth,
+        height: window.innerHeight,
+        visibleHeight: viewport?.height ?? null,
+      },
+      failure,
+      history,
+    }, null, 2);
+  }
+  function render() {
+    const status = document.getElementById("startup-status");
+    if (!status) return;
+    status.hidden = ready;
+    status.textContent = failure
+      ? "Permits could not be loaded or updated. Retry, or share the diagnostic details below."
+      : phase + "…";
+    document.getElementById("startup-retry").hidden = !failure;
+    document.getElementById("startup-show-details").hidden = !failure;
+    document.getElementById("search").disabled = !ready || !!failure;
+    document.getElementById("diagnostic-output").textContent = diagnostics();
+    document.getElementById("stats").hidden = !!failure;
+  }
+  function stage(value) {
+    phase = value;
+    history.push(value);
+    if (history.length > 8) history.shift();
+    render();
+  }
+  function fail(error) {
+    if (failure) return;
+    failure = {
+      phase,
+      name: error?.name || "Error",
+      message: String(error?.message || error).slice(0, 300),
+    };
+    ready = false;
+    console.error("Permit map failed at " + phase, error);
+    render();
+  }
+  window.addEventListener("error", (event) => {
+    if (event.error) fail(event.error);
+    else if (event.target?.tagName === "SCRIPT") fail(new Error("A required script could not load."));
+  }, true);
+  window.addEventListener("unhandledrejection", (event) => fail(event.reason));
+  window.visualViewport?.addEventListener("resize", render);
+  document.addEventListener("DOMContentLoaded", () => {
+    document.getElementById("startup-show-details").onclick = () => {
+      document.querySelectorAll(".explorer-tabs [role=tab]").forEach((button) => {
+        button.setAttribute("aria-selected", String(button.dataset.tab === "sources"));
+        button.tabIndex = button.dataset.tab === "sources" ? 0 : -1;
+      });
+      document.querySelectorAll(".explorer-panel").forEach((panel) => {
+        panel.hidden = panel.id !== "sources-panel";
+      });
+      document.getElementById("startup-diagnostics").open = true;
+      document.getElementById("panel").classList.add("expanded");
+      document.getElementById("sheet-toggle").setAttribute("aria-expanded", "true");
+      document.getElementById("sheet-toggle").setAttribute("aria-label", "Collapse map controls");
+      render();
+    };
+    document.getElementById("startup-retry").onclick = () => window.location.reload();
+    document.getElementById("startup-diagnostics").addEventListener("toggle", render);
+    render();
+  });
+  return {
+    stage,
+    fail,
+    async run(start) {
+      if (failure) {
+        render();
+        return;
+      }
+      try {
+        await start();
+      } catch (error) {
+        fail(error);
+      }
+    },
+    dataLoaded(data) {
+      snapshot = { retrievedAt: data.retrieved_at, records: data.permits.length };
+    },
+    ready() {
+      if (failure) return;
+      ready = true;
+      stage("Ready");
+    },
+  };
+})();
+</script>
     <link
       rel="stylesheet"
       href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
@@ -723,6 +829,46 @@ summary {
   margin: 8px 0;
 }
 
+/* Startup errors must be readable without connecting a phone to a debugger. */
+#startup-status {
+  margin: 0;
+  padding: 8px 17px;
+  font-size: 13px;
+}
+#startup-retry,
+#startup-show-details {
+  margin: 4px 17px;
+  padding: 8px;
+}
+#diagnostic-output {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 11px;
+}
+@media (max-width: 760px) {
+  body {
+    height: var(--visible-height, 100dvh);
+  }
+  .explorer-sidebar {
+    overflow: auto;
+    max-height: 100%;
+    min-height: min(285px, 100%);
+  }
+  .explorer-sidebar.expanded {
+    height: calc(100% - 8px);
+    min-height: 0;
+  }
+  .search-area,
+  #stats,
+  .explorer-tabs,
+  #startup-status {
+    flex-shrink: 0;
+  }
+  .explorer-panel {
+    flex: 1 0 80px;
+  }
+}
+
     </style>
     <style></style>
   </head>
@@ -755,8 +901,16 @@ summary {
             placeholder="Address, permit number or description"
             aria-label="Search features"
             autocomplete="off"
+            disabled
           />
         </div>
+        <p id="startup-status" role="status">Loading permits…</p>
+        <button id="startup-show-details" type="button" hidden>
+          Show diagnostic details
+        </button>
+        <button id="startup-retry" type="button" hidden>Retry loading permits</button>
+
+        <noscript>Enable JavaScript to search permits.</noscript>
         <div id="stats" role="status" aria-live="polite"></div>
         <nav class="explorer-tabs" role="tablist" aria-label="Map exploration">
           <button
@@ -838,6 +992,12 @@ summary {
           hidden
         >
           <p id="snapshot-provenance" class="muted"></p>
+          <details id="startup-diagnostics">
+            <summary>Diagnostic details</summary>
+            <p>For troubleshooting. These details stay on your device.
+              No search text or location is included.</p>
+            <pre id="diagnostic-output"></pre>
+          </details>
           <h2>Data sources</h2>
           <ul>
             <li>
@@ -937,8 +1097,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //# sourceMappingURL=leaflet.markercluster.js.map
 ;
     </script>
-    <script>
-      const DATA = {
+    <script type="application/json" id="permit-data">{
   "retrieved_at": "2026-10-25T14:40:58+00:00",
   "columns": [
     "number",
@@ -3015722,8 +3015881,49 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
       -79.409399
     ]
   ]
-};
-    </script>
+}</script>
+    <script>/* Keep this helper project-local. House numbers are identifiers, not substrings. */
+const FeatureSearch = (() => {
+  const normalize = (value) =>
+    String(value ?? "")
+      .toLowerCase()
+      .replace(/[.,]/g, " ")
+      .replace(/[\u2010-\u2015]/g, "-")
+      .replace(/\s+/g, " ")
+      .trim();
+  function compile(value, { addressOnly = true } = {}) {
+    const query = normalize(value);
+    // Full permit numbers begin with two numeric groups, so they stay in the
+    // general text search. A number followed by street text is address-only.
+    const address = query.match(/^(\d+[a-z]?(?:-\d+[a-z]?)?)\s+([a-z].*)$/);
+    return (street, ...text) => {
+      if (!query) return true;
+      const normalized = normalize(street);
+      if (address) {
+        const split = normalized.indexOf(" ");
+        if (
+          split > 0 && normalized.slice(0, split) === address[1] &&
+          normalized.slice(split + 1).startsWith(address[2])
+        ) return true;
+        if (addressOnly) return false;
+        // DineSafe also has numeric business names (e.g. "3 Brewers"). Keep
+        // these searchable without matching an 8 embedded in a name's 38.
+        return text.some((value) => {
+          const name = normalize(value);
+          let at = name.indexOf(query);
+          while (at !== -1) {
+            if (!at || !/[a-z0-9]/.test(name[at - 1])) return true;
+            at = name.indexOf(query, at + 1);
+          }
+          return false;
+        });
+      }
+      return normalized.includes(query) || text.some((s) => normalize(s).includes(query));
+    };
+  }
+  return { normalize, compile };
+})();
+</script>
     <script>
       /* Project-local explorer UI. No source is loaded from another project. */
 const Explorer = (() => {
@@ -3015790,6 +3015990,25 @@ const Explorer = (() => {
       expanded ? "Collapse map controls" : "Expand map controls",
     );
   };
+  function expandSearch() {
+    if (!mobile()) return;
+    byId("panel").classList.add("expanded");
+    byId("sheet-toggle").setAttribute("aria-expanded", "true");
+    byId("sheet-toggle").setAttribute("aria-label", "Collapse map controls");
+  }
+  byId("search").addEventListener("focus", expandSearch);
+  byId("search").addEventListener("keydown", (event) => {
+    if (event.key === "Enter") byId("search").blur();
+  });
+  // iOS changes the visual viewport when its keyboard opens without changing
+  // layout viewport units. Size the phone layout to the actually visible area.
+  if (typeof window !== "undefined" && window.visualViewport) {
+    const resize = () => document.documentElement.style.setProperty(
+      "--visible-height", window.visualViewport.height + "px",
+    );
+    window.visualViewport.addEventListener("resize", resize);
+    resize();
+  }
   byId("search").addEventListener("input", () =>
     tab(byId("search").value.trim() ? "results" : "layers"),
   );
@@ -3015889,7 +3016108,10 @@ const Explorer = (() => {
       const sub = document.createElement("small");
       sub.textContent = summary(item);
       button.append(title, sub);
-      button.onclick = () => onSelect(item);
+      button.onclick = () => {
+        byId("search").blur();
+        onSelect(item);
+      };
       target.append(button);
     }
     byId("result-note").textContent = !items.length
@@ -3016068,151 +3016290,167 @@ const Explorer = (() => {
 ;
     </script>
     <script>
-      const $ = (id) => document.getElementById(id),
-  esc = Explorer.esc;
-const map = L.map("map", { preferCanvas: true }).setView([43.74, -79.43], 11);
-L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-  maxZoom: 19,
-  attribution: "&copy; OpenStreetMap contributors",
-}).addTo(map);
-const fields = Object.fromEntries(DATA.columns.map((name, i) => [name, i])),
-  get = (r, k) => r[fields[k]],
-  rows = DATA.permits;
-const types = [
-  "Small Residential Projects",
-  "Plumbing(PS)",
-  "Mechanical(MS)",
-  "Building Additions/Alterations",
-  "Drain and Site Service",
-  "New Houses",
-];
-const palette = [
-  "#267ba0",
-  "#458474",
-  "#8364a6",
-  "#bd8740",
-  "#ba5e40",
-  "#9c3651",
-  "#647580",
-];
-const category = (r) =>
-  types.includes(get(r, "type")) ? get(r, "type") : "Other";
-for (const [id, key] of [
-  ["status", "status"],
-  ["type", "type"],
-  ["year", "applied"],
-]) {
-  const values = [
-    ...new Set(
-      rows
-        .map((r) => (id === "year" ? get(r, key).slice(0, 4) : get(r, key)))
-        .filter(Boolean),
-    ),
-  ].sort();
-  if (id === "year") values.reverse();
-  for (const v of values) {
-    const o = document.createElement("option");
-    o.value = v;
-    o.textContent = v;
-    $(id).append(o);
+      PermitStartup.run(async () => {
+  PermitStartup.stage("Reading permit data");
+  // JSON avoids compiling 200,000 row literals as JavaScript on mobile Safari.
+  const payload = document.getElementById("permit-data");
+  const DATA = JSON.parse(payload.textContent);
+  payload.remove();
+  if (!Array.isArray(DATA.columns) || !Array.isArray(DATA.permits) || !DATA.permits.length)
+    throw new Error("The embedded permit snapshot is missing or invalid.");
+  PermitStartup.dataLoaded(DATA);
+  PermitStartup.stage("Preparing map controls");
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  const $ = (id) => document.getElementById(id),
+    esc = Explorer.esc;
+  const map = L.map("map", { preferCanvas: true }).setView([43.74, -79.43], 11);
+  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    maxZoom: 19,
+    attribution: "&copy; OpenStreetMap contributors",
+  }).addTo(map);
+  const fields = Object.fromEntries(DATA.columns.map((name, i) => [name, i])),
+    get = (r, k) => r[fields[k]],
+    rows = DATA.permits;
+  const types = [
+    "Small Residential Projects",
+    "Plumbing(PS)",
+    "Mechanical(MS)",
+    "Building Additions/Alterations",
+    "Drain and Site Service",
+    "New Houses",
+  ];
+  const palette = [
+    "#267ba0",
+    "#458474",
+    "#8364a6",
+    "#bd8740",
+    "#ba5e40",
+    "#9c3651",
+    "#647580",
+  ];
+  const category = (r) =>
+    types.includes(get(r, "type")) ? get(r, "type") : "Other";
+  for (const [id, key] of [
+    ["status", "status"],
+    ["type", "type"],
+    ["year", "applied"],
+  ]) {
+    const values = [
+      ...new Set(
+        rows
+          .map((r) => (id === "year" ? get(r, key).slice(0, 4) : get(r, key)))
+          .filter(Boolean),
+      ),
+    ].sort();
+    if (id === "year") values.reverse();
+    for (const v of values) {
+      const o = document.createElement("option");
+      o.value = v;
+      o.textContent = v;
+      $(id).append(o);
+    }
   }
-}
-// Cluster every matched address; the number is permit records, not addresses.
-const clusters = L.markerClusterGroup({
-  maxClusterRadius: 45,
-  iconCreateFunction: (c) =>
-    L.divIcon({
-      className: "",
-      iconSize: [42, 42],
-      html:
-        '<div class="cluster">' +
-        c
-          .getAllChildMarkers()
-          .reduce((n, m) => n + m.options.recordCount, 0)
-          .toLocaleString() +
-        "</div>",
-    }),
-}).addTo(map);
-let locations = [];
-function details(r) {
-  return (
-    "<strong>" +
-    esc(get(r, "address")) +
-    "</strong><br>" +
-    esc(get(r, "number")) +
-    " · revision " +
-    esc(get(r, "revision")) +
-    "<br>" +
-    esc(get(r, "status")) +
-    "<br>" +
-    esc(get(r, "type")) +
-    " · " +
-    esc(get(r, "work")) +
-    "<br>Structure: " +
-    esc(get(r, "structure")) +
-    "<br>Applied: " +
-    esc(get(r, "applied") || "Unknown") +
-    " · Issued: " +
-    esc(get(r, "issued") || "Not recorded") +
-    "<br>Estimated cost: " +
-    (get(r, "cost") === null
-      ? "Not disclosed"
-      : new Intl.NumberFormat("en-CA", {
-          style: "currency",
-          currency: "CAD",
-          maximumFractionDigits: 0,
-        }).format(get(r, "cost"))) +
-    "<p>" +
-    esc(get(r, "description")) +
-    "</p>"
-  );
-}
-function show(r) {
-  if (Number.isFinite(get(r, "lat")) && Number.isFinite(get(r, "lon"))) {
-    const ll = [get(r, "lat"), get(r, "lon")];
-    Explorer.focus(map, ll, 17);
-    L.popup().setLatLng(ll).setContent(details(r)).openOn(map);
-  } else
-    Explorer.detail(
-      get(r, "number"),
-      details(r) +
-        "<p>No matching City address point; this record has no pin.</p>",
+  // Cluster every matched address; the number is permit records, not addresses.
+  const clusters = L.markerClusterGroup({
+    maxClusterRadius: 45,
+    // Yield between marker batches so typing and the mobile UI remain responsive.
+    chunkedLoading: true,
+    chunkInterval: 32,
+    chunkDelay: 16,
+    iconCreateFunction: (c) =>
+      L.divIcon({
+        className: "",
+        iconSize: [42, 42],
+        html:
+          '<div class="cluster">' +
+          c
+            .getAllChildMarkers()
+            .reduce((n, m) => n + m.options.recordCount, 0)
+            .toLocaleString() +
+          "</div>",
+      }),
+  }).addTo(map);
+  let locations = [];
+  function details(r) {
+    return (
+      "<strong>" +
+      esc(get(r, "address")) +
+      "</strong><br>" +
+      esc(get(r, "number")) +
+      " · revision " +
+      esc(get(r, "revision")) +
+      "<br>" +
+      esc(get(r, "status")) +
+      "<br>" +
+      esc(get(r, "type")) +
+      " · " +
+      esc(get(r, "work")) +
+      "<br>Structure: " +
+      esc(get(r, "structure")) +
+      "<br>Applied: " +
+      esc(get(r, "applied") || "Unknown") +
+      " · Issued: " +
+      esc(get(r, "issued") || "Not recorded") +
+      "<br>Estimated cost: " +
+      (get(r, "cost") === null
+        ? "Not disclosed"
+        : new Intl.NumberFormat("en-CA", {
+            style: "currency",
+            currency: "CAD",
+            maximumFractionDigits: 0,
+          }).format(get(r, "cost"))) +
+      "<p>" +
+      esc(get(r, "description")) +
+      "</p>"
     );
-}
-function update() {
-  const q = $("search").value.toLowerCase().trim(),
-    counts = Object.fromEntries([...types, "Other"].map((k) => [k, 0])),
-    filtered = [],
-    grouped = new Map();
-  let mapped = 0;
-  for (const r of rows) {
-    if (
-      ($("status").value && get(r, "status") !== $("status").value) ||
-      ($("type").value && get(r, "type") !== $("type").value) ||
-      ($("year").value && !get(r, "applied").startsWith($("year").value)) ||
-      (q &&
-        ![get(r, "address"), get(r, "number"), get(r, "description")]
-          .join(" ")
-          .toLowerCase()
-          .includes(q))
-    )
-      continue;
-    const cat = category(r);
-    counts[cat]++;
-    if (!Explorer.enabled(cat)) continue;
-    filtered.push(r);
-    if (!Number.isFinite(get(r, "lat")) || !Number.isFinite(get(r, "lon")))
-      continue;
-    mapped++;
-    const key = get(r, "lat") + "," + get(r, "lon");
-    if (!grouped.has(key))
-      grouped.set(key, { point: [get(r, "lat"), get(r, "lon")], rows: [] });
-    grouped.get(key).rows.push(r);
   }
-  locations = [...grouped.values()];
-  clusters.clearLayers();
-  clusters.addLayers(
-    locations.map((g) =>
+  function show(r) {
+    if (Number.isFinite(get(r, "lat")) && Number.isFinite(get(r, "lon"))) {
+      const ll = [get(r, "lat"), get(r, "lon")];
+      Explorer.focus(map, ll, 17);
+      L.popup().setLatLng(ll).setContent(details(r)).openOn(map);
+    } else
+      Explorer.detail(
+        get(r, "number"),
+        details(r) +
+          "<p>No matching City address point; this record has no pin.</p>",
+      );
+  }
+  let inserting = false, rerun = false;
+  function update() {
+    if (inserting) {
+      rerun = true;
+      return;
+    }
+    PermitStartup.stage("Filtering permits");
+    const matches = FeatureSearch.compile($("search").value),
+      counts = Object.fromEntries([...types, "Other"].map((k) => [k, 0])),
+      filtered = [],
+      grouped = new Map();
+    let mapped = 0;
+    for (const r of rows) {
+      if (
+        ($("status").value && get(r, "status") !== $("status").value) ||
+        ($("type").value && get(r, "type") !== $("type").value) ||
+        ($("year").value && !get(r, "applied").startsWith($("year").value)) ||
+        !matches(get(r, "address"), get(r, "number"), get(r, "description"))
+      )
+        continue;
+      const cat = category(r);
+      counts[cat]++;
+      if (!Explorer.enabled(cat)) continue;
+      filtered.push(r);
+      if (!Number.isFinite(get(r, "lat")) || !Number.isFinite(get(r, "lon")))
+        continue;
+      mapped++;
+      const key = get(r, "lat") + "," + get(r, "lon");
+      if (!grouped.has(key))
+        grouped.set(key, { point: [get(r, "lat"), get(r, "lon")], rows: [] });
+      grouped.get(key).rows.push(r);
+    }
+    locations = [...grouped.values()];
+    clusters.clearLayers();
+    const markers = locations.map((g) =>
       L.marker(g.point, {
         recordCount: g.rows.length,
         title: g.rows.length + " permits at this address",
@@ -3016236,36 +3016474,52 @@ function update() {
             ? "<p>First 30 shown; search a permit number for its details.</p>"
             : ""),
       ),
-    ),
+    );
+    Explorer.layerCounts(counts);
+    Explorer.count(filtered.length, "permits", mapped);
+    Explorer.results(
+      filtered,
+      (r) => get(r, "address") || get(r, "number"),
+      (r) =>
+        get(r, "number") +
+        " · " +
+        get(r, "status") +
+        (get(r, "lat") === null ? " · No pin" : ""),
+      show,
+    );
+    PermitStartup.stage("Drawing matching permits");
+    inserting = true;
+    clusters.options.chunkProgress = (processed, total) => {
+      if (processed !== total) return;
+      inserting = false;
+      if (rerun) {
+        rerun = false;
+        setTimeout(update, 0);
+      } else PermitStartup.ready();
+    };
+    if (markers.length) clusters.addLayers(markers);
+    else {
+      inserting = false;
+      PermitStartup.ready();
+    }
+  }
+  Explorer.layers(
+    [...types, "Other"].map((id, i) => ({ id, label: id, color: palette[i] })),
+    update,
   );
-  Explorer.layerCounts(counts);
-  Explorer.count(filtered.length, "permits", mapped);
-  Explorer.results(
-    filtered,
-    (r) => get(r, "address") || get(r, "number"),
-    (r) =>
-      get(r, "number") +
-      " · " +
-      get(r, "status") +
-      (get(r, "lat") === null ? " · No pin" : ""),
-    show,
-  );
-}
-Explorer.layers(
-  [...types, "Other"].map((id, i) => ({ id, label: id, color: palette[i] })),
-  update,
-);
-let pending;
-$("search").addEventListener("input", () => {
-  clearTimeout(pending);
-  pending = setTimeout(update, 200);
+  let pending;
+  $("search").addEventListener("input", () => {
+    clearTimeout(pending);
+    pending = setTimeout(update, 200);
+  });
+  for (const id of ["status", "type", "year"]) $(id).onchange = update;
+  Explorer.stamp(DATA.retrieved_at);
+  Explorer.connect(map, {
+    bounds: () => L.latLngBounds(locations.map((g) => g.point)),
+  });
+  update();
+
 });
-for (const id of ["status", "type", "year"]) $(id).onchange = update;
-Explorer.stamp(DATA.retrieved_at);
-Explorer.connect(map, {
-  bounds: () => L.latLngBounds(locations.map((g) => g.point)),
-});
-update();
 ;
     </script>
   </body>

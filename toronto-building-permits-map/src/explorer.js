@@ -63,6 +63,25 @@ const Explorer = (() => {
       expanded ? "Collapse map controls" : "Expand map controls",
     );
   };
+  function expandSearch() {
+    if (!mobile()) return;
+    byId("panel").classList.add("expanded");
+    byId("sheet-toggle").setAttribute("aria-expanded", "true");
+    byId("sheet-toggle").setAttribute("aria-label", "Collapse map controls");
+  }
+  byId("search").addEventListener("focus", expandSearch);
+  byId("search").addEventListener("keydown", (event) => {
+    if (event.key === "Enter") byId("search").blur();
+  });
+  // iOS changes the visual viewport when its keyboard opens without changing
+  // layout viewport units. Size the phone layout to the actually visible area.
+  if (typeof window !== "undefined" && window.visualViewport) {
+    const resize = () => document.documentElement.style.setProperty(
+      "--visible-height", window.visualViewport.height + "px",
+    );
+    window.visualViewport.addEventListener("resize", resize);
+    resize();
+  }
   byId("search").addEventListener("input", () =>
     tab(byId("search").value.trim() ? "results" : "layers"),
   );
@@ -162,7 +181,10 @@ const Explorer = (() => {
       const sub = document.createElement("small");
       sub.textContent = summary(item);
       button.append(title, sub);
-      button.onclick = () => onSelect(item);
+      button.onclick = () => {
+        byId("search").blur();
+        onSelect(item);
+      };
       target.append(button);
     }
     byId("result-note").textContent = !items.length

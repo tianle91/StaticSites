@@ -633,3 +633,43 @@ summary {
 .itin li {
   margin: 8px 0;
 }
+
+/* Startup errors must be readable without connecting a phone to a debugger. */
+#startup-status {
+  margin: 0;
+  padding: 8px 17px;
+  font-size: 13px;
+}
+#startup-retry,
+#startup-show-details {
+  margin: 4px 17px;
+  padding: 8px;
+}
+#diagnostic-output {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 11px;
+}
+@media (max-width: 760px) {
+  body {
+    height: var(--visible-height, 100dvh);
+  }
+  .explorer-sidebar {
+    overflow: auto;
+    max-height: 100%;
+    min-height: min(285px, 100%);
+  }
+  .explorer-sidebar.expanded {
+    height: calc(100% - 8px);
+    min-height: 0;
+  }
+  .search-area,
+  #stats,
+  .explorer-tabs,
+  #startup-status {
+    flex-shrink: 0;
+  }
+  .explorer-panel {
+    flex: 1 0 80px;
+  }
+}

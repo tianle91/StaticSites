@@ -1,5 +1,6 @@
 import json
 import pathlib
+import re
 
 import pytest
 
@@ -20,11 +21,24 @@ def test_snapshot_is_content_aware_and_restores_missing_file(tmp_path):
 
 def test_script_payload_cannot_end_its_html_element():
     rendered = build_site.render({"description": "</script><script>alert(1)</script>"})
-    payload = rendered.split("const DATA = ", 1)[1].split(";\n", 1)[0]
+    payload = rendered.split('id="permit-data">', 1)[1].split("</script>", 1)[0]
     assert json.loads(payload)["description"] == "</script><script>alert(1)</script>"
     assert "<script>" not in payload
     assert "__PAYLOAD__" not in rendered
     assert "Data sources" in rendered
+
+
+def test_diagnostic_build_identifies_the_embedded_snapshot():
+    first = build_site.render({"permits": ["first snapshot"]})
+    repeated = build_site.render({"permits": ["first snapshot"]})
+    changed = build_site.render({"permits": ["second snapshot"]})
+    fingerprint = lambda html: re.search(
+        r'name="permits-build" content="([0-9a-f]{12})"', html
+    ).group(1)
+    assert first == repeated
+    assert fingerprint(first) != fingerprint(changed)
+    # Capture errors before the network-dependent library and data initialize.
+    assert first.index("const PermitStartup") < first.index('src="https://unpkg.com')
 
 
 def permit(number="22 100000 BLD", geo_id="42", address="10", revision="00"):

@@ -9,6 +9,13 @@ not addresses. Type layers group the six most common permit types plus Other,
 with exact type, status and year controls under More filters.
 The sidebar lists the first 50 matching records, including unmatched addresses.
 
+Address queries such as `8 The Esplanade` match the complete house number in
+the address field, excluding `38`, `58`, and mentions in another property's
+description. Case, extra spaces, commas and periods are ignored. Street text
+can be partial while typing. House-number suffixes and ranges are literal:
+`8A` and `8-10` are separate from `8`; trailing unit information is allowed.
+Other queries still search address, permit number and description as text.
+
 ## Map controls
 
 The desktop sidebar puts search and the matching count above **Layers**,
@@ -16,6 +23,8 @@ The desktop sidebar puts search and the matching count above **Layers**,
 expandable bottom panel. Search and selected layers determine both the count
 and results; layer badges show matches available before layer selection. Results
 list up to 50 matches; narrow the search to find a specific feature.
+Focusing search expands the mobile panel. Its height follows the visible
+viewport when the keyboard opens; the keyboard's Search/Enter key dismisses it.
 
 Use **Center on my location** (◎) to request browser location and show its
 accuracy circle, or **Fit matching features** (⛶) to frame the current selection.
@@ -58,6 +67,27 @@ complete register manageable. Builder/applicant names are not retained. Invalid
 or sentinel construction costs become null (displayed as not disclosed).
 `src/build_site.py` embeds it in `src/page.html` to produce the single-file
 `output/toronto-building-permits-map.html`.
+The snapshot is embedded as inert JSON and parsed at startup, avoiding compilation
+of the full register as JavaScript. The raw JSON element is then removed.
+Markercluster inserts markers in timed batches, coalescing filter changes until
+the current insertion finishes so an older search cannot repopulate the map.
+
+### Mobile troubleshooting
+
+Search stays disabled until initial marker insertion finishes. A loading message
+names the current phase. Startup and later JavaScript failures show an error,
+**Retry loading permits**, and **Show diagnostic details** instead of a blank
+result area. **Data sources → Diagnostic details** is also available after a
+successful load. It contains a deterministic build fingerprint, browser/version,
+visible viewport, snapshot/count, recent phases and the error, when present.
+Diagnostics stay on the device; nothing is sent automatically, and the report
+does not collect the search text or geolocation. Select/copy the report when
+reporting a phone issue. Reloading retries the whole initialization.
+
+Optional offline interaction regressions from the repo root:
+`node admin_tests/map_explorer.cjs` and `node admin_tests/permit_search.cjs`
+(Node 18+). These use DOM/Leaflet fixtures; they do not emulate an iPhone keyboard
+or establish the cause of an error on a particular physical device.
 
 For an initial import or a portal outage, previously downloaded official files
 can be supplied explicitly with `src/fetch_data.py --permits-csv PATH
