@@ -5,6 +5,33 @@ An interactive Leaflet map of every clinic and hospital listed on
 with phone, email, a text filter (name / city / postal code) and directions
 links.
 
+## Visual snapshots
+
+[Desktop (1440 × 900)](tests/snapshots/desktop.jpg) ·
+[Mobile (390 × 844)](tests/snapshots/mobile.jpg)
+
+Regenerate both review images explicitly:
+
+```sh
+make snapshot-browser  # one-time headless Chromium download; repeat after Playwright upgrades
+make snapshots         # rebuild from committed inputs, then capture both views
+```
+
+The helper serves this project on a temporary loopback port and uses fresh,
+light-mode Chromium contexts with no search or user location. Mobile uses touch
+emulation and the compact panel; browser chrome and the on-screen keyboard are
+excluded. It waits for initialization, fonts, loaded tiles and settled map motion.
+Both captures must succeed before existing images are replaced. Images are visual
+review references, not automated pixel comparisons; upstream map tiles can change.
+
+Snapshot capture needs network access to the page's map scripts and tiles. It
+never refreshes committed data or installs browsers automatically. Ordinary
+`make`, `make test` and `make data` do not capture snapshots. Python dependencies
+remain locked in this project's environment. On Linux, install Chromium's
+[manual system prerequisites](https://playwright.dev/python/docs/browsers#install-system-dependencies)
+if required; these targets do not install OS packages. Recapture after visual
+changes and commit the reviewed images with them.
+
 ## Map controls
 
 The desktop sidebar puts search and the matching count above **Layers**,
@@ -12,6 +39,13 @@ The desktop sidebar puts search and the matching count above **Layers**,
 expandable bottom panel. Search and selected layers determine both the count
 and results; layer badges show matches available before layer selection. Results
 list up to 50 matches; narrow the search to find a specific feature.
+
+On phones, the compact panel keeps search and counts visible. **Show results & filters**
+expands it; **Show more map** folds it down. Focusing search also expands the
+panel. It follows the visible viewport when the keyboard opens, and Search/Enter
+dismisses the keyboard. Source links remain available under **Data sources**.
+Long location details open in a scrollable mobile dialog with a persistent close
+button; short map labels remain anchored popups. Desktop keeps its sidebar and popups.
 
 Use **Center on my location** (◎) to request browser location and show its
 accuracy circle, or **Fit matching features** (⛶) to frame the current selection.

@@ -33,6 +33,7 @@ const points = L.layerGroup().addTo(map),
             esc(rec.url) +
             '" target="_blank" rel="noopener">More information</a>'
           : ""),
+      Explorer.detailPopup(rec.name),
     );
     return {
       rec,

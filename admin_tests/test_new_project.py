@@ -24,6 +24,46 @@ def prepare_project(directory, makefile):
 
 
 class DependencyContractTests(unittest.TestCase):
+    def test_snapshots_are_explicit_and_use_the_configured_environment(self):
+        makefile = '''PROJECT := map
+VENV := .review-env
+STAMP := .state/ready
+SNAPSHOT_SCRIPT := src/capture.py
+include ../python-project.mk
+$(OUT):
+\t@mkdir -p output
+\t@touch $@
+'''
+        with tempfile.TemporaryDirectory() as directory:
+            root = prepare_project(directory, makefile)
+            (root / "pyproject.toml").touch()
+            (root / "uv.lock").touch()
+            (root / ".review-env/bin").mkdir(parents=True)
+            interpreter = root / ".review-env/bin/python"
+            interpreter.write_text('#!/bin/sh\necho "$*" >> calls\n')
+            interpreter.chmod(0o755)
+            (root / ".state").mkdir()
+            (root / ".state/ready").touch()
+            snapshot = root / "tests/snapshots/mobile.jpg"
+            snapshot.parent.mkdir(parents=True)
+            snapshot.write_bytes(b"reviewed image")
+
+            def make(target):
+                result = subprocess.run(["make", target], cwd=root, capture_output=True)
+                self.assertEqual(result.returncode, 0, result.stderr.decode())
+
+            for target in ("all", "test", "data"):
+                make(target)
+            self.assertEqual((root / "calls").read_text().splitlines(),
+                             ["-m pytest -q", "src/fetch_data.py"])
+            make("snapshots")
+            make("snapshot-browser")
+            self.assertEqual((root / "calls").read_text().splitlines()[-2:],
+                             ["src/capture.py", "-m playwright install --only-shell chromium"])
+            make("clean")
+            make("clean-deps")
+            self.assertEqual(snapshot.read_bytes(), b"reviewed image")
+
     def test_project_overrides_data_rebuild_and_cleanup(self):
         makefile = '''PROJECT := custom
 VENV := .custom-env

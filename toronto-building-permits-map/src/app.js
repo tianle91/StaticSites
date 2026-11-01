@@ -116,7 +116,8 @@ PermitStartup.run(async () => {
     if (Number.isFinite(get(r, "lat")) && Number.isFinite(get(r, "lon"))) {
       const ll = [get(r, "lat"), get(r, "lon")];
       Explorer.focus(map, ll, 17);
-      L.popup().setLatLng(ll).setContent(details(r)).openOn(map);
+      if (Explorer.mobile()) Explorer.detail(get(r, "address"), details(r));
+      else L.popup().setLatLng(ll).setContent(details(r)).openOn(map);
     } else
       Explorer.detail(
         get(r, "number"),
@@ -178,6 +179,7 @@ PermitStartup.run(async () => {
           g.rows.length +
           " permits at this address</b>" +
           g.rows.map(details).join("<hr>"),
+        Explorer.detailPopup(get(g.rows[0], "address")),
       ),
     );
     Explorer.layerCounts(counts);

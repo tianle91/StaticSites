@@ -4,6 +4,8 @@
 
 PROJECT := toronto-dinesafe-map
 
+SNAPSHOT_SCRIPT := src/snapshot_site.py
+
 include ../python-project.mk
 
 $(OUT): $(wildcard src/*.html src/*.js src/*.css src/vendor/*) src/build_map.py data/dinesafe.json $(wildcard data/geocode_cache.json)

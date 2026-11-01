@@ -63,7 +63,7 @@ for (const c of DATA.clinics) {
   const marker = L.marker([c.lat, c.lon], {
     icon: markerIcon(cat.color),
     title: c.name,
-  }).bindPopup(popup);
+  }).bindPopup(popup, Explorer.detailPopup(c.name));
   marker.addTo(layers[c.category]);
   entries.push({
     marker,

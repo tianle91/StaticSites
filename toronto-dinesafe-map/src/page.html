@@ -13,6 +13,10 @@
     </style>
     <style>
       /* Detail sidebar uses the explorer surface/text pairs in both themes. */
+      .explorer-layout {
+        /* The closed sidebar's transform must not widen the phone page. */
+        overflow: hidden;
+      }
       #sidebar {
         position: absolute;
         top: 0;
@@ -251,7 +255,7 @@
           class="sheet-toggle"
           aria-label="Expand map controls"
           aria-expanded="false"
-        ></button>
+        >Show results &amp; filters</button>
         <div class="search-area">
           <label for="search">Search features</label
           ><input

@@ -155,7 +155,7 @@ function update() {
           ? "<p>First 20 incidents shown here. Search an incident ID for all its records.</p>"
           : "");
       return div;
-    });
+    }, Explorer.detailPopup("Incidents at this location"));
     points.push(marker);
   }
   clusters.addLayers(points);
@@ -177,7 +177,8 @@ function update() {
       if (e.points.length) {
         const r = e.points[0];
         Explorer.focus(map, [r.lat, r.lon]);
-        L.popup().setLatLng([r.lat, r.lon]).setContent(details(e)).openOn(map);
+        if (Explorer.mobile()) Explorer.detail("Incident " + e.id, details(e));
+        else L.popup().setLatLng([r.lat, r.lon]).setContent(details(e)).openOn(map);
       } else Explorer.detail("Incident " + e.id, details(e));
     },
   );

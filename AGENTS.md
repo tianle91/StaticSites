@@ -243,8 +243,9 @@ Configure the shared template before `include ../python-project.mk`. Defaults
 cover `.venv`, `output/<project>.html`, `src/fetch_data.py`, `pytest -q`, and
 Homebrew `uv`. Supported variables are `PROJECT`, `VENV`, `PY`, `STAMP`, `OUT`,
 `OUTPUTS`, `OPEN_FILE`, `CLEAN_FILES`, `FETCH_SCRIPT`, `PYTEST_ARGS`,
-`BREW_FORMULAE`, and `BREW_CASKS`. Use variables rather than overriding standard
-target recipes. Keep file prerequisites and rendering recipes in each project.
+`BREW_FORMULAE`, `BREW_CASKS`, and optional `SNAPSHOT_SCRIPT`. Use variables
+rather than overriding standard target recipes. Keep file prerequisites and
+rendering recipes in each project.
 The shared template sets `all` as the default goal and attaches order-only
 dependency validation to every declared output. List every generated artifact
 in `OUTPUTS`; transit also includes its routed grid in `CLEAN_FILES` to preserve
@@ -291,6 +292,20 @@ System tools are installed separately via explicit `make system-deps` or manuall
 on other platforms. Credentials remain operator prerequisites.
 
 ## Verifying changes
+
+Map projects opt in to review snapshots by setting `SNAPSHOT_SCRIPT` before the
+shared Make include. `make snapshots` rebuilds the HTML and runs the local
+helper; `make snapshot-browser` explicitly downloads Playwright's headless
+Chromium. These optional commands are separate from `all`, `test` and `data` and
+are never run automatically. Screenshot capture is an explicit exception to the
+data-only network rule: it can load the page's external scripts and map tiles,
+but must not refresh committed datasets. Declare Playwright in the project's
+locked dev dependencies and keep the helper in its own `src/`. Browser binaries
+are installed only by the explicit setup target. Store review JPEGs in
+`tests/snapshots/`, preserve existing images on capture failure, and document the
+viewport sizes and recapture commands in the project README. New map projects
+follow the scaffolder README's opt-in instructions; non-map scaffolds do not
+install browser dependencies by default.
 
 ```bash
 cd <project> && make && make test

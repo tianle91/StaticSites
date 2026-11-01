@@ -38,6 +38,15 @@ badges show query matches before selection; the headline count and results respe
 selected layers. Duplicate the small `src/explorer.css` / `src/explorer.js` helpers
 locally when starting another map; projects must not import each other's code.
 
+All seven map projects also provide explicit review snapshots:
+`make -C <project> snapshot-browser` downloads headless Chromium once, and
+`make -C <project> snapshots` rebuilds and captures desktop (1440 × 900) and
+mobile (390 × 844) images under that project's `tests/snapshots/`.
+Capture waits for map initialization, tiles and motion to settle. These commands
+use each project's locked Playwright dependency; they are never run by ordinary
+builds, tests or data refreshes. Snapshot capture requires network access to map
+assets. Review and commit the images after visual changes.
+
 Optional interaction checks use only Node.js built-ins (Node 18+):
 `node admin_tests/map_explorer.cjs`. They verify all seven projects' layer-aware
 counts, search, location success/error/retry behavior, and mobile fit padding.

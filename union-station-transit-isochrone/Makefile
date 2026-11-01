@@ -15,6 +15,8 @@ OSM_RAW := data/gtha.osm.pbf
 OSM_PBF := data/gtha-clipped.osm.pbf
 BBOX := -80.6,43.05,-78.7,44.40
 
+SNAPSHOT_SCRIPT := src/snapshot_site.py
+
 include ../python-project.mk
 
 $(OUT): $(wildcard src/*.html src/*.js src/*.css src/vendor/*) src/build_map.py $(GEOJSON) data/transit_model.json $(wildcard data/reachability.json)

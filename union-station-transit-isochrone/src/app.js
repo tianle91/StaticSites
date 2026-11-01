@@ -180,7 +180,7 @@ const stations = L.layerGroup().addTo(map),
             (DATA.mode_color[rec.mode] || "#555") +
             '"></div>',
         }),
-      }).bindPopup(popup);
+      }).bindPopup(popup, Explorer.detailPopup(rec.name));
       return {
         rec,
         marker,

@@ -471,8 +471,8 @@ summary {
 }
 @media (max-width: 760px) {
   .explorer-header {
-    padding: 14px 16px;
-    min-height: 79px;
+    padding: 10px 16px;
+    min-height: 60px;
   }
   .explorer-header h1 {
     font-size: 19px;
@@ -486,8 +486,8 @@ summary {
     right: 0;
     bottom: 0;
     width: 100%;
-    height: min(45dvh, 370px);
-    min-height: 285px;
+    height: auto;
+    min-height: 0;
     border: 0;
     border-radius: 15px 15px 0 0;
     box-shadow: 0 -3px 14px #0003;
@@ -495,23 +495,27 @@ summary {
   .explorer-sidebar.expanded {
     height: 80%;
   }
+  .explorer-sidebar:not(.expanded) .explorer-tabs,
+  .explorer-sidebar:not(.expanded) .explorer-panel {
+    display: none;
+  }
   .sheet-toggle {
     display: block;
-    height: 24px;
-    min-height: 24px;
+    height: 44px;
+    min-height: 44px;
     padding: 0;
     border: 0;
     background: transparent;
     flex-shrink: 0;
+    color: var(--muted);
+    font-size: 12px;
   }
   .sheet-toggle::before {
-    content: "";
-    display: block;
-    width: 35px;
-    height: 4px;
-    margin: auto;
-    border-radius: 3px;
-    background: var(--line);
+    content: "⌃";
+    margin-right: 7px;
+  }
+  .expanded .sheet-toggle::before {
+    content: "⌄";
   }
   .search-area {
     padding: 0 15px 8px;
@@ -522,14 +526,22 @@ summary {
   input[type="search"] {
     font-size: 16px;
     padding: 9px;
+    min-height: 44px;
   }
   #stats {
     padding: 0 15px 8px;
-    min-height: 55px;
+    min-height: 36px;
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    column-gap: 4px;
   }
   #stats strong,
   #stats > b {
-    font-size: 24px;
+    font-size: 18px;
+  }
+  #stats .secondary {
+    margin: 0 0 0 auto;
   }
   .explorer-tabs button {
     padding: 8px 10px;
@@ -539,7 +551,44 @@ summary {
     padding: 10px 15px;
   }
   .explorer-footer {
-    padding: 8px 15px;
+    display: none;
+  }
+  .feature-result strong {
+    font-size: 14px;
+  }
+  #result-note.complete-list {
+    display: none;
+  }
+  .record-dialog {
+    width: calc(100% - 24px);
+    max-width: none;
+    max-height: calc(var(--visible-height, 100dvh) - 24px);
+    padding: 16px;
+    overflow: hidden;
+  }
+  .record-dialog[open] {
+    display: flex;
+    flex-direction: column;
+  }
+  .record-dialog h2 {
+    margin: 0 44px 16px 0;
+    flex-shrink: 0;
+    overflow-wrap: anywhere;
+  }
+  .record-dialog .close {
+    min-width: 44px;
+    min-height: 44px;
+    top: 6px;
+    right: 6px;
+    font-size: 22px;
+  }
+  #record-body {
+    overflow: auto;
+    min-height: 0;
+    font-size: 14px;
+    line-height: 1.7;
+    overflow-wrap: anywhere;
+    overscroll-behavior: contain;
   }
   .map-canvas {
     position: absolute;
@@ -645,6 +694,47 @@ summary {
   margin: 8px 0;
 }
 
+/* Startup errors must be readable without connecting a phone to a debugger. */
+#startup-status {
+  margin: 0;
+  padding: 8px 17px;
+  font-size: 13px;
+}
+#startup-retry,
+#startup-show-details {
+  margin: 4px 17px;
+  padding: 8px;
+}
+#diagnostic-output {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 11px;
+}
+@media (max-width: 760px) {
+  body {
+    height: var(--visible-height, 100dvh);
+  }
+  .explorer-sidebar {
+    overflow: hidden;
+    max-height: 100%;
+    min-height: 0;
+  }
+  .explorer-sidebar.expanded {
+    height: calc(100% - 8px);
+    min-height: 0;
+  }
+  .search-area,
+  #stats,
+  .explorer-tabs,
+  #startup-status {
+    flex-shrink: 0;
+  }
+  .explorer-panel {
+    flex: 1;
+    overscroll-behavior: contain;
+  }
+}
+
     </style>
     <style></style>
   </head>
@@ -668,7 +758,7 @@ summary {
           class="sheet-toggle"
           aria-label="Expand map controls"
           aria-expanded="false"
-        ></button>
+        >Show results &amp; filters</button>
         <div class="search-area">
           <label for="search">Search features</label
           ><input
@@ -2003,11 +2093,15 @@ const Explorer = (() => {
     byId("panel").classList.remove("expanded");
     byId("sheet-toggle").setAttribute("aria-expanded", "false");
     byId("sheet-toggle").setAttribute("aria-label", "Expand map controls");
+    byId("sheet-toggle").textContent = "Show results & filters";
   }
   function sheetHeight() {
     return mobile() ? byId("panel").getBoundingClientRect().height : 0;
   }
   function tab(name) {
+    // Programmatic navigation (diagnostics, trip results, provenance) must also
+    // reveal its panel when the phone is showing the compact map view.
+    if (name !== "layers") expandSearch();
     document.querySelectorAll(".explorer-tabs [role=tab]").forEach((button) => {
       button.setAttribute("aria-selected", String(button.dataset.tab === name));
       button.tabIndex = button.dataset.tab === name ? 0 : -1;
@@ -2046,7 +2140,28 @@ const Explorer = (() => {
       "aria-label",
       expanded ? "Collapse map controls" : "Expand map controls",
     );
+    byId("sheet-toggle").textContent = expanded ? "Show more map" : "Show results & filters";
   };
+  function expandSearch() {
+    if (!mobile()) return;
+    byId("panel").classList.add("expanded");
+    byId("sheet-toggle").setAttribute("aria-expanded", "true");
+    byId("sheet-toggle").setAttribute("aria-label", "Collapse map controls");
+    byId("sheet-toggle").textContent = "Show more map";
+  }
+  byId("search").addEventListener("focus", expandSearch);
+  byId("search").addEventListener("keydown", (event) => {
+    if (event.key === "Enter") byId("search").blur();
+  });
+  // iOS changes the visual viewport when its keyboard opens without changing
+  // layout viewport units. Size the phone layout to the actually visible area.
+  if (typeof window !== "undefined" && window.visualViewport) {
+    const resize = () => document.documentElement.style.setProperty(
+      "--visible-height", window.visualViewport.height + "px",
+    );
+    window.visualViewport.addEventListener("resize", resize);
+    resize();
+  }
   byId("search").addEventListener("input", () =>
     tab(byId("search").value.trim() ? "results" : "layers"),
   );
@@ -2146,9 +2261,15 @@ const Explorer = (() => {
       const sub = document.createElement("small");
       sub.textContent = summary(item);
       button.append(title, sub);
-      button.onclick = () => onSelect(item);
+      button.onclick = () => {
+        byId("search").blur();
+        onSelect(item);
+      };
       target.append(button);
     }
+    // The count above already covers a complete result list. Keep warnings
+    // about empty or truncated lists visible even in the compact phone panel.
+    byId("result-note").classList[items.length && items.length <= limit ? "add" : "remove"]("complete-list");
     byId("result-note").textContent = !items.length
       ? "No features match the selected layers and search."
       : items.length > limit
@@ -2188,7 +2309,19 @@ const Explorer = (() => {
     if (!dialog.open) dialog.showModal();
   }
   byId("record-close").onclick = () => byId("record-detail").close();
+  function detailPopup(title) {
+    return { detailTitle: title, autoPan: !mobile() };
+  }
   function connect(map, config) {
+    // Resolve lazy content only when selected. Desktop retains its anchored
+    // popups; long phone details get a separate scroll area and fixed close.
+    map.on("popupopen", ({ popup }) => {
+      if (!mobile() || !popup.options.detailTitle) return;
+      let content = popup.getContent();
+      if (typeof content === "function") content = content();
+      map.closePopup();
+      detail(popup.options.detailTitle, typeof content === "string" ? content : content.innerHTML);
+    });
     if (mobile()) map.panBy([0, sheetHeight() / 2], { animate: false });
     let userMarker = null,
       accuracyCircle = null;
@@ -2306,6 +2439,8 @@ const Explorer = (() => {
     // Location stays in memory only and is requested solely by the locate button.
   }
   return {
+    mobile,
+    detailPopup,
     esc,
     tab,
     count,
@@ -2360,6 +2495,7 @@ const points = L.layerGroup().addTo(map),
             esc(rec.url) +
             '" target="_blank" rel="noopener">More information</a>'
           : ""),
+      Explorer.detailPopup(rec.name),
     );
     return {
       rec,

@@ -15,6 +15,8 @@ FETCH_SCRIPT ?= src/fetch_data.py
 PYTEST_ARGS ?= -q
 BREW_FORMULAE ?= uv
 BREW_CASKS ?=
+# Optional review images: map projects configure their own local helper.
+SNAPSHOT_SCRIPT ?=
 
 .PHONY: all system-deps deps test data open clean clean-deps clean-venv
 
@@ -72,3 +74,15 @@ clean-deps:
 	rm -rf $(VENV)
 
 clean-venv: clean-deps
+
+ifneq ($(strip $(SNAPSHOT_SCRIPT)),)
+.PHONY: snapshots snapshot-browser
+
+# These explicit targets are never prerequisites of ordinary builds/tests/data.
+# Browser downloads are separate from Python setup and never repaired implicitly.
+snapshot-browser: deps
+	$(PY) -m playwright install --only-shell chromium
+
+snapshots: all
+	$(PY) $(SNAPSHOT_SCRIPT)
+endif
