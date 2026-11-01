@@ -89,6 +89,25 @@ async function main() {
   });
   const manyGroup = [...many.map.layers].find((l) => l.options?.chunkedLoading);
   assert.match(manyGroup.children[0].popup(), /test permit 30/);
+  many.map.handlers.popupopen({popup: {options: manyGroup.children[0].popupOptions}});
+  assert.equal(many.get("record-detail").open, undefined, "desktop keeps its map popup");
+  h.search("220 major");
+  while (h.chunks.length) h.chunks.shift()();
+  h.get("results").children[0].click();
+  assert.equal(h.get("record-detail").open, true, "mobile results open readable details");
+  assert.equal(h.get("record-title").textContent, "220 MAJOR ST");
+  h.get("record-close").click();
+  assert.equal(h.get("record-detail").open, false);
+  h.map.handlers.popupopen({popup: {
+    options: group.children[0].popupOptions,
+    getContent: () => group.children[0].popup,
+  }});
+  assert.equal(h.map.popupClosed, true, "mobile details replace the overlapping map popup");
+  assert.equal(h.get("record-detail").open, true);
+  assert.match(h.get("record-body").innerHTML, /2 permits at this address/);
+  assert.match(h.get("record-body").innerHTML, /25 270971 BLD/);
+  assert.match(h.get("record-body").innerHTML, /25 270971 PLB/);
+  h.get("record-close").click();
   for (const fn of h.get("search").listeners.focus) fn();
   assert.equal(h.get("panel").classList.contains("expanded"), true);
   assert.equal(h.get("sheet-toggle").attributes["aria-expanded"], "true");

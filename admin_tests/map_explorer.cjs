@@ -170,6 +170,9 @@ async function harness(slug, mobile = false, override = {}) {
       on(name, fn) {
         this.handlers[name] = fn;
       },
+      closePopup() {
+        this.popupClosed = true;
+      },
       addControl(control) {
         control.onAdd();
         controls.push(control);
@@ -209,14 +212,17 @@ async function harness(slug, mobile = false, override = {}) {
       clearLayers() {
         this.children = [];
       },
-      bindPopup(content) {
+      bindPopup(content, options = {}) {
         this.popup = content;
+        this.popupOptions = options;
         return this;
       },
       openPopup() {
         return this;
       },
-      on() {
+      handlers: {},
+      on(name, fn) {
+        this.handlers[name] = fn;
         return this;
       },
       getAllChildMarkers() {
@@ -391,6 +397,33 @@ async function main() {
       slug,
       "(counts, search, layers, location success/error/retry)",
     );
+    // The same phone controls must work independently in every map project.
+    const phone = await harness(slug, true);
+    for (const fn of phone.get("search").listeners.focus) fn();
+    assert.equal(phone.get("panel").classList.contains("expanded"), true);
+    phone.get("sheet-toggle").click();
+    assert.equal(phone.get("sheet-toggle").textContent, "Show results & filters");
+    phone.get("provenance").click();
+    assert.equal(phone.get("panel").classList.contains("expanded"), true);
+    assert.equal(phone.get("sources-panel").hidden, false);
+    const detailMarker = phone.markers.find((m) => m.popupOptions?.detailTitle);
+    if (detailMarker) {
+      phone.map.handlers.popupopen({ popup: {
+        options: detailMarker.popupOptions,
+        getContent: () => detailMarker.popup,
+      } });
+      assert.equal(phone.map.popupClosed, true);
+      assert.equal(phone.get("record-detail").open, true);
+      assert.ok(phone.get("record-body").innerHTML.length > 0);
+      phone.get("record-close").click();
+      assert.equal(phone.get("record-detail").open, false);
+    }
+    if (slug === "toronto-dinesafe-map") {
+      phone.get("results").children[0].click();
+      assert.equal(phone.get("record-detail").open, true, "phone inspection history uses the dialog");
+      assert.match(phone.get("record-body").innerHTML, /Inspection history/);
+      assert.equal(phone.get("sidebar").classList.contains("open"), false);
+    }
   }
   const mobile = await harness("ontario-physiotherapy-clinics-map", true);
   mobile.get("fit").click();

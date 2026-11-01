@@ -201,6 +201,16 @@ function openSidebar(e) {
 
   document.getElementById("sb-body").innerHTML =
     '<div class="facts">' + facts + "</div>" + actions + history;
+  if (Explorer.mobile()) {
+    Explorer.collapse();
+    Explorer.detail(
+      e.name || "Establishment",
+      document.getElementById("sb-badge").innerHTML +
+        '<p class="sb-sub">' + document.getElementById("sb-sub").innerHTML + "</p>" +
+        document.getElementById("sb-body").innerHTML,
+    );
+    return;
+  }
   sidebar.classList.add("open");
   sidebar.setAttribute("aria-hidden", "false");
   sidebar.inert = false;

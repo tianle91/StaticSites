@@ -19,11 +19,15 @@ const Explorer = (() => {
     byId("panel").classList.remove("expanded");
     byId("sheet-toggle").setAttribute("aria-expanded", "false");
     byId("sheet-toggle").setAttribute("aria-label", "Expand map controls");
+    byId("sheet-toggle").textContent = "Show results & filters";
   }
   function sheetHeight() {
     return mobile() ? byId("panel").getBoundingClientRect().height : 0;
   }
   function tab(name) {
+    // Programmatic navigation (diagnostics, trip results, provenance) must also
+    // reveal its panel when the phone is showing the compact map view.
+    if (name !== "layers") expandSearch();
     document.querySelectorAll(".explorer-tabs [role=tab]").forEach((button) => {
       button.setAttribute("aria-selected", String(button.dataset.tab === name));
       button.tabIndex = button.dataset.tab === name ? 0 : -1;
@@ -62,12 +66,14 @@ const Explorer = (() => {
       "aria-label",
       expanded ? "Collapse map controls" : "Expand map controls",
     );
+    byId("sheet-toggle").textContent = expanded ? "Show more map" : "Show results & filters";
   };
   function expandSearch() {
     if (!mobile()) return;
     byId("panel").classList.add("expanded");
     byId("sheet-toggle").setAttribute("aria-expanded", "true");
     byId("sheet-toggle").setAttribute("aria-label", "Collapse map controls");
+    byId("sheet-toggle").textContent = "Show more map";
   }
   byId("search").addEventListener("focus", expandSearch);
   byId("search").addEventListener("keydown", (event) => {
@@ -187,6 +193,9 @@ const Explorer = (() => {
       };
       target.append(button);
     }
+    // The count above already covers a complete result list. Keep warnings
+    // about empty or truncated lists visible even in the compact phone panel.
+    byId("result-note").classList[items.length && items.length <= limit ? "add" : "remove"]("complete-list");
     byId("result-note").textContent = !items.length
       ? "No features match the selected layers and search."
       : items.length > limit
@@ -226,7 +235,19 @@ const Explorer = (() => {
     if (!dialog.open) dialog.showModal();
   }
   byId("record-close").onclick = () => byId("record-detail").close();
+  function detailPopup(title) {
+    return { detailTitle: title, autoPan: !mobile() };
+  }
   function connect(map, config) {
+    // Resolve lazy content only when selected. Desktop retains its anchored
+    // popups; long phone details get a separate scroll area and fixed close.
+    map.on("popupopen", ({ popup }) => {
+      if (!mobile() || !popup.options.detailTitle) return;
+      let content = popup.getContent();
+      if (typeof content === "function") content = content();
+      map.closePopup();
+      detail(popup.options.detailTitle, typeof content === "string" ? content : content.innerHTML);
+    });
     if (mobile()) map.panBy([0, sheetHeight() / 2], { animate: false });
     let userMarker = null,
       accuracyCircle = null;
@@ -344,6 +365,8 @@ const Explorer = (() => {
     // Location stays in memory only and is requested solely by the locate button.
   }
   return {
+    mobile,
+    detailPopup,
     esc,
     tab,
     count,
