@@ -111,6 +111,11 @@ lockfiles, outputs and review images. `make -C <project> clean` removes only tha
 project's generated outputs. Ignored legacy project `.venv` directories are no
 longer used and are not deleted automatically.
 
+Automatic dependency cleanup is limited to `.venv`, `.venv-*` and nested
+`.venv/` directories inside this checkout. Other custom environment locations
+must be cleaned manually. Changing `.python-version` invalidates the shared
+setup stamp just like changing the dependency manifests.
+
 Use `uv add <dependency>` or `uv add --group <group> <dependency>` **from the
 repository root**. Groups `plots`, `maps`, `transit`, and `dev` describe the
 optional toolsets; Make installs all groups for complete verification. Advanced
@@ -130,7 +135,7 @@ project commands, not ten separate installations.
 
 `src/staticsites/` is the editable build-time Python package:
 
-- `assets.py` and `assets/maps/`: map controls, layers/results/sources tabs,
+- `assets.py` and `assets/maps/`: safe JSON embedding, map controls, layers/results/sources tabs,
   mobile panels/dialogs, keyboard/location/fit behavior and styles. Search stays
   project-configured: addresses, names, categories, watersheds or stations.
 - `charts.py` and `assets/plots/`: native SVG plotting, legends, axes, shared
@@ -157,7 +162,7 @@ GeoJSON retain their project-specific prerequisites and cached inputs.
 <project>/
   site.toml       # [site] name, title, description (listing metadata only)
   pytest.ini      # testpaths=tests, pythonpath=src
-  Makefile        # project build/refresh rules; includes ../python-project.mk
+  Makefile        # project builder/inputs; includes ../artifact-project.mk
   README.md       # purpose, sources, limitations and commands
   src/            # local adapters, fetchers and builders
   tests/          # project tests and committed review snapshots
@@ -166,7 +171,9 @@ GeoJSON retain their project-specific prerequisites and cached inputs.
 ```
 
 `environment.mk` manages the root environment and explicit setup/cleanup;
-`python-project.mk` supplies the project commands. Every project implements
+`python-project.mk` supplies the project commands. `artifact-project.mk` adds
+the common builder/input/format rules used by all ten projects; transit adds its
+geometry and clipping recipes locally. Every project implements
 `all`, `deps`, `system-deps`, `test`, `data`, `open`, `clean`, `clean-deps` and
 `clean-venv`. Snapshot-enabled projects also expose `snapshot-browser`,
 `snapshots`, and `browser-test` (explicit offline browser fixtures).
@@ -222,3 +229,45 @@ placeholders and README TODOs, configure shared components, update `site.toml`,
 add a catalog row above, then run `make manifest`. New projects inherit the root
 lock; add genuinely new dependencies at the root rather than creating another
 environment. Update the scaffolder whenever the standard changes.
+
+## Reuse audit
+
+The common Make recipes live in environment.mk, python-project.mk and
+artifact-project.mk. Project Makefiles now declare their builder, inputs and
+formats; transit retains its routing, GeoJSON and osmium rules. Makefile/fragment
+changes also invalidate their configured artifacts. Successful builds must
+produce the declared output; unchanged bytes still advance the build mtime so
+Make does not repeatedly rerun a content-aware publisher. Keep these small
+configuration files rather than inferring build dependencies from filenames.
+
+This pass also consolidated safe script JSON, atomic HTML publication,
+monthly/quarterly time-series mechanics, search normalization and existing map
+HTML escaping. The cleanup guard rejects ancestor/source/data directories, and
+Python-version changes invalidate environment setup.
+
+The remaining candidates have different policies and should not be merged
+blindly:
+
+- **Downloads:** a shared streaming/staging helper could serve permits, DineSafe
+  and transit. Preserve conditional requests, fresh-stream retries, bulk-export
+  fallback and read-only operator-supplied files as explicit caller policies.
+- **ArcGIS batches:** crime and flood maps both enumerate IDs and validate
+  complete batches. Share the mechanics only with hooks for ID extraction,
+  GET/POST transport, geometry format and source-change checks. Keep schema
+  validation, joins and geometry simplification local.
+- **Map initialization and marker factories:** repeated Leaflet setup, tile
+  attribution and marker styling are candidates. Preserve clustering, pane order
+  and project-specific styling; do not turn all map logic into a generic framework.
+- **DOM/SVG primitives:** the Ontario dual-axis plot and shared plot renderer
+  still have small element/date-tick helpers in common. Share primitives before
+  trying to unify their different axis, coverage and observation semantics.
+- **Provenance fallback:** the shared plot helper retains the existing CSV-mtime
+  fallback when the retrieval sidecar is absent. Prefer a preserved source or
+  reported retrieval date before that fallback; clone time should not imply new
+  upstream data.
+- **Dependency groups:** shared Python files currently invalidate all HTML/PNG
+  outputs. Separate map/plot/pipeline prerequisites would avoid unrelated rebuilds
+  as the package grows, without invalidating cached data-derived GeoJSON.
+
+Address matching, business-name matching, reporting-period policies, source
+parsers, outlier rejection and fallback geography remain local by design.

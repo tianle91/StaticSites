@@ -1,12 +1,6 @@
 /* Keep this helper project-local. House numbers are identifiers, not substrings. */
 const FeatureSearch = (() => {
-  const normalize = (value) =>
-    String(value ?? "")
-      .toLowerCase()
-      .replace(/[.,]/g, " ")
-      .replace(/[\u2010-\u2015]/g, "-")
-      .replace(/\s+/g, " ")
-      .trim();
+  const normalize = SearchQuery.normalize;
   function compile(value, { addressOnly = true } = {}) {
     const query = normalize(value);
     // Full permit numbers begin with two numeric groups, so they stay in the

@@ -60,3 +60,16 @@ def test_assets_are_embedded_from_package_not_another_project(tmp_path):
     (tmp_path/'src').mkdir()
     (tmp_path/'src/app.js').write_text('local adapter')
     assert source_text(tmp_path, 'app.js') == 'local adapter'
+
+
+def test_script_json_is_safe_readable_and_round_trips_values():
+    from staticsites.assets import script_json
+    value={'label':'</script><script>alert(1)</script>\u2028\u2029','points':[0,None,-1]}
+    encoded=script_json(value)
+    assert json.loads(encoded)==value
+    assert '</script>' not in encoded
+    assert '\u2028' not in encoded and '\u2029' not in encoded
+    assert '\\u2028' in encoded and '\\u2029' in encoded
+    assert '\n  "label"' in encoded
+    with pytest.raises(ValueError):
+        script_json({'value':float('nan')})

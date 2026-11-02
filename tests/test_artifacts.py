@@ -13,6 +13,7 @@ def test_generated_html_has_no_build_time_runtime_dependencies(project):
     assert '__MAP_TABS__' not in html
     assert '__EXPLORER_JS__' not in html
     assert '__EXPLORER_CSS__' not in html
+    assert '__QUERY_JS__' not in html
     assert 'src/staticsites' not in html
     scripts = re.findall(r'<script\b[^>]*\bsrc=["\']([^"\']+)',html,re.I)
     styles = re.findall(r'<link\b[^>]*\bhref=["\']([^"\']+)',html,re.I)

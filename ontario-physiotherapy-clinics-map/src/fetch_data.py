@@ -26,7 +26,7 @@ import requests
 from geopy.distance import geodesic
 from geopy.extra.rate_limiter import RateLimiter
 from geopy.geocoders import Nominatim
-from staticsites.pipeline import write_if_changed
+from staticsites.pipeline import write_if_changed, cached_lookup
 from staticsites.sources import ckan_action
 from staticsites.geocoding import nominatim
 
@@ -133,12 +133,7 @@ def address_candidates(street, city, postal):
 def _cached(params):
     """Run one Nominatim query, memoised on its parameters."""
     key = params.get("q") or "|".join(f"{k}={v}" for k, v in sorted(params.items()))
-    if key in cache:
-        return cache[key]
-    result = lookup(**params)
-    cache[key] = result  # cache misses too, so reruns don't re-hammer
-    save_cache()
-    return result
+    return cached_lookup(cache, key, lambda: lookup(**params), save_cache)
 
 
 def geocode(street, city, postal, center):

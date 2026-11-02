@@ -1,9 +1,17 @@
 """Embed shared components at build time, never as runtime repo dependencies."""
 from pathlib import Path
+import json
 
 ASSETS = Path(__file__).parent / "assets"
 SHARED = {"explorer.js": "maps/explorer.js", "explorer.css": "maps/explorer.css",
-          "chart.js": "plots/chart.js", "chart.css": "plots/chart.css"}
+          "chart.js": "plots/chart.js", "chart.css": "plots/chart.css",
+          "query.js": "maps/query.js"}
+
+
+def script_json(value):
+    """Readable JSON safe inside an HTML script element, without invalid numbers."""
+    return (json.dumps(value, indent=2, ensure_ascii=False, allow_nan=False)
+            .replace('<', '\\u003c').replace('\u2028', '\\u2028').replace('\u2029', '\\u2029'))
 
 
 def source_text(project, filename):

@@ -9,6 +9,8 @@ index.html needs the internet only for OpenStreetMap tiles.
 import json
 import pathlib
 from staticsites.assets import source_text, read_template
+from staticsites.assets import script_json
+from staticsites.pipeline import write_if_changed
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent  # project root (src/ is one level down)
 DATA_DIR = ROOT / "data"
@@ -51,7 +53,7 @@ def _generated_at() -> str:
     return str(MODEL.get("generated_at", ""))[:10]
 
 
-PAYLOAD = json.dumps({
+PAYLOAD = script_json({
     "geo": GEO,
     "origin": MODEL["origin"],
     "bands": MODEL["bands"],
@@ -61,7 +63,7 @@ PAYLOAD = json.dumps({
     "stations": STATIONS,
     "mode_color": MODE_COLOR,
     "mode_label": MODE_LABEL,
-}, indent=2, ensure_ascii=False)
+})
 
 HTML = read_template(ROOT / "src/page.html")
 
@@ -76,7 +78,7 @@ def main():
     out = out.replace("__PAYLOAD__", PAYLOAD.replace("<", "\\u003c"))
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     target = OUT_DIR / "union-station-transit-isochrone.html"
-    target.write_text(out, encoding="utf-8")
+    write_if_changed(target, out)
     n_nodes = sum(1 for n in MODEL["nodes"] if n["mode"] != "origin")
     print(f"Wrote {target} ({len(GEO['features'])} bands, {n_nodes} stations)")
 

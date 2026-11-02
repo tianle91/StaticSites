@@ -12,12 +12,7 @@ L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
 const layers = {};
 for (const key in DATA.categories) layers[key] = L.layerGroup().addTo(map);
 
-function esc(s) {
-  return String(s == null ? "" : s).replace(
-    /[&<>"]/g,
-    (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c],
-  );
-}
+const esc = Explorer.esc;
 function catFor(key) {
   return DATA.categories[key] || { label: "Other / Unknown", color: "#777" };
 }

@@ -23,8 +23,11 @@ JSON in data and HTML is readable with `indent=2`, never minified.
 - Root `pyproject.toml`, `uv.lock`, and `.venv` are the sole Python dependency
   manifest, lock and normal environment. Root `uv sync --locked --all-groups`
   installs the editable shared package and complete dev/plots/maps/transit groups.
-- `environment.mk` owns setup/cleanup; project Makefiles include
-  `../python-project.mk`. Scripts resolve paths from their own project root.
+- `environment.mk` owns setup/cleanup. Common project Makefiles declare their
+  builder/inputs/formats and include `../artifact-project.mk`, which includes
+  `python-project.mk`. Transit adds its own geometry/clipping rules and limits
+  the common artifact recipe to its HTML output.
+  Scripts resolve paths from their own project root.
 - `make deps` from any project uses the root environment. Install only if the
   shared stamp is missing or the root manifests changed. Do not probe packages,
   auto-repair environments, or force synchronization when the stamp is current.
@@ -53,12 +56,14 @@ and continues after failures, returning nonzero when any fail.
 
 ## Shared components
 
-- `staticsites.assets` and `assets/maps/`: map controls, tab markup, styles,
+- `staticsites.assets` and `assets/maps/`: safe JSON embedding, map controls, tab markup, styles,
   location/fit actions, mobile panels/dialogs. Search fields and ranking remain
   configurable by project; never assume all maps search only by address.
 - `staticsites.charts` and `assets/plots/`: native SVG plots, legends, shared
   time scale/inspection, page/provenance components and Matplotlib styling.
   Keep data definitions, units, aggregation and special dual-axis logic local.
+- `staticsites.timeseries`: CSV loading, provenance and rebasing mechanics;
+  callers choose the monthly/quarterly period policy explicitly.
 - `staticsites.pipeline`: content-aware atomic publication, provenance and caches.
 - `staticsites.sources` / `geocoding`: HTTP, CKAN/ArcGIS envelopes and rate limits.
   Keep source-specific parsing, validation, geographic fallbacks and joins local.

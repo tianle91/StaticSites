@@ -44,19 +44,15 @@ pythonpath = src
 '''
 
 FILES["Makefile"] = '''\
-# __TITLE__.
-# Run from this project: cd __PROJECT__ && make
-# Shared Python/uv targets live in ../python-project.mk; build rules stay here.
-
+# Project configuration; artifact recipes and the Python environment are shared.
 PROJECT := __PROJECT__
-# Optional snapshots: configure staticsites.snapshots.Snapshotter in src/snapshot_site.py
-# and set SNAPSHOT_SCRIPT := src/snapshot_site.py
+BUILD_SCRIPT := src/build_site.py
+DATA_INPUTS := data/example.json
+# Optional: SNAPSHOT_SCRIPT := src/snapshot_site.py
 
-include ../python-project.mk
-
-$(OUT): src/build_site.py data/example.json
-	$(PY) src/build_site.py
+include ../artifact-project.mk
 '''
+
 
 FILES[".gitignore"] = '''\
 # Generic Python/venv rules live in the repo-root .gitignore.

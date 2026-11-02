@@ -3,6 +3,8 @@
 import json
 import pathlib
 from staticsites.assets import source_text, read_template
+from staticsites.assets import script_json
+from staticsites.pipeline import write_if_changed
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 DATA_DIR = ROOT / "data"
@@ -34,15 +36,14 @@ def render(data_dir=DATA_DIR):
     }.items():
         template = template.replace(key, "\n".join((data_dir / name).read_text(encoding="utf-8") for name in files))
     # Insert data last so upstream text cannot be mistaken for template tokens.
-    return template.replace("__PAYLOAD__", json.dumps(data, indent=2, ensure_ascii=False).replace("<", "\\u003c"))
+    return template.replace("__PAYLOAD__", script_json(data))
 
 
 def main():
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     target = OUT_DIR / "toronto-crime-map.html"
     html = render()
-    if not target.exists() or target.read_text(encoding="utf-8") != html:
-        target.write_text(html, encoding="utf-8")
+    write_if_changed(target, html)
     print(f"Built {target} ({len(html):,} characters)")
 
 

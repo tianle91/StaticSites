@@ -5,6 +5,7 @@ import textwrap
 import re
 import json
 import math
+from staticsites.assets import script_json
 
 INK = '#182d37'
 MUTED = '#596b71'
@@ -68,7 +69,7 @@ def chart_page(payload, *, title, subtitle, sources, pulled, context=''):
     style = (source / 'page.css').read_text(encoding='utf-8') + (source / 'chart.css').read_text(encoding='utf-8') + (source / 'page-mobile.css').read_text(encoding='utf-8')
     behavior = (source / 'chart.js').read_text(encoding='utf-8')
     title = escape(unescape(title))
-    encoded = json.dumps(payload, indent=2, ensure_ascii=False, allow_nan=False).replace('<', '\\u003c')
+    encoded = script_json(payload)
     links = ''.join(f'<li><a href="{escape(url, quote=True)}" target="_blank" rel="noopener">{escape(name)}</a></li>'
                     for name, url in sources)
     stamp = f'<p>Data pulled {escape(pulled)}</p>' if pulled else ''

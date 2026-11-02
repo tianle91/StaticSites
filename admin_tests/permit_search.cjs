@@ -7,7 +7,8 @@ const { harness } = require("./map_explorer.cjs");
 const root = path.resolve(__dirname, "..");
 for (const slug of ["toronto-building-permits-map", "toronto-dinesafe-map"]) {
   const context = vm.createContext({});
-  vm.runInContext(fs.readFileSync(path.join(root, slug, "src/search.js"), "utf8"), context);
+  vm.runInContext(fs.readFileSync(path.join(root, "src/staticsites/assets/maps/query.js"), "utf8"), context);
+    vm.runInContext(fs.readFileSync(path.join(root, slug, "src/search.js"), "utf8"), context);
   const compile = vm.runInContext("FeatureSearch.compile", context);
   for (const number of ["38", "58", "118", "248", "8A", "8-10"])
     assert.equal(compile("8 The Esplanade")(number + " The Esplanade"), false, number);

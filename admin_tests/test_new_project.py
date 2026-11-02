@@ -19,10 +19,11 @@ class SharedEnvironmentTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name).resolve()
-        for name in ['environment.mk','python-project.mk']:
+        for name in ['environment.mk','python-project.mk','artifact-project.mk']:
             shutil.copy(ROOT/name, self.root/name)
         (self.root/'pyproject.toml').touch()
         (self.root/'uv.lock').touch()
+        (self.root/'.python-version').write_text('3.12\n')
         (self.root/'src/staticsites').mkdir(parents=True)
         self.tools = self.root/'tools'
         self.tools.mkdir()
@@ -118,6 +119,48 @@ $(OUT):
         self.assertEqual(self.make('a','all').returncode,0)
         self.assertGreater(output.stat().st_mtime_ns,0)
 
+    def test_artifact_template_builds_formats_and_tracks_declared_inputs(self):
+        project=self.root/'a'
+        (project/'src').mkdir()
+        (project/'src/render.py').touch()
+        (project/'data').mkdir()
+        (project/'data/input.json').write_text('{}')
+        (project/'Makefile').write_text('''PROJECT := example
+BUILD_SCRIPT := src/render.py
+DATA_INPUTS := data/input.json
+ARTIFACT_FORMATS := html png
+BUILD_OUTPUT_FLAG := -o
+include ../artifact-project.mk
+''')
+        self.assertEqual(self.make('a','deps').returncode,0)
+        interpreter=self.root/'.venv/bin/python'
+        interpreter.write_text('''#!/bin/sh
+echo "$*" >> "$TEST_REPO/render-calls"
+mkdir -p output
+test -f "$3" || echo built > "$3"
+''')
+        interpreter.chmod(0o755)
+        self.assertEqual(self.make('a').returncode,0)
+        self.assertEqual((self.root/'render-calls').read_text().splitlines(),
+                         ['src/render.py -o output/example.html','src/render.py -o output/example.png'])
+        for name in ('example.html','example.png'):
+            self.assertTrue((project/'output'/name).exists())
+            os.utime(project/'output'/name,(0,0))
+        self.assertEqual(self.make('a','all').returncode,0)
+        self.assertEqual(len((self.root/'render-calls').read_text().splitlines()),4)
+        # Unchanged publisher bytes must not cause an endless Make rebuild loop.
+        self.assertEqual(self.make('a','all').returncode,0)
+        self.assertEqual(len((self.root/'render-calls').read_text().splitlines()),4)
+
+    def test_artifact_template_rejects_a_successful_builder_with_missing_output(self):
+        project=self.root/'a'
+        (project/'src').mkdir()
+        (project/'src/build_site.py').touch()
+        (project/'Makefile').write_text('PROJECT := example\ninclude ../artifact-project.mk\n')
+        result=self.make('a','all')
+        self.assertNotEqual(result.returncode,0)
+        self.assertIn(b'Builder did not produce output/example.html',result.stderr)
+
     def test_alternate_environment_is_still_shared(self):
         for name in ['a','b']:
             self.assertEqual(self.make(name,'deps','VENV=.venv-ci').returncode,0)
@@ -129,6 +172,29 @@ $(OUT):
         result = self.make('a', 'deps', 'VENV=' + str(self.root.parent/'outside-test-env'))
         self.assertNotEqual(result.returncode, 0)
         self.assertIn(b'unsafe fixture environment', result.stderr)
+
+    def test_cleanup_rejects_ancestors_and_project_directories_before_removal(self):
+        # Stub rm even for this negative test: a regression must never execute
+        # the dangerous command it is meant to reject.
+        remover = self.tools/'rm'
+        remover.write_text('#!/bin/sh\necho called >> "$TEST_REPO/removal-calls"\n')
+        remover.chmod(0o755)
+        for directory in ('..', '/', '.', 'src', 'a/data', 'a/output'):
+            result = self.make('a','clean-deps','VENV='+directory)
+            self.assertNotEqual(result.returncode,0,directory)
+            self.assertIn(b'Refusing unsafe environment cleanup',result.stderr)
+        self.assertFalse((self.root/'removal-calls').exists())
+
+    def test_python_pin_change_invalidates_the_shared_stamp(self):
+        self.assertEqual(self.make('a','deps').returncode,0)
+        (self.root/'.python-version').write_text('3.13\n')
+        # Use distinct whole-second mtimes even on coarse Make/filesystem clocks.
+        for name in ('pyproject.toml','uv.lock'):
+            os.utime(self.root/name,(0,0))
+        os.utime(self.root/'.venv/.stamp',(1,1))
+        os.utime(self.root/'.python-version',(2,2))
+        self.assertEqual(self.make('b','deps').returncode,0)
+        self.assertEqual(len((self.root/'installs').read_text().splitlines()),2)
 
     def test_shared_ui_does_not_rebuild_cached_data_artifacts(self):
         project = self.root/'a'
@@ -165,4 +231,4 @@ $(OUTPUTS):
         self.assertTrue((project/'data/example.json').exists())
         self.assertFalse((project/'pyproject.toml').exists())
         self.assertFalse((project/'uv.lock').exists())
-        self.assertIn('../python-project.mk',(project/'Makefile').read_text())
+        self.assertIn('../artifact-project.mk',(project/'Makefile').read_text())

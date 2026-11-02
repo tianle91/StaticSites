@@ -21,12 +21,7 @@ function markerIcon(color) {
   });
 }
 
-function esc(s) {
-  return String(s == null ? "" : s).replace(
-    /[&<>"]/g,
-    (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c],
-  );
-}
+const esc = Explorer.esc;
 
 // Keep marker + record together so the search box can filter without rebuilding.
 const entries = [];

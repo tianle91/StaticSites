@@ -11,7 +11,7 @@ BREW_CASKS ?=
 deps: $(STAMP)
 	@test -x "$(PY)" || { echo "Environment incomplete: run make clean-deps then make deps at the repo root." >&2; exit 1; }
 
-$(STAMP): $(REPO_ROOT)/pyproject.toml $(REPO_ROOT)/uv.lock
+$(STAMP): $(REPO_ROOT)/pyproject.toml $(REPO_ROOT)/uv.lock $(REPO_ROOT)/.python-version
 	@command -v uv >/dev/null || { echo "Install uv (make system-deps on macOS) before make deps." >&2; exit 1; }
 	cd "$(REPO_ROOT)" && UV_PROJECT_ENVIRONMENT="$(ENV_DIR)" uv sync --locked --all-groups
 	@mkdir -p "$(dir $(STAMP))"
@@ -23,7 +23,7 @@ $(REPO_ROOT)/uv.lock:
 
 # Explicitly affects the shared environment, regardless of calling directory.
 clean-deps:
-	@test "$(abspath $(ENV_DIR))" != "$(REPO_ROOT)" && test "$(abspath $(ENV_DIR))" != / || { echo "Refusing unsafe environment cleanup" >&2; exit 1; }
+	@case "$(ENV_DIR)" in "$(REPO_ROOT)"/.venv|"$(REPO_ROOT)"/.venv-*|"$(REPO_ROOT)"/.venv/*) ;; *) echo "Refusing unsafe environment cleanup; use a .venv-style directory inside the repository." >&2; exit 1;; esac
 	rm -f "$(STAMP)"
 	rm -rf "$(ENV_DIR)"
 clean-venv: clean-deps
