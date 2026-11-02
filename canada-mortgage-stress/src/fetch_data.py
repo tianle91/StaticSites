@@ -198,18 +198,26 @@ def collect(get):
             candidates[match[1] + match[2]] = urljoin(MARKET, link['href'])
     if not candidates:
         raise ValueError('Latest TRREB report link not found')
-    latest = candidates[max(candidates)]
+    latest_key = max(candidates)
+    latest = candidates[latest_key]
+    report_year, report_month = 2000 + int(latest_key[:2]), int(latest_key[2:])
+    terminal_period = f'{report_year}-{report_month:02}'
+    latest_periods = [f'{year}-{month:02}' for year in (report_year - 1, report_year)
+                      for month in range(1, 13) if f'{year}-{month:02}' <= terminal_period]
     monthly = {}
     # Newer report revisions win; preserve per-point source URLs and coverage break.
     for url in [ARCHIVE.format('21'), ARCHIVE.format('23'), ARCHIVE.format('25'), latest]:
         parsed = parse_monthly(get(url).content, url)
+        if url == latest and sorted(parsed) != latest_periods:
+            raise ValueError(f'Latest TRREB report must cover January {report_year - 1} '
+                             f'through {terminal_period}: {url}')
         if url != latest and len(parsed) != 24:
             raise ValueError(f'Year-end report must contain 24 monthly rows: {url}')
         monthly.update(parsed)
         sources.append({'name': 'TRREB Market Watch — ' + url.rsplit('/', 1)[-1], 'url': url})
     periods = sorted(monthly)
-    expected = [f'{year}-{month:02}' for year in range(2020, int(periods[-1][:4]) + 1)
-                for month in range(1, 13) if f'{year}-{month:02}' <= periods[-1]]
+    expected = [f'{year}-{month:02}' for year in range(2020, report_year + 1)
+                for month in range(1, 13) if f'{year}-{month:02}' <= terminal_period]
     if periods != expected:
         raise ValueError('TRREB monthly price history has a gap')
     groups += [
