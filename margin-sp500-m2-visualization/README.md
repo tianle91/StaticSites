@@ -15,8 +15,8 @@ below, and collapsed definitions/sources. It has no plotting runtime, CDN,
 zoom toolbar, range slider or log-scale controls. The generated HTML is fully
 self-contained, including its data, styles and JavaScript.
 
-The project-local `src/chart.js`, `src/chart.css` and `src/chart_style.py` copies
-keep projects independent. PNG exports continue to use Matplotlib with the same
+Shared plot components live in `../src/staticsites/charts.py` and
+`../src/staticsites/assets/plots/`; their CSS/JS is embedded at build time. PNG exports continue to use Matplotlib with the same
 palette and neutral colors. The chart anchor remains configurable at build time
 with `--rebase-date`; there is no browser click-to-rebase control.
 
@@ -54,7 +54,7 @@ Optional browser fixtures check incomplete rendering, moving paths, page errors,
 overflow and blocked external resources without live data or network assets:
 
 ```sh
-.venv/bin/python -m pytest -q tests/browser_snapshots.py
+make browser-test # shared offline browser fixtures; browser setup is explicit
 ```
 
 ## Usage
@@ -65,7 +65,7 @@ Render both charts from the committed `data/series.csv` (offline):
 make
 ```
 
-`uv` creates this project's `.venv` on first run. Targets follow the repo
+`make deps` installs the repository-root `.venv` from the single root lockfile. Targets follow the repo
 standard — see the [repo README](../README.md):
 
 - `make` — render `output/margin-sp500-m2-visualization.{html,png}` from `data/series.csv`
@@ -78,7 +78,7 @@ The output format follows the file extension, so the script can also be driven
 directly:
 
 ```sh
-.venv/bin/python src/plot_macro_series.py -o output/chart.html --rebase-date 2008-09-15
+../.venv/bin/python src/plot_macro_series.py -o output/chart.html --rebase-date 2008-09-15
 ```
 
 ## Interactive chart
@@ -92,7 +92,7 @@ Open the committed HTML in a browser:
   without a separate chart toolbar or horizontal page scrolling.
 
 Optional component-model checks use Node 18+ built-ins only:
-`node tests/test_chart.cjs`. Standard `make test` remains Python-only.
+`node tests/test_chart.cjs`. Standard `make test` remains Python-only; shared tests run via root `make check`.
 
 ## Data sources
 
@@ -115,7 +115,7 @@ On other platforms, install those tools manually before `make deps` / `make data
 System installation runs only when explicitly requested; other targets never
 invoke it. Credentials must be supplied separately.
 
-`make deps` installs this project's complete locked Python environment, including
+`make deps` installs the repository's complete locked Python environment, including
 test dependencies, when it is new or the dependency manifests change. `make data`
 uses the same setup before fetching all required upstream inputs. Repeated commands
 reuse the environment; they do not attempt repairs. To reinstall from scratch, run
@@ -125,3 +125,9 @@ Dependency setup may require network access; installed builds/tests are offline.
 `make data` obtains every required input and rebuilds outputs automatically.
 Unchanged upstream content preserves data timestamps; missing generated files are
 restored. Required-source failures retain previous datasets and return an error.
+
+Shared build-time components and the single Python environment are documented
+in the [repo README](../README.md). Project `make clean-deps` removes that shared
+environment, not a private environment. Add dependencies at the repository root;
+`site.toml` holds listing metadata and `pytest.ini` configures this project’s tests.
+The generated HTML remains standalone and embeds its application assets/data.

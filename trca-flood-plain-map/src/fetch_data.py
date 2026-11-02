@@ -15,6 +15,8 @@ import urllib.parse
 import urllib.request
 
 from shapely.geometry import shape, mapping
+from staticsites.pipeline import write_snapshot
+from staticsites.sources import arcgis_result
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 DATA_DIR = ROOT / "data"
@@ -33,9 +35,7 @@ def request_json(url, params):
             request = urllib.request.Request(address, headers={"User-Agent": "StaticSites-trca-flood-plain-map/1.0"})
             with urllib.request.urlopen(request, timeout=120) as stream:
                 result = json.load(stream)
-            if "error" in result:
-                raise ValueError("TRCA query failed: " + str(result["error"]))
-            return result
+            return arcgis_result(result, label="TRCA query failed")
         except (OSError, ValueError):
             if attempt == 2:
                 raise
@@ -108,26 +108,7 @@ def fetch_layer(url, fields, kind):
     return collection
 
 
-def write_snapshot(path, substantive):
-    existing = json.loads(path.read_text()) if path.exists() else {}
-    previous = {k: v for k, v in existing.items() if k != "retrieved_at"}
-    if previous == substantive:
-        return False
-    payload = {"retrieved_at": datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds"), **substantive}
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=path.parent, delete=False) as stream:
-        temporary = pathlib.Path(stream.name)
-        try:
-            json.dump(payload, stream, indent=2, ensure_ascii=False, allow_nan=False)
-            stream.write("\n")
-        except BaseException:
-            temporary.unlink(missing_ok=True)
-            raise
-    try:
-        temporary.replace(path)
-    finally:
-        temporary.unlink(missing_ok=True)
-    return True
+
 
 
 def main():

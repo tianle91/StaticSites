@@ -29,7 +29,7 @@ make snapshot-browser  # one-time headless Chromium download; repeat after Playw
 make snapshots         # rebuild from committed inputs, then capture both views
 ```
 
-The helper serves this project on a temporary loopback port and uses fresh,
+The shared capture helper serves this project on a temporary loopback port and uses fresh,
 light-mode Chromium contexts with no search or user location. Mobile uses touch
 emulation and the compact panel; browser chrome and the on-screen keyboard are
 excluded. It waits for initialization, fonts, loaded tiles and settled map motion.
@@ -39,7 +39,7 @@ review references, not automated pixel comparisons; upstream map tiles can chang
 Snapshot capture needs network access to the page's map scripts and tiles. It
 never refreshes committed data or installs browsers automatically. Ordinary
 `make`, `make test` and `make data` do not capture snapshots. Python dependencies
-remain locked in this project's environment. On Linux, install Chromium's
+remain locked in the repository-root environment. On Linux, install Chromium's
 [manual system prerequisites](https://playwright.dev/python/docs/browsers#install-system-dependencies)
 if required; these targets do not install OS packages. Recapture after visual
 changes and commit the reviewed images with them.
@@ -83,7 +83,7 @@ make data    # downloads OSM + TTC/GO/UP feeds, clips, routes, and rebuilds
 make open    # opens output/union-station-transit-isochrone.html in your default browser
 ```
 
-`make data` uses this project's own `.venv`, which `uv` creates on demand (see
+`make data` uses the repository-root `.venv`, installed by `make deps` (see
 the [repo README](../README.md)). It downloads and conditionally refreshes OSM and the separate TTC, GO, and UP
 Express feeds, validates active service, and auto-clips the OSM extract to the GTHA bbox (R5 caps the geographic
 extent), then writes `data/reachability.json` (a grid→Union travel-time grid), contours
@@ -205,7 +205,7 @@ timing (Richmond Hill's 52 min is real, but only via that one train). Raise
 ## Tests
 
 ```bash
-make test    # runs pytest in this project's .venv
+make test    # runs pytest in the shared root .venv
 ```
 
 The suite is **stdlib + pytest only** — no r5py, Java, or GTFS needed — so it runs
@@ -248,7 +248,7 @@ On other platforms, install those tools manually before `make deps` / `make data
 System installation runs only when explicitly requested; other targets never
 invoke it. Credentials must be supplied separately.
 
-`make deps` installs this project's complete locked Python environment, including
+`make deps` installs the repository's complete locked Python environment, including
 test dependencies, when it is new or the dependency manifests change. `make data`
 uses the same setup before fetching all required upstream inputs. Repeated commands
 reuse the environment; they do not attempt repairs. To reinstall from scratch, run
@@ -258,3 +258,15 @@ Dependency setup may require network access; installed builds/tests are offline.
 `make data` obtains every required input and rebuilds outputs automatically.
 Unchanged upstream content preserves data timestamps; missing generated files are
 restored. Required-source failures retain previous datasets and return an error.
+
+Shared build-time components and the single Python environment are documented
+in the [repo README](../README.md). Project `make clean-deps` removes that shared
+environment, not a private environment. Add dependencies at the repository root;
+`site.toml` holds listing metadata and `pytest.ini` configures this project’s tests.
+The generated HTML remains standalone and embeds its application assets/data.
+
+A small committed `data/station_itineraries.json` preserves the published routed
+station details and their original date when the ignored routing grid is absent.
+The cache was recovered from the previously committed HTML, not freshly fetched.
+It is used only with routed GeoJSON, never with the curated fallback geometry.
+`make data` updates it from validated routing results and restores it on cache reuse.

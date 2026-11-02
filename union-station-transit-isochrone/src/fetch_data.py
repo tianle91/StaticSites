@@ -16,6 +16,7 @@ import re
 import shutil
 import subprocess
 import sys
+from staticsites.pipeline import write_if_changed
 import tempfile
 import urllib.error
 import urllib.request
@@ -25,6 +26,7 @@ import fetch_isochrones as routing
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 DATA_DIR = ROOT / "data"
+LOCK_FILE = ROOT.parent / "uv.lock"
 STATE_PATH = DATA_DIR / "refresh_cache.json"
 OSM_URL = "https://download.geofabrik.de/north-america/canada/ontario-latest.osm.pbf"
 FEEDS = {
@@ -244,6 +246,15 @@ def validate_reachability(path):
             raise ValueError("Invalid reachability point")
 
 
+def save_station_itineraries(value):
+    # Small enough to commit independently of the ignored routing grid. It is
+    # derived only from validated routing results, including on cache reuse.
+    snapshot = {key: value.get(key, [] if key == "stations" else "")
+                for key in ("generated_at", "stations")}
+    write_if_changed(DATA_DIR / "station_itineraries.json",
+                     json.dumps(snapshot, indent=2, ensure_ascii=False) + "\n")
+
+
 def refresh_routing(state, osm, feeds, date):
     key = signature({
         "osm": digest(osm), "feeds": [(str(path), digest(path)) for path in feeds],
@@ -252,7 +263,7 @@ def refresh_routing(state, osm, feeds, date):
         "grid": routing.GRID_SPACING_M, "minutes": routing.MAX_MINUTES,
         "model": digest(DATA_DIR / "transit_model.json"),
         "code": digest(ROOT / "src" / "fetch_isochrones.py"),
-        "preparation": digest(pathlib.Path(__file__)), "lock": digest(ROOT / "uv.lock"),
+        "preparation": digest(pathlib.Path(__file__)), "lock": digest(LOCK_FILE),
     })
     previous = state.get("routing", {})
     destination = DATA_DIR / "reachability.json"
@@ -260,6 +271,7 @@ def refresh_routing(state, osm, feeds, date):
             and previous.get("sha256") == digest(destination)):
         try:
             validate_reachability(destination)
+            save_station_itineraries(json.loads(destination.read_text(encoding="utf-8")))
             print("Routing inputs unchanged; reusing reachability.json.")
             return
         except (ValueError, KeyError, TypeError):
@@ -282,6 +294,7 @@ def refresh_routing(state, osm, feeds, date):
         value["generated_at"] = stamp if existing == value and stamp else datetime.date.today().isoformat()
         temporary.write_text(json.dumps(value, indent=2) + "\n", encoding="utf-8")
         publish(temporary, destination)
+        save_station_itineraries(value)
         state["routing"] = {"signature": key, "sha256": digest(destination)}
         save_state(state)
     finally:

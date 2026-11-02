@@ -1,0 +1,5 @@
+@media(max-width:640px) {
+  main { padding:23px 14px; }
+  .explorer { padding:14px; }
+  .subtitle { font-size:12px; }
+}

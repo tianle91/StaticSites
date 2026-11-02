@@ -23,6 +23,8 @@ from pathlib import Path
 import pandas as pd
 import requests
 import yfinance as yf
+from staticsites.pipeline import write_if_changed
+from staticsites.pipeline import record_pull_date as shared_pull_date
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA_DIR = ROOT / "data"
@@ -36,41 +38,11 @@ START = pd.Timestamp("2000-01-01")
 END = pd.Timestamp.today().normalize() + pd.Timedelta(days=1)
 
 
-def write_if_changed(path, content):
-    """Publish validated content atomically; unchanged files keep their mtime."""
-    if path.exists() and path.read_text(encoding="utf-8") == content:
-        return False
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=path.parent,
-                                     delete=False) as stream:
-        temporary = pathlib.Path(stream.name)
-        try:
-            stream.write(content)
-        except BaseException:
-            temporary.unlink(missing_ok=True)
-            raise
-    try:
-        temporary.replace(path)
-    finally:
-        temporary.unlink(missing_ok=True)
-    return True
+
 
 
 def record_pull_date(changed):
-    """Recover a lost sidecar from the rendered provenance before using today."""
-    if not changed and PULLED_STAMP.exists():
-        return
-    stamp = date.today().isoformat()
-    if not changed:
-        rendered = ROOT / "output" / (ROOT.name + ".html")
-        if rendered.exists():
-            match = re.search(r"Data pulled (\d{4}-\d{2}-\d{2})", rendered.read_text(encoding="utf-8"))
-            if match:
-                try:
-                    stamp = date.fromisoformat(match[1]).isoformat()
-                except ValueError:
-                    pass  # invalid rendered provenance cannot recover a date
-    write_if_changed(PULLED_STAMP, stamp + "\n")
+    return shared_pull_date(ROOT, PULLED_STAMP, changed, today=date.today)
 
 
 def _fetch_fred_monthly(series_id: str) -> pd.Series:

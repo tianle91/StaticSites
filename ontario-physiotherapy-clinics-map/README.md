@@ -17,7 +17,7 @@ make snapshot-browser  # one-time headless Chromium download; repeat after Playw
 make snapshots         # rebuild from committed inputs, then capture both views
 ```
 
-The helper serves this project on a temporary loopback port and uses fresh,
+The shared capture helper serves this project on a temporary loopback port and uses fresh,
 light-mode Chromium contexts with no search or user location. Mobile uses touch
 emulation and the compact panel; browser chrome and the on-screen keyboard are
 excluded. It waits for initialization, fonts, loaded tiles and settled map motion.
@@ -27,7 +27,7 @@ review references, not automated pixel comparisons; upstream map tiles can chang
 Snapshot capture needs network access to the page's map scripts and tiles. It
 never refreshes committed data or installs browsers automatically. Ordinary
 `make`, `make test` and `make data` do not capture snapshots. Python dependencies
-remain locked in this project's environment. On Linux, install Chromium's
+remain locked in the repository-root environment. On Linux, install Chromium's
 [manual system prerequisites](https://playwright.dev/python/docs/browsers#install-system-dependencies)
 if required; these targets do not install OS packages. Recapture after visual
 changes and commit the reviewed images with them.
@@ -132,7 +132,7 @@ On other platforms, install those tools manually before `make deps` / `make data
 System installation runs only when explicitly requested; other targets never
 invoke it. Credentials must be supplied separately.
 
-`make deps` installs this project's complete locked Python environment, including
+`make deps` installs the repository's complete locked Python environment, including
 test dependencies, when it is new or the dependency manifests change. `make data`
 uses the same setup before fetching all required upstream inputs. Repeated commands
 reuse the environment; they do not attempt repairs. To reinstall from scratch, run
@@ -142,3 +142,9 @@ Dependency setup may require network access; installed builds/tests are offline.
 `make data` obtains every required input and rebuilds outputs automatically.
 Unchanged upstream content preserves data timestamps; missing generated files are
 restored. Required-source failures retain previous datasets and return an error.
+
+Shared build-time components and the single Python environment are documented
+in the [repo README](../README.md). Project `make clean-deps` removes that shared
+environment, not a private environment. Add dependencies at the repository root;
+`site.toml` holds listing metadata and `pytest.ini` configures this project’s tests.
+The generated HTML remains standalone and embeds its application assets/data.

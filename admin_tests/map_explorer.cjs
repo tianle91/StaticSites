@@ -17,7 +17,7 @@ const expected = {
   "union-station-transit-isochrone": [129, 129],
 };
 const shared = fs.readFileSync(
-  path.join(root, "toronto-crime-map/src/explorer.js"),
+  path.join(root, "src/staticsites/assets/maps/explorer.js"),
   "utf8",
 );
 async function harness(slug, mobile = false, override = {}) {
@@ -317,7 +317,7 @@ async function harness(slug, mobile = false, override = {}) {
     console: override.console || console,
   });
   const code = fs.readFileSync(
-    path.join(root, slug, "src/explorer.js"),
+    path.join(root, "src/staticsites/assets/maps/explorer.js"),
     "utf8",
   );
   if (slug !== "toronto-building-permits-map")

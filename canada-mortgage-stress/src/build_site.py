@@ -3,6 +3,7 @@ import json
 from pathlib import Path
 
 from fetch_data import validate_dataset
+from staticsites.assets import ASSETS
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = ROOT / 'data'
@@ -15,7 +16,7 @@ def build():
     html = (source / 'page.html').read_text()
     # Avoid a data string closing the script element, even if an upstream label changes.
     payload = json.dumps(data, indent=2, ensure_ascii=False).replace('<', '\\u003c')
-    for marker, value in [('__STYLE__', (source / 'style.css').read_text()),
+    for marker, value in [('__STYLE__', (ASSETS / 'plots/page.css').read_text() + (source / 'style.css').read_text() + (ASSETS / 'plots/page-mobile.css').read_text()),
                           ('__DATA__', payload),
                           ('__TIMELINE__', (source / 'timeline.js').read_text()),
                           ('__APP__', (source / 'app.js').read_text())]:

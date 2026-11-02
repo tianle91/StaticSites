@@ -27,7 +27,7 @@ import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from chart_style import chart_page, compact_label, matplotlib_style, png_sources, series_data
+from staticsites.charts import chart_page, compact_label, matplotlib_style, png_sources, series_data
 
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT_DIR = ROOT / "output"

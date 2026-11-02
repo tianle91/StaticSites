@@ -2,6 +2,7 @@
 import contextlib
 import io
 import pathlib
+import os
 import subprocess
 import tempfile
 import unittest
@@ -82,21 +83,24 @@ class LocalCITests(unittest.TestCase):
         self.assertEqual([c.args[4] for c in self.status.call_args_list], ["pending", "error"])
 
     def test_root_data_dispatches_all_projects_and_reports_failure(self):
+        (self.root / "environment.mk").write_text((ROOT / "environment.mk").read_text())
         (self.root / "Makefile").write_text((ROOT / "Makefile").read_text())
         for name, code in (("a", 1), ("b", 0)):
             (self.root / name / "Makefile").write_text(
                 "data:\n\t@echo {} >> ../calls\n\t@exit {}\n".format(name, code))
         result = subprocess.run(["make", "data"], cwd=self.root,
-                                capture_output=True, text=True)
+                                capture_output=True, text=True,
+                                env={k:v for k,v in os.environ.items() if k not in
+                                     ("MAKEFLAGS","MAKEOVERRIDES","MFLAGS","MAKELEVEL","VENV","PY","STAMP")})
         self.assertNotEqual(result.returncode, 0)
         self.assertEqual((self.root / "calls").read_text().splitlines(), ["a", "b"])
 
-    def test_separate_environment_is_only_passed_to_project_commands(self):
+    def test_alternate_shared_environment_is_passed_to_all_commands(self):
         with contextlib.redirect_stdout(io.StringIO()):
             self.assertEqual(local_ci.run(self.root, "off", ".venv/verification"), 0)
-        self.assertEqual(self.commands.call_args_list[0].args[1], ["make", "check"])
+        self.assertEqual(self.commands.call_args_list[0].args[1], ["make", "check", "VENV=.venv/verification"])
         self.assertEqual(self.commands.call_args_list[1].args[1][-1], "VENV=.venv/verification")
-        with self.assertRaisesRegex(ValueError, "relative"):
+        with self.assertRaisesRegex(ValueError, "shared environment"):
             local_ci.run(self.root, "off", "../shared-environment")
 
 

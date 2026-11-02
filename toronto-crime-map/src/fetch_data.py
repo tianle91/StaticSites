@@ -15,6 +15,8 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
+from staticsites.pipeline import write_if_changed
+from staticsites.sources import arcgis_result
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 DATA_DIR = ROOT / "data"
@@ -63,9 +65,7 @@ def request_json(url, **params):
     # and 404 responses while retaining exact batch membership validation.
     payload = json.loads(download(url, encoded.encode()) if "objectIds" in params
                          else download(url + "?" + encoded))
-    if "error" in payload:
-        raise ValueError("ArcGIS query failed: " + str(payload["error"]))
-    return payload
+    return arcgis_result(payload)
 
 
 def text(value):
@@ -145,22 +145,7 @@ def fetch_source(source, start_year):
     return rows, summary
 
 
-def write_if_changed(path, content):
-    if path.exists() and path.read_text(encoding="utf-8") == content:
-        return False
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=path.parent, delete=False) as stream:
-        temporary = pathlib.Path(stream.name)
-        try:
-            stream.write(content)
-        except BaseException:
-            temporary.unlink(missing_ok=True)
-            raise
-    try:
-        temporary.replace(path)
-    finally:
-        temporary.unlink(missing_ok=True)
-    return True
+
 
 
 def refresh(start_year=2025, data_dir=DATA_DIR):

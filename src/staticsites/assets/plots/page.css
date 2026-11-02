@@ -1,0 +1,15 @@
+* { box-sizing:border-box; }
+body { margin:0; background:var(--paper); color:var(--ink); font:14px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+main { max-width:1200px; margin:auto; padding:35px 28px; }
+header { margin-bottom:23px; }
+h1 { font-size:clamp(27px,3.5vw,38px); font-weight:650; letter-spacing:-1px; line-height:1.25; margin:0 0 8px; }
+.subtitle { color:var(--muted); margin:0; font-size:14px; }
+.chart svg { display:block; width:100%; height:auto; touch-action:pan-y; }
+.gridline { stroke:var(--line); stroke-width:1; }
+.vertical-grid { stroke:var(--line); stroke-width:1; stroke-dasharray:2 4; }
+.axis { font-size:11px; fill:var(--muted); }
+.axis-title { font-size:11px; font-weight:600; fill:var(--muted); }
+.inspection { background:var(--paper); border-radius:4px; padding:10px 13px; margin-top:10px; }
+#inspect-period { margin:0 0 4px; color:var(--muted); font-size:10px; }
+.hint { color:var(--muted); font-size:10px; margin:7px 0 0; }
+footer { color:var(--muted); font-size:11px; margin:15px 2px 0; }

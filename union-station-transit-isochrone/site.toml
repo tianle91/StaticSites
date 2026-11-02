@@ -1,0 +1,4 @@
+[site]
+name = "union-station-transit-isochrone"
+title = "Union Station commute-shed"
+description = "Union Station commute-shed — where you can reach Toronto's Union Station by transit in 30 / 60 / 90 / 120 minutes."

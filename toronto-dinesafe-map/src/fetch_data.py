@@ -36,6 +36,10 @@ import time
 import requests
 from geopy.extra.rate_limiter import RateLimiter
 from geopy.geocoders import Nominatim
+from staticsites.pipeline import write_if_changed
+from staticsites.sources import ckan_action
+from staticsites.geocoding import nominatim
+from staticsites.pipeline import cached_lookup
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent  # project root (src/ is one level down)
 DATA_DIR = ROOT / "data"
@@ -49,30 +53,12 @@ USER_AGENT = "toronto-dinesafe-map/1.0 (+https://github.com/tianle91/StaticSites
 
 # RateLimiter sleeps between calls for us, keeping this inside Nominatim's
 # 1 request/second policy. Only hit when a row is missing coordinates.
-_nominatim = Nominatim(user_agent=USER_AGENT, timeout=30)
-_lookup = RateLimiter(_nominatim.geocode, min_delay_seconds=1.1, swallow_exceptions=False)
+_nominatim, _lookup = nominatim(USER_AGENT)
 
 cache = json.loads(CACHE_PATH.read_text(encoding="utf-8")) if CACHE_PATH.exists() else {}
 
 
-def write_if_changed(path, content):
-    """Publish validated content atomically; unchanged files keep their mtime."""
-    if path.exists() and path.read_text(encoding="utf-8") == content:
-        return False
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=path.parent,
-                                     delete=False) as stream:
-        temporary = pathlib.Path(stream.name)
-        try:
-            stream.write(content)
-        except BaseException:
-            temporary.unlink(missing_ok=True)
-            raise
-    try:
-        temporary.replace(path)
-    finally:
-        temporary.unlink(missing_ok=True)
-    return True
+
 
 
 def save_cache() -> None:
@@ -80,33 +66,17 @@ def save_cache() -> None:
 
 
 def geocode(address):
-    """Return [lat, lon] for an address, using the on-disk cache. None if not found."""
     if not address:
         return None
-    if address in cache:
-        return cache[address]
-    loc = _lookup(address, country_codes="ca", exactly_one=True)
-    result = [loc.latitude, loc.longitude] if loc else None
-    cache[address] = result  # cache misses too, so we don't re-hammer unknown addresses
-    save_cache()
-    return result
+    def lookup():
+        loc = _lookup(address, country_codes="ca", exactly_one=True)
+        return [loc.latitude, loc.longitude] if loc else None
+    return cached_lookup(cache, address, lookup, save_cache)
+
 
 
 def ckan(action, **params):
-    for attempt in range(3):
-        try:
-            r = requests.get(f"{CKAN}/api/3/action/{action}", params=params,
-                             headers={"User-Agent": USER_AGENT}, timeout=120)
-            r.raise_for_status()
-            break
-        except requests.RequestException:
-            if attempt == 2:
-                raise
-            time.sleep(2 ** attempt)
-    payload = r.json()
-    if not payload.get("success"):
-        raise RuntimeError(f"CKAN {action} failed: {payload}")
-    return payload["result"]
+    return ckan_action(CKAN, action, params, user_agent=USER_AGENT, get=requests.get, timeout=120, attempts=3, sleep=time.sleep)
 
 
 def active_resource_id() -> str:

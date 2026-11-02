@@ -1,324 +1,168 @@
-"""Exercise the generated project's dependency contract offline."""
+"""Shared-environment Make contract and scaffolder, entirely offline."""
 import importlib.util
 import os
-import pathlib
+from pathlib import Path
 import shutil
 import subprocess
+import sys
 import tempfile
 import unittest
 
-ROOT = pathlib.Path(__file__).resolve().parent.parent
-spec = importlib.util.spec_from_file_location("scaffolder", ROOT / "new-project.py")
+ROOT = Path(__file__).resolve().parent.parent
+spec = importlib.util.spec_from_file_location('scaffolder', ROOT/'new-project.py')
 scaffolder = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(scaffolder)
 
 
-def prepare_project(directory, makefile):
-    """Keep the same root-template/project arrangement as a real checkout."""
-    repository = pathlib.Path(directory)
-    shutil.copy(ROOT / "python-project.mk", repository / "python-project.mk")
-    project = repository / "project"
-    project.mkdir()
-    (project / "Makefile").write_text(makefile)
-    return project
-
-
-class DependencyContractTests(unittest.TestCase):
-    def test_snapshots_are_explicit_and_use_the_configured_environment(self):
-        makefile = '''PROJECT := map
-VENV := .review-env
-STAMP := .state/ready
+class SharedEnvironmentTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name).resolve()
+        for name in ['environment.mk','python-project.mk']:
+            shutil.copy(ROOT/name, self.root/name)
+        (self.root/'pyproject.toml').touch()
+        (self.root/'uv.lock').touch()
+        (self.root/'src/staticsites').mkdir(parents=True)
+        self.tools = self.root/'tools'
+        self.tools.mkdir()
+        uv = self.tools/'uv'
+        uv.write_text('''#!/bin/sh
+case "$UV_PROJECT_ENVIRONMENT" in "$TEST_REPO"/*) ;; *) echo "unsafe fixture environment" >&2; exit 90;; esac
+printf '%s:%s\\n' "$UV_PROJECT_ENVIRONMENT" "$*" >> installs
+[ -z "$FAIL_SYNC" ] || exit 1
+mkdir -p "$UV_PROJECT_ENVIRONMENT/bin"
+cat > "$UV_PROJECT_ENVIRONMENT/bin/python" <<'SH'
+#!/bin/sh
+printf '%s:%s\\n' "$PWD" "$*" >> "$TEST_REPO/calls"
+SH
+chmod +x "$UV_PROJECT_ENVIRONMENT/bin/python"
+''')
+        uv.chmod(0o755)
+        self.env = dict(os.environ, PATH=str(self.tools)+os.pathsep+os.environ['PATH'], TEST_REPO=str(self.root))
+        # These are isolated builds, never children of the outer CI Make invocation.
+        for key in ('MAKEFLAGS','MAKEOVERRIDES','MFLAGS','MAKELEVEL','VENV','PY','STAMP'):
+            self.env.pop(key, None)
+        for name in ['a','b']:
+            project = self.root/name
+            project.mkdir()
+            (project/'Makefile').write_text('''PROJECT := example
 SNAPSHOT_SCRIPT := src/capture.py
 include ../python-project.mk
 $(OUT):
 \t@mkdir -p output
-\t@touch $@
-'''
-        with tempfile.TemporaryDirectory() as directory:
-            root = prepare_project(directory, makefile)
-            (root / "pyproject.toml").touch()
-            (root / "uv.lock").touch()
-            (root / ".review-env/bin").mkdir(parents=True)
-            interpreter = root / ".review-env/bin/python"
-            interpreter.write_text('#!/bin/sh\necho "$*" >> calls\n')
-            interpreter.chmod(0o755)
-            (root / ".state").mkdir()
-            (root / ".state/ready").touch()
-            snapshot = root / "tests/snapshots/mobile.jpg"
-            snapshot.parent.mkdir(parents=True)
-            snapshot.write_bytes(b"reviewed image")
+\t@echo built > $@
+''')
 
-            def make(target):
-                result = subprocess.run(["make", target], cwd=root, capture_output=True)
-                self.assertEqual(result.returncode, 0, result.stderr.decode())
+    def make(self, project, *targets, **extra):
+        return subprocess.run(['make','-C',str(self.root/project),*targets], capture_output=True,
+                              env=dict(self.env, **extra))
 
-            for target in ("all", "test", "data"):
-                make(target)
-            self.assertEqual((root / "calls").read_text().splitlines(),
-                             ["-m pytest -q", "src/fetch_data.py"])
-            make("snapshots")
-            make("snapshot-browser")
-            self.assertEqual((root / "calls").read_text().splitlines()[-2:],
-                             ["src/capture.py", "-m playwright install --only-shell chromium"])
-            make("clean")
-            make("clean-deps")
-            self.assertEqual(snapshot.read_bytes(), b"reviewed image")
+    def test_projects_share_one_install_and_keep_commands_local(self):
+        for project,target in [('a','all'),('b','test'),('a','data')]:
+            result=self.make(project,target)
+            self.assertEqual(result.returncode,0,result.stderr.decode())
+        installs=(self.root/'installs').read_text().splitlines()
+        self.assertEqual(installs,[str(self.root/'.venv')+':sync --locked --all-groups'])
+        self.assertFalse((self.root/'a/.venv').exists())
+        self.assertFalse((self.root/'b/.venv').exists())
+        self.assertEqual((self.root/'calls').read_text().splitlines(),
+                         [str(self.root/'b')+':-m pytest -q', str(self.root/'a')+':src/fetch_data.py'])
+        self.assertTrue((self.root/'a/output/example.html').exists())
 
-    def test_project_overrides_data_rebuild_and_cleanup(self):
-        makefile = '''PROJECT := custom
-VENV := .custom-env
-STAMP := .state/deps.stamp
-OUT := output/main.html
-OUTPUTS := $(OUT) output/extra.txt
-OPEN_FILE := output/extra.txt
-CLEAN_FILES := $(OUTPUTS) data/routing.json
-FETCH_SCRIPT := src/custom_fetch.py
-PYTEST_ARGS := -q -x
-BREW_FORMULAE := uv extra-tool
-BREW_CASKS := extra-cask
+    def test_current_outputs_validate_env_without_automatic_repair(self):
+        self.assertEqual(self.make('a','all').returncode,0)
+        stamp=self.root/'.venv/.stamp'
+        before=stamp.stat().st_mtime_ns
+        (self.root/'.venv/bin/python').unlink()
+        for target in ['all','test','data','deps','output/example.html']:
+            result=self.make('a',target)
+            self.assertNotEqual(result.returncode,0)
+            self.assertIn(b'make clean-deps then make deps',result.stderr)
+        self.assertEqual(stamp.stat().st_mtime_ns,before)
+        self.assertEqual(len((self.root/'installs').read_text().splitlines()),1)
+
+    def test_failed_sync_stops_fetch_and_keeps_old_stamp(self):
+        self.assertEqual(self.make('a','deps').returncode,0)
+        stamp=self.root/'.venv/.stamp'
+        os.utime(stamp,(0,0))
+        self.assertNotEqual(self.make('b','data',FAIL_SYNC='yes').returncode,0)
+        self.assertEqual(stamp.stat().st_mtime_ns,0)
+        self.assertFalse((self.root/'calls').exists())
+        self.assertEqual(self.make('b','deps').returncode,0)
+        (self.root/'uv.lock').unlink()
+        self.assertNotEqual(self.make('a','deps').returncode,0)
+
+    def test_cleanup_preserves_project_inputs_outputs_and_snapshots(self):
+        self.assertEqual(self.make('a','all').returncode,0)
+        for filename in ['data/cache.json','tests/snapshots/mobile.jpg','site.toml']:
+            p=self.root/'a'/filename
+            p.parent.mkdir(parents=True,exist_ok=True)
+            p.write_text('keep')
+        self.assertEqual(self.make('b','clean-deps').returncode,0)
+        self.assertFalse((self.root/'.venv').exists())
+        for filename in ['data/cache.json','tests/snapshots/mobile.jpg','site.toml','output/example.html']:
+            self.assertTrue((self.root/'a'/filename).exists())
+        self.assertTrue((self.root/'uv.lock').exists())
+
+    def test_snapshots_are_explicit_and_assets_invalidate_artifacts(self):
+        self.assertEqual(self.make('a','all','test','data').returncode,0)
+        self.assertNotIn('capture',(self.root/'calls').read_text())
+        self.assertEqual(self.make('a','snapshots','snapshot-browser').returncode,0)
+        calls=(self.root/'calls').read_text()
+        self.assertIn('src/capture.py',calls)
+        self.assertIn('-m playwright install --only-shell chromium',calls)
+        output=self.root/'a/output/example.html'
+        os.utime(output,(0,0))
+        (self.root/'src/staticsites/ui.js').touch()
+        self.assertEqual(self.make('a','all').returncode,0)
+        self.assertGreater(output.stat().st_mtime_ns,0)
+
+    def test_alternate_environment_is_still_shared(self):
+        for name in ['a','b']:
+            self.assertEqual(self.make(name,'deps','VENV=.venv-ci').returncode,0)
+        self.assertTrue((self.root/'.venv-ci/.stamp').exists())
+        self.assertFalse((self.root/'.venv').exists())
+        self.assertEqual(len((self.root/'installs').read_text().splitlines()),1)
+
+    def test_fake_installer_refuses_environment_outside_its_fixture(self):
+        result = self.make('a', 'deps', 'VENV=' + str(self.root.parent/'outside-test-env'))
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn(b'unsafe fixture environment', result.stderr)
+
+    def test_shared_ui_does_not_rebuild_cached_data_artifacts(self):
+        project = self.root/'a'
+        (project/'Makefile').write_text('''PROJECT := example
+OUTPUTS := output/example.html output/model.geojson
 include ../python-project.mk
-
 $(OUTPUTS):
 \t@mkdir -p output
-\t@touch $@
-'''
-        with tempfile.TemporaryDirectory() as directory:
-            root = prepare_project(directory, makefile)
-            (root / "pyproject.toml").touch()
-            (root / "uv.lock").touch()
-            (root / "data").mkdir()
-            for name in ("routing.json", "curated.json", "geocode_cache.json"):
-                (root / "data" / name).write_text("keep")
-            tools = root / "tools"
-            tools.mkdir()
-            uv = tools / "uv"
-            uv.write_text('#!/bin/sh\n'
-                          'echo "$UV_PROJECT_ENVIRONMENT:$*" >> installs\n'
-                          'mkdir -p "$UV_PROJECT_ENVIRONMENT/bin"\n'
-                          'printf \'#!/bin/sh\\necho "$*" >> calls\\n\' > "$UV_PROJECT_ENVIRONMENT/bin/python"\n'
-                          'chmod +x "$UV_PROJECT_ENVIRONMENT/bin/python"\n')
-            uv.chmod(0o755)
-            interpreter = root / ".custom-env/bin/python"
+\t@echo built > $@
+''')
+        self.assertEqual(self.make('a','all').returncode,0)
+        geometry = project/'output/model.geojson'
+        os.utime(geometry,(0,0))
+        (self.root/'src/staticsites/ui.js').touch()
+        self.assertEqual(self.make('a','all').returncode,0)
+        self.assertEqual(geometry.stat().st_mtime_ns,0)
 
-            def make(*arguments):
-                # Exercise the normal repo-root invocation and recursive rebuild.
-                return subprocess.run(["make", "-C", str(root), *arguments],
-                                      cwd=directory, capture_output=True,
-                                      env=dict(os.environ, PATH=str(tools) + os.pathsep + os.environ["PATH"]))
+    def test_explicit_system_installation(self):
+        for tool,body in [('uname','echo "${TEST_OS:-Darwin}"'),('brew','echo "$*" >> "$TEST_REPO/brew-calls"')]:
+            p=self.tools/tool
+            p.write_text('#!/bin/sh\n'+body+'\n')
+            p.chmod(0o755)
+        self.assertEqual(self.make('a','system-deps').returncode,0)
+        self.assertEqual((self.root/'brew-calls').read_text(),'install uv\n')
+        self.assertNotEqual(self.make('a','system-deps',TEST_OS='Linux').returncode,0)
+        self.assertFalse((self.root/'.venv').exists())
 
-            self.assertEqual(make("data").returncode, 0)
-            self.assertEqual((root / "installs").read_text(), ".custom-env:sync --locked\n")
-            self.assertFalse((root / ".venv").exists())
-            self.assertTrue((root / ".state/deps.stamp").exists())
-            (root / ".state/keep.txt").write_text("keep")
-            self.assertTrue((root / "output/main.html").exists())
-            self.assertTrue((root / "output/extra.txt").exists())
-            self.assertEqual(make("test").returncode, 0)
-            self.assertEqual((root / "calls").read_text().splitlines(),
-                             ["src/custom_fetch.py", "-m pytest -q -x"])
-            self.assertEqual(make("clean").returncode, 0)
-            self.assertFalse((root / "output/main.html").exists())
-            self.assertFalse((root / "output/extra.txt").exists())
-            self.assertFalse((root / "data/routing.json").exists())
-            self.assertTrue((root / "data/curated.json").exists())
-            self.assertTrue((root / "data/geocode_cache.json").exists())
-            self.assertTrue(interpreter.exists())
-            self.assertEqual(make("clean-deps").returncode, 0)
-            self.assertFalse((root / ".custom-env").exists())
-            self.assertFalse((root / ".state/deps.stamp").exists())
-            self.assertTrue((root / ".state/keep.txt").exists())
-            self.assertTrue((root / "uv.lock").exists())
-            # The default goal must remain all despite included setup targets.
-            self.assertEqual(make("deps").returncode, 0)
-            self.assertEqual((root / "installs").read_text().splitlines(),
-                             [".custom-env:sync --locked"] * 2)
-            self.assertTrue((root / ".state/deps.stamp").exists())
-            self.assertEqual(make().returncode, 0)
-            self.assertTrue((root / "output/main.html").exists())
-            self.assertTrue((root / "output/extra.txt").exists())
-
-    def test_current_outputs_still_validate_environment_without_repair(self):
-        makefiles = {path.parent.name: path.read_text()
-                     for path in ROOT.glob("*/Makefile")}
-        makefiles["scaffold"] = scaffolder.FILES["Makefile"].replace("__PROJECT__", "scaffold")
-        for name, makefile in makefiles.items():
-            with self.subTest(project=name), tempfile.TemporaryDirectory() as directory:
-                root = prepare_project(directory, makefile)
-                (root / "pyproject.toml").touch()
-                (root / "uv.lock").touch()
-                if name == "scaffold":
-                    for filename in ("src/build_site.py", "data/example.json"):
-                        path = root / filename
-                        path.parent.mkdir(exist_ok=True)
-                        path.touch()
-                    outputs = ["scaffold.html"]
-                else:
-                    # Read real prerequisites without copying large transit inputs.
-                    for folder in ("src", "data"):
-                        (root / folder).symlink_to(ROOT / name / folder, target_is_directory=True)
-                    outputs = [path.name for path in (ROOT / name / "output").iterdir()
-                               if path.is_file()]
-                (root / "output").mkdir()
-                # Deliberately write HTML before its generated dependencies;
-                # equal mtimes below must make the fixture current in any order.
-                for filename in sorted(outputs, key=lambda name: (not name.endswith(".html"), name)):
-                    (root / "output" / filename).write_text("already built")
-                built_at = max(path.stat().st_mtime_ns for path in (root / "output").iterdir())
-                for path in (root / "output").iterdir():
-                    os.utime(path, ns=(built_at, built_at))
-                tools = root / "tools"
-                tools.mkdir()
-                uv = tools / "uv"
-                uv.write_text('#!/bin/sh\necho sync >> calls\nexit 1\n')
-                uv.chmod(0o755)
-                (root / ".venv/bin").mkdir(parents=True)
-                interpreter = root / ".venv/bin/python"
-                interpreter.write_text('#!/bin/sh\necho python >> calls\n')
-                interpreter.chmod(0o755)
-                stamp = root / ".venv/.stamp"
-                stamp.touch()
-                stamp_before = stamp.stat().st_mtime_ns
-                environment = dict(os.environ, PATH=str(tools) + os.pathsep + os.environ["PATH"])
-
-                def make(target):
-                    return subprocess.run(["make", target], cwd=root,
-                                          env=environment, capture_output=True)
-
-                before = {path.name: path.stat().st_mtime_ns
-                          for path in (root / "output").iterdir()}
-                self.assertEqual(make("all").returncode, 0)
-                self.assertFalse((root / "calls").exists())
-                interpreter.unlink()
-                for target in ("all", "test", "data", "deps", "output/" + name + ".html"):
-                    result = make(target)
-                    self.assertNotEqual(result.returncode, 0, target)
-                    self.assertIn(b"make clean-deps then make deps", result.stderr, target)
-                self.assertFalse((root / "calls").exists())
-                self.assertEqual(stamp.stat().st_mtime_ns, stamp_before)
-                self.assertEqual(before, {path.name: path.stat().st_mtime_ns
-                                         for path in (root / "output").iterdir()})
-
-    def test_explicit_system_installation_and_prerequisite_failures(self):
-        makefiles = {path.parent.name: path.read_text()
-                     for path in ROOT.glob("*/Makefile")}
-        makefiles["scaffold"] = scaffolder.FILES["Makefile"]
-        for name, makefile in makefiles.items():
-            with self.subTest(project=name), tempfile.TemporaryDirectory() as directory:
-                root = prepare_project(directory, makefile)
-                tools = root / "tools"
-                tools.mkdir()
-                uname = tools / "uname"
-                uname.write_text('#!/bin/sh\necho "${TEST_OS:-Darwin}"\n')
-                uname.chmod(0o755)
-                brew = tools / "brew"
-                brew.write_text('#!/bin/sh\necho "$*" >> calls\nexit "${BREW_EXIT:-0}"\n')
-                brew.chmod(0o755)
-
-                def install(**extra):
-                    return subprocess.run(
-                        [shutil.which("make"), "system-deps"], cwd=root, capture_output=True,
-                        env=dict(os.environ, PATH=str(tools), **extra),
-                    )
-
-                self.assertEqual(install().returncode, 0)
-                expected = (["install uv osmium-tool", "install --cask temurin@21"]
-                            if name == "union-station-transit-isochrone" else ["install uv"])
-                self.assertEqual((root / "calls").read_text().splitlines(), expected)
-                self.assertFalse((root / ".venv").exists())
-                (root / "calls").unlink()
-                result = install(TEST_OS="Linux")
-                self.assertNotEqual(result.returncode, 0)
-                self.assertIn(b"supports macOS", result.stderr)
-                self.assertFalse((root / "calls").exists())
-                self.assertNotEqual(install(BREW_EXIT="1").returncode, 0)
-                self.assertEqual(len((root / "calls").read_text().splitlines()), 1)
-                (root / "calls").unlink()
-                brew.unlink()
-                result = install()
-                self.assertNotEqual(result.returncode, 0)
-                self.assertIn(b"Install Homebrew", result.stderr)
-                self.assertFalse((root / "calls").exists())
-
-    def test_data_sync_failure_stops_before_fetch_for_every_project(self):
-        makefiles = {path.parent.name: path.read_text()
-                     for path in ROOT.glob("*/Makefile")}
-        makefiles["scaffold"] = scaffolder.FILES["Makefile"]
-        for name, makefile in makefiles.items():
-            with self.subTest(project=name), tempfile.TemporaryDirectory() as directory:
-                root = prepare_project(directory, makefile)
-                (root / "pyproject.toml").touch()
-                (root / "uv.lock").touch()
-                tools = root / "tools"
-                tools.mkdir()
-                uv = tools / "uv"
-                uv.write_text('#!/bin/sh\necho sync >> calls\nexit 1\n')
-                uv.chmod(0o755)
-                # Dependency installation must finish before any fetch runs.
-                (root / ".venv/bin").mkdir(parents=True)
-                interpreter = root / ".venv/bin/python"
-                interpreter.write_text('#!/bin/sh\necho fetch >> calls\n')
-                interpreter.chmod(0o755)
-                result = subprocess.run(
-                    ["make", "data"], cwd=root, capture_output=True,
-                    env=dict(os.environ, PATH=str(tools) + os.pathsep + os.environ["PATH"]),
-                )
-                self.assertNotEqual(result.returncode, 0)
-                self.assertEqual((root / "calls").read_text(), "sync\n")
-
-    def test_actual_scaffolder_creates_project_using_shared_template(self):
-        with tempfile.TemporaryDirectory() as directory:
-            root = pathlib.Path(directory)
-            # Seed out-of-process so generated fetch_data cannot pollute imports.
-            script = root / "new-project.py"
-            shutil.copy(ROOT / "new-project.py", script)
-            shutil.copy(ROOT / "python-project.mk", root / "python-project.mk")
-            subprocess.run([os.sys.executable, str(script), "fresh-site"], check=True,
-                           stdout=subprocess.DEVNULL)
-            project = root / "fresh-site"
-            self.assertTrue((project / "uv.lock").exists())
-            self.assertTrue((project / "Makefile").exists())
-            self.assertTrue((project / "data/example.json").exists())
-
-    def test_install_reuse_failure_and_explicit_cleanup(self):
-        with tempfile.TemporaryDirectory() as directory:
-            root = prepare_project(directory, scaffolder.FILES["Makefile"])
-            (root / "pyproject.toml").touch()
-            (root / "uv.lock").touch()
-            tools = root / "tools"
-            tools.mkdir()
-            uv = tools / "uv"
-            uv.write_text('#!/bin/sh\necho "$*" >> calls\n'
-                          'test -z "$FAIL_SYNC" || exit 1\n'
-                          'mkdir -p .venv/bin\n'
-                          'printf "#!/bin/sh\\nexit 0\\n" > .venv/bin/python\n'
-                          'chmod +x .venv/bin/python\n')
-            uv.chmod(0o755)
-            environment = dict(os.environ, PATH=str(tools) + os.pathsep + os.environ["PATH"])
-
-            def make(target, **extra):
-                return subprocess.run(["make", target], cwd=root,
-                                      env=dict(environment, **extra), capture_output=True)
-
-            self.assertEqual(make("deps").returncode, 0)
-            self.assertEqual(make("deps").returncode, 0)
-            self.assertEqual(len((root / "calls").read_text().splitlines()), 1)
-            stamp = root / ".venv/.stamp"
-            # Changed manifests require another sync; failed sync keeps the old stamp.
-            os.utime(stamp, (0, 0))
-            before = stamp.stat().st_mtime_ns
-            self.assertNotEqual(make("deps", FAIL_SYNC="stale lock").returncode, 0)
-            self.assertEqual(stamp.stat().st_mtime_ns, before)
-            self.assertEqual(make("test").returncode, 0)
-            self.assertEqual(len((root / "calls").read_text().splitlines()), 3)
-            (root / ".venv/bin/python").unlink()
-            self.assertNotEqual(make("deps").returncode, 0)
-            self.assertNotEqual(make("test").returncode, 0)
-            self.assertEqual(len((root / "calls").read_text().splitlines()), 3)
-            self.assertEqual(make("clean-deps").returncode, 0)
-            self.assertFalse((root / ".venv").exists())
-            self.assertEqual(make("deps").returncode, 0)
-            self.assertEqual(len((root / "calls").read_text().splitlines()), 4)
-            self.assertTrue(all(line == "sync --locked" for line in (root / "calls").read_text().splitlines()))
-            (root / "uv.lock").unlink()
-            self.assertNotEqual(make("deps").returncode, 0)
-            self.assertEqual(len((root / "calls").read_text().splitlines()), 4)
+    def test_scaffolder_uses_root_lock_and_metadata_only_projects(self):
+        shutil.copy(ROOT/'new-project.py',self.root/'new-project.py')
+        subprocess.run([sys.executable,str(self.root/'new-project.py'),'fresh-site'],check=True,stdout=subprocess.DEVNULL)
+        project=self.root/'fresh-site'
+        self.assertTrue((project/'site.toml').exists())
+        self.assertTrue((project/'pytest.ini').exists())
+        self.assertTrue((project/'data/example.json').exists())
+        self.assertFalse((project/'pyproject.toml').exists())
+        self.assertFalse((project/'uv.lock').exists())
+        self.assertIn('../python-project.mk',(project/'Makefile').read_text())

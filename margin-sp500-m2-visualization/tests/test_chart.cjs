@@ -1,6 +1,6 @@
 'use strict';
 const assert = require('node:assert/strict');
-const M = require('../src/chart.js');
+const M = require('../../src/staticsites/assets/plots/chart.js');
 const observed = (date,value) => ({date,value});
 const spec = {panels:[{id:'a',series:[{points:[observed('2024-01-31',0),observed('2024-02-29',null)]}]},
   {id:'ratio',defaultChoice:'m2',choices:[{key:'m2',series:[{id:'m2',points:[observed('2024-03-31',100)]}]},

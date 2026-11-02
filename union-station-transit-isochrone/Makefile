@@ -19,7 +19,7 @@ SNAPSHOT_SCRIPT := src/snapshot_site.py
 
 include ../python-project.mk
 
-$(OUT): $(wildcard src/*.html src/*.js src/*.css src/vendor/*) src/build_map.py $(GEOJSON) data/transit_model.json $(wildcard data/reachability.json)
+$(OUT): $(wildcard src/*.html src/*.js src/*.css src/vendor/*) src/build_map.py $(GEOJSON) data/transit_model.json $(wildcard data/reachability.json data/station_itineraries.json)
 	$(PY) src/build_map.py
 
 # Depends on data/reachability.json when present so a fresh `make data`

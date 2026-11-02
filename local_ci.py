@@ -4,7 +4,7 @@
 GitHub statuses describe an exact, clean HEAD, never uncommitted work. `auto`
 publishes for clean commits and stays local for dirty checkouts; `required`
 refuses dirty checkouts; `off` never contacts GitHub. Repo-admin tooling uses
-only the Python 3.9 standard library, independently of project environments.
+only the Python 3.9 standard library, before bootstrapping the shared environment.
 """
 import argparse
 import json
@@ -62,8 +62,8 @@ def run_command(root, command, log):
 
 
 def run(root, statuses, venv=None):
-    if venv and (pathlib.Path(venv).is_absolute() or ".." in pathlib.Path(venv).parts):
-        raise ValueError("CI_VENV must be relative to each project, without '..'.")
+    if venv and ".." in pathlib.Path(venv).parts:
+        raise ValueError("VENV must identify one shared environment without '..'.")
     projects = [path.parent.name for path in sorted(root.glob("*/Makefile"))]
     if not projects:
         raise ValueError("No projects found (expected */Makefile).")
@@ -86,7 +86,7 @@ def run(root, statuses, venv=None):
 
     log_dir = root / ".local-ci" / sha
     log_dir.mkdir(parents=True, exist_ok=True)
-    tasks = [("metadata", ["make", "check"])] + [
+    tasks = [("metadata", ["make", "check"] + (["VENV=" + venv] if venv else []))] + [
         (project, ["make", "-C", project, "test", "all"]
          + (["VENV=" + venv] if venv else []))
         for project in projects]
@@ -148,7 +148,7 @@ def run(root, statuses, venv=None):
 def main():
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--statuses", choices=("auto", "off", "required"), default="auto")
-    parser.add_argument("--venv", help="optional environment path relative to each project")
+    parser.add_argument("--venv", help="optional shared environment path, relative to the repository or absolute")
     args = parser.parse_args()
     try:
         return run(ROOT, args.statuses, args.venv)

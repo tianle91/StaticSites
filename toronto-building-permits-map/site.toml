@@ -1,0 +1,4 @@
+[site]
+name = "toronto-building-permits-map"
+title = "Toronto building permits"
+description = "Toronto building permits — the complete active permit register, searchable by address, with status, type, and year filters."

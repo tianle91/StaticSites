@@ -1,0 +1,4 @@
+[site]
+name = "margin-sp500-m2-visualization"
+title = "Margin debt vs. the S&P 500"
+description = "Margin debt vs. the S&P 500 — FINRA margin debt against the S&P 500, M2, CPI, and PPI, rebased to a chosen anchor date."

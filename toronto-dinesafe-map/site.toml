@@ -1,0 +1,4 @@
+[site]
+name = "toronto-dinesafe-map"
+title = "Toronto DineSafe food-safety inspections"
+description = "Toronto DineSafe food-safety inspections — one pin per establishment, coloured by its latest outcome (Pass / Conditional Pass / Closed); search by name / type / address and open any business for its inspection history."

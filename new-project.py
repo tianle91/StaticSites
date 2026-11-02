@@ -19,128 +19,28 @@ import pathlib
 import re
 import stat
 import sys
+import runpy
 
 ROOT = pathlib.Path(__file__).resolve().parent
 
-# Kebab-case: the directory name is also the package-ish name in pyproject.toml
+# Kebab-case: the directory name is also the project name in site.toml
 # and the stem of the built artifact, so keep it to something safe everywhere.
 NAME_RE = re.compile(r"^[a-z][a-z0-9]*(-[a-z0-9]+)*$")
 
 
 FILES = {}
 
-FILES["pyproject.toml"] = '''\
-[project]
+FILES["site.toml"] = '''\
+[site]
 name = "__PROJECT__"
-version = "0.0.0"
-description = "__TITLE__ — TODO: one-line blurb for the homepage listing."
-requires-python = ">=3.11"
-
-# Runtime dependencies. Say why each one is here.
-dependencies = []
-
-[dependency-groups]
-dev = ["pytest>=8.0"]
-
-[tool.uv]
-# This project is an environment, not a distributable package -- nothing to build.
-package = false
-
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-pythonpath = ["src"]
-
-[tool.staticsite]
-# Homepage-listing metadata, aggregated into the repo-root sites.json by
-# ../generate_manifest.py. `title` is the link text; the blurb shown after it is
-# [project].description with the leading "<title> — " stripped, so description
-# must start with "<title> — ".
 title = "__TITLE__"
-
+description = "__TITLE__ — TODO: one-line blurb for the homepage listing."
 '''
 
-# Generated with uv lock for the empty placeholder + pytest. Shipping the lock
-# keeps scaffolding stdlib-only and makes the first locked sync reproducible.
-FILES["uv.lock"] = '''\
-version = 1
-revision = 5
-requires-python = ">=3.11"
-
-[[package]]
-name = "colorama"
-version = "0.4.6"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/d8/53/6f443c9a4a8358a93a6792e2acffb9d9d5cb0a5cfd8802644b7b1c9a02e4/colorama-0.4.6.tar.gz", hash = "sha256:08695f5cb7ed6e0531a20572697297273c47b8cae5a63ffc6d6ed5c201be6e44", size = 27697, upload-time = "2022-10-25T02:36:22.414Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/d1/d6/3965ed04c63042e047cb6a3e6ed1a63a35087b6a609aa3a15ed8ac56c221/colorama-0.4.6-py2.py3-none-any.whl", hash = "sha256:4f1d9991f5acc0ca119f9d443620b77f9d6b33703e51011c16baf57afb285fc6", size = 25335, upload-time = "2022-10-25T02:36:20.889Z" },
-]
-
-[[package]]
-name = "iniconfig"
-version = "2.3.1"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/01/e1/2069291243c926a2ff1cd706c7f3eeb9b62144bf60f77c9fb9ff2fb26bd3/iniconfig-2.3.1.tar.gz", hash = "sha256:67f4b9c50da0dedf52af349e7749a80a9057a5031199791b906c3bb3ae878960", size = 21209, upload-time = "2026-10-06T22:48:38.076Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/56/43/4ca9e49d27a1fcf6bece6f6aec0ea46bb9112489b93d4b688fb415457bdb/iniconfig-2.3.1-py3-none-any.whl", hash = "sha256:9121e2c1fdb355232495be3194c8dfe87ccc2d5dee45947b78e68f499790d7a7", size = 7552, upload-time = "2026-10-06T22:48:36.959Z" },
-]
-
-[[package]]
-name = "packaging"
-version = "26.3"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/7d/fa/3944b40b07da9ce895c0e6303a5ab7d53da063554f534556b134a54d6093/packaging-26.3.tar.gz", hash = "sha256:94edc256424af38762eb31306eed28beb9f0efc50a8837492c9d6fd6004aed79", size = 313412, upload-time = "2026-08-04T18:15:28.737Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/63/34/ba1c580383c9eada3711951fef0795c80b829a078d72188184bcab9dd527/packaging-26.3-py3-none-any.whl", hash = "sha256:d7193f7c8e4e93f444fde0262bf90af30e16fa0ad0ad44cb553c87339b23cd1c", size = 129956, upload-time = "2026-08-04T18:15:27.159Z" },
-]
-
-[[package]]
-name = "pluggy"
-version = "1.6.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/f9/e2/3e91f31a7d2b083fe6ef3fa267035b518369d9511ffab804f839851d2779/pluggy-1.6.0.tar.gz", hash = "sha256:7dcc130b76258d33b90f61b658791dede3486c3e6bfb003ee5c9bfb396dd22f3", size = 69412, upload-time = "2025-05-15T12:30:07.975Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/54/20/4d324d65cc6d9205fabedc306948156824eb9f0ee1633355a8f7ec5c66bf/pluggy-1.6.0-py3-none-any.whl", hash = "sha256:e920276dd6813095e9377c0bc5566d94c932c33b27a3e3945d8389c374dd4746", size = 20538, upload-time = "2025-05-15T12:30:06.134Z" },
-]
-
-[[package]]
-name = "pygments"
-version = "2.21.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/49/2e/ced460408999b33da6b31b0021b0f37d329e202d4169aeb164493778f25b/pygments-2.21.0.tar.gz", hash = "sha256:610ca751c9bc2492b38eb9a38a7fbc93edbbb2d7182edaf34e66ae493dee5c8c", size = 5005329, upload-time = "2026-08-17T08:02:48.824Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/71/46/17f022dd3e953bf20a04a028a21ec746d942f8d2af30fa0f124fa0e6a684/pygments-2.21.0-py3-none-any.whl", hash = "sha256:2363c69b61c4a97c838da3b130dcd6468f4848992b21a82f2a63ec34377137d9", size = 1250147, upload-time = "2026-08-17T08:02:44.912Z" },
-]
-
-[[package]]
-name = "pytest"
-version = "9.1.1"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "colorama", marker = "sys_platform == 'win32'" },
-    { name = "iniconfig" },
-    { name = "packaging" },
-    { name = "pluggy" },
-    { name = "pygments" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/e4/47/b9efed96c114afcfa3c9d3fe98a76a1d14c74a9e266d397cf6eb64be5e01/pytest-9.1.1.tar.gz", hash = "sha256:1088fbde8f2b49d95a549a195707afa7a76a3ce9bcadc26b6d71f0ffda5fe313", size = 1636369, upload-time = "2026-06-19T10:58:32.857Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/24/25/1de2678b631f5a49215c6c96fff41ba892b0a34df68d6d80292b1b48aa7f/pytest-9.1.1-py3-none-any.whl", hash = "sha256:37a86b45efb9a47a61a36449063e8e18d0cab3161329fc099eb21783169c4f0c", size = 386536, upload-time = "2026-06-19T10:58:31.347Z" },
-]
-
-[[package]]
-name = "__PROJECT__"
-version = "0.0.0"
-source = { virtual = "." }
-
-[package.dev-dependencies]
-dev = [
-    { name = "pytest" },
-]
-
-[package.metadata]
-
-[package.metadata.requires-dev]
-dev = [{ name = "pytest", specifier = ">=8.0" }]
+FILES["pytest.ini"] = '''\
+[pytest]
+testpaths = tests
+pythonpath = src
 '''
 
 FILES["Makefile"] = '''\
@@ -149,8 +49,8 @@ FILES["Makefile"] = '''\
 # Shared Python/uv targets live in ../python-project.mk; build rules stay here.
 
 PROJECT := __PROJECT__
-# Map/chart projects can opt in after copying src/snapshot_site.py locally and adding
-# Playwright as a locked dev dependency: SNAPSHOT_SCRIPT := src/snapshot_site.py
+# Optional snapshots: configure staticsites.snapshots.Snapshotter in src/snapshot_site.py
+# and set SNAPSHOT_SCRIPT := src/snapshot_site.py
 
 include ../python-project.mk
 
@@ -320,6 +220,7 @@ import pathlib
 import shutil
 import subprocess
 import sys
+import runpy
 
 import pytest
 
@@ -354,28 +255,15 @@ __TITLE__.
 
 TODO: one paragraph on what this shows and why it is interesting.
 
-For a map project, follow the repo README's map interface convention: search and
-matching counts above Layers / Results / Data sources tabs, toggleable feature
-layers, clickable search results, linked provenance, and adjacent zoom / locate /
-fit controls. Use a desktop sidebar and an expandable mobile bottom panel.
-Copy browser helpers into this project's src/; do not import another project.
-Request location only after a click, show browser accuracy and retry messages,
-and explain what the counts and published coordinates represent.
+Use the shared build-time package in ../src/staticsites for map controls,
+plot components, snapshot capture and data-pipeline helpers. Keep dataset parsing,
+validation rules, search fields and page-specific behavior here. Shared CSS/JS is
+embedded into output HTML; a published site must not require this checkout or
+Python. Maps may retain documented external tiles/scripts.
 
-For review snapshots, copy a map project's `src/snapshot_site.py` locally, add
-`playwright>=1.50` with `uv add --dev`, and set
-`SNAPSHOT_SCRIPT := src/snapshot_site.py` before the shared Make include.
-Then `make snapshot-browser` explicitly installs headless Chromium and
-`make snapshots` rebuilds the page and captures desktop/mobile review images.
-These optional commands require network access; ordinary builds/tests stay offline.
-
-For a chart project, follow the repo README's chart interface convention and
-copy the native SVG page components into this project's src/ locally. Keep
-legend, shared time axis, inspection readout and collapsed sources consistent
-with the Ontario mortgage chart; avoid an external plotting runtime. For chart
-review snapshots, copy a chart project's src/snapshot_site.py and use the same
-Playwright/Make opt-in described above. The helper waits for charts/readouts and
-stable layout and blocks external requests; capture stays offline after setup.
+For snapshots, configure staticsites.snapshots.Snapshotter in src/snapshot_site.py
+and set SNAPSHOT_SCRIPT before the Make include. Run make snapshot-browser
+explicitly for browser setup and make snapshots for desktop/mobile review JPEGs.
 
 ## Usage
 
@@ -386,7 +274,7 @@ make test     # run the tests
 make data     # refresh data/ from upstream (requires internet), then rebuild
 ```
 
-`uv` creates this project's `.venv` on first run. Targets follow the repo
+`make deps` installs the repository-root `.venv` from the single root lockfile. Targets follow the repo
 standard -- see the [repo README](../README.md).
 
 ## Layout
@@ -419,7 +307,7 @@ On other platforms, install those tools manually before `make deps` / `make data
 System installation runs only when explicitly requested; other targets never
 invoke it. Credentials must be supplied separately.
 
-`make deps` installs this project's complete locked Python environment, including
+`make deps` installs the repository's complete locked Python environment, including
 test dependencies, when it is new or the dependency manifests change. `make data`
 uses the same setup before fetching all required upstream inputs. Repeated commands
 reuse the environment; they do not attempt repairs. To reinstall from scratch, run
@@ -462,10 +350,7 @@ def main():
 
     # Seed data/ so the very first `make` has an input and succeeds offline.
     (target / "output").mkdir(exist_ok=True)
-    sys.path.insert(0, str(target / "src"))
-    import fetch_data  # noqa: E402 - imported from the freshly written project
-
-    fetch_data.main()
+    runpy.run_path(str(target / "src/fetch_data.py"), run_name="__main__")
 
     # The builders are meant to be runnable directly, like the ones they mimic.
     for script in (target / "src").glob("*.py"):
@@ -481,7 +366,7 @@ Created {name}/ in the standard layout. Next:
 Then replace the placeholders: src/fetch_data.py (the real upstream fetch),
 src/build_site.py (the real rendering), the TODOs in README.md, and add a row
 for the project to the table in ../README.md. Set the homepage blurb in
-pyproject.toml ([project].description + [tool.staticsite].title), then run
+site.toml ([site].description + [site].title), then run
 `make manifest` from the repo root to add the project to sites.json. Refresh data
 only when `make data` is invoked; unchanged upstream content must preserve
 committed bytes and timestamps.
