@@ -1,13 +1,10 @@
 # StaticSites
 
-A collection of self-contained static-site projects — interactive maps and plots
-that build to a single file you can open in a browser with no server.
-
-**Each project lives in its own top-level directory**, with its own
-dependencies, its own virtualenv, its own tests, and its own committed output.
-Projects never import from one another and there is nothing to install at the
-repo root. Their Makefiles include the shared [Python/uv template](python-project.mk),
-so build them within the repository checkout.
+Standalone static maps and plots built from committed datasets. Projects share
+build-time Python and UI components, while retaining their own sources, data,
+tests and outputs. Each generated HTML embeds its application code, styles and
+data: publishing it requires no Python, package server or checkout. Existing
+map CDN/tile dependencies remain documented; chart pages work offline.
 
 | Project | What it is |
 | --- | --- |
@@ -44,9 +41,7 @@ toolbar. Hover and keyboard inspection expose exact observations; legend taps
 can toggle lines. Keep only essential controls, such as the FCF ratio choice.
 Rebasing is a build-time option in the macro projects.
 
-Duplicate `src/chart_style.py`, `src/chart.css` and `src/chart.js` locally when
-starting another chart project. Do not import a shared runtime theme or another
-project's code. Native charts embed their data/scripts/styles in the HTML and
+Use `staticsites.charts` and the shared plot assets in `src/staticsites/assets/plots/`. Native charts embed their data/scripts/styles in the HTML and
 make no external runtime requests.
 
 All three chart projects support the same review-image commands as maps:
@@ -71,15 +66,14 @@ Keep project-specific details (inspection histories, permit records, transit
 itineraries) accessible from features and results. Clearly label what counts mean
 and document spatial accuracy, snapshot dates and linked upstream sources. Layer
 badges show query matches before selection; the headline count and results respect
-selected layers. Duplicate the small `src/explorer.css` / `src/explorer.js` helpers
-locally when starting another map; projects must not import each other's code.
+selected layers. Use the shared controls and styles in `src/staticsites/assets/maps/`; keep project-specific search fields and filters configurable in the local adapter.
 
 All seven map projects also provide explicit review snapshots:
 `make -C <project> snapshot-browser` downloads headless Chromium once, and
 `make -C <project> snapshots` rebuilds and captures desktop (1440 × 900) and
 mobile (390 × 844) images under that project's `tests/snapshots/`.
 Capture waits for map initialization, tiles and motion to settle. These commands
-use each project's locked Playwright dependency; they are never run by ordinary
+use the root environment’s locked Playwright dependency; they are never run by ordinary
 builds, tests or data refreshes. Snapshot capture requires network access to map
 assets. Review and commit the images after visual changes.
 
@@ -88,249 +82,192 @@ Optional interaction checks use only Node.js built-ins (Node 18+):
 counts, search, location success/error/retry behavior, and mobile fit padding.
 Project builds and pytest suites continue to use their own Python environments.
 
-## Usage
+## Setup and commands
 
-Each project works independently. You need
-[uv](https://docs.astral.sh/uv/) installed; it creates the virtualenv for you on
-first build.
+The repository has one `pyproject.toml`, one `uv.lock`, and one root `.venv`.
+`.python-version` selects Python 3.12 for the standard build environment.
+Install [uv](https://docs.astral.sh/uv/) manually, or use `make system-deps` on
+macOS with Homebrew already installed. System tools and browser binaries are
+never installed by ordinary builds or tests. Transit additionally needs Java 21
+and osmium-tool; `make -C union-station-transit-isochrone system-deps` installs
+those explicitly on macOS.
 
-```bash
-cd <project>
-make system-deps # install system tools on macOS (requires Homebrew)
-make          # build output/<project>.html from the committed data/
-make open     # build, then open it in a browser
-make test     # run this project's tests
-make deps     # install this project's dependencies from its committed lockfile
-make clean-deps # remove this project's environment for a fresh install
-make data     # refresh every required input and rebuild
+```sh
+make deps                         # uv sync --locked --all-groups; install the root package editable
+make -C canada-mortgage-stress     # offline build of one project
+make -C canada-mortgage-stress test
+make test STATUSES=off             # shared/admin tests, then every project's tests and build
+make -C <project> data             # explicit data refresh for one project, then rebuild
+make data                         # explicit refresh of all projects; refresh is an alias
+make manifest                     # regenerate sites.json
+make check                        # metadata, shared Python tests and repo-admin tests
 ```
 
-You can also select a project from the repo root with `make -C`:
+All project `make deps` commands refer to the same root environment. A current
+stamp reuses it; an incomplete environment fails without automatic repair.
+`make clean-deps && make deps` at the root explicitly recreates the shared
+environment, affecting every project. It preserves data, caches, sources,
+lockfiles, outputs and review images. `make -C <project> clean` removes only that
+project's generated outputs. Ignored legacy project `.venv` directories are no
+longer used and are not deleted automatically.
 
-```bash
-make -C <project> deps     # install this project's isolated .venv
-make -C <project> data     # refresh this project's inputs and rebuild its output
-```
+Automatic dependency cleanup is limited to `.venv`, `.venv-*` and nested
+`.venv/` directories inside this checkout. Other custom environment locations
+must be cleaned manually. Changing `.python-version` invalidates the shared
+setup stamp just like changing the dependency manifests.
 
-Target names are consistent across projects; each project's Makefile defines
-its own sources, dependencies, and build steps. The root Makefile delegates `test` and `data` to all projects and
-provides repository metadata commands (`manifest`, `check`, and `help`). Supply credentials
-such as `SEC_USER_AGENT` through the environment. `make system-deps` installs
-`uv` and transit's Java 21 / `osmium` prerequisites on macOS with Homebrew;
-other platforms require manual installation.
+Use `uv add <dependency>` or `uv add --group <group> <dependency>` **from the
+repository root**. Groups `plots`, `maps`, `transit`, and `dev` describe the
+optional toolsets; Make installs all groups for complete verification. Advanced
+partial setups are possible with uv’s group flags, but are outside the
+complete stamped Make workflow. After manually changing a stamped environment,
+use explicit cleanup/setup before normal verification.
+There is no separate Python environment per group or project. The initial root lock constrains existing numeric and geometry engines to
+avoid mixing dependency upgrades into the extraction. Review those constraints
+when deliberately upgrading. Run the full suite whenever the root lockfile changes. Browser/system installation remains
+explicit even after dependency changes.
 
-Or just open the committed `output/<project>.html` directly — the sites work
-straight from a clone.
+For an isolated verification environment use `make test STATUSES=off VENV=.venv-ci`.
+That is one alternate **repository** environment used by metadata and all
+project commands, not ten separate installations.
 
-## Project standard
+## Shared components and project boundaries
 
-Every project follows the same layout and the same `make` targets, so any
-project is navigable once you have seen one, and CI stays generic. The full
-specification — including the rules for agents working in this repo — is in
-[AGENTS.md](AGENTS.md); the short version:
+`src/staticsites/` is the editable build-time Python package:
 
-```
+- `assets.py` and `assets/maps/`: safe JSON embedding, map controls, layers/results/sources tabs,
+  mobile panels/dialogs, keyboard/location/fit behavior and styles. Search stays
+  project-configured: addresses, names, categories, watersheds or stations.
+- `charts.py` and `assets/plots/`: native SVG plotting, legends, axes, shared
+  inspection, page layout/provenance and Matplotlib styling. Ontario's dual-axis
+  chart remains a local adapter with its own data/coverage semantics.
+- `snapshots.py`: one capture implementation with map/chart readiness policies,
+  fresh desktop/mobile contexts, explicit browser setup, and staged publication.
+- `pipeline.py`: atomic write-if-changed, content-aware timestamped snapshots,
+  provenance sidecar recovery and caches that do not persist service failures.
+- `sources.py` and `geocoding.py`: bounded HTTP GET retries, CKAN envelopes,
+  ArcGIS error handling, and Nominatim client/rate-limit setup.
+
+Keep domain-specific parsing, joins, geometry preparation, validation bounds,
+reporting-period alignment and fallback decisions in each project's `src/`.
+Data and geocoding caches stay project-local. No project imports another
+project. Avoid a pipeline framework: extract real repeated behavior and keep
+source-specific policies explicit. Shared assets are included as Make
+prerequisites for HTML/PNG outputs. Data-derived artifacts such as routed
+GeoJSON retain their project-specific prerequisites and cached inputs.
+
+## Project layout and metadata
+
+```text
 <project>/
-  README.md        # what it is, data sources, caveats
-  Makefile         # the standard targets below
-  pyproject.toml   # dependencies + pytest config
-  uv.lock          # committed
-  src/             # all Python source
-  tests/           # all tests, pytest
-  data/            # inputs consumed by the build (committed where small)
-  output/          # generated artifacts, committed
+  site.toml       # [site] name, title, description (listing metadata only)
+  pytest.ini      # testpaths=tests, pythonpath=src
+  Makefile        # project builder/inputs; includes ../artifact-project.mk
+  README.md       # purpose, sources, limitations and commands
+  src/            # local adapters, fetchers and builders
+  tests/          # project tests and committed review snapshots
+  data/           # committed build inputs and persistent caches
+  output/         # committed standalone HTML and secondary artifacts
 ```
 
-Python projects include [`python-project.mk`](python-project.mk) after setting
-their configuration variables, then define their own artifact build rules:
+`environment.mk` manages the root environment and explicit setup/cleanup;
+`python-project.mk` supplies the project commands. `artifact-project.mk` adds
+the common builder/input/format rules used by all ten projects; transit adds its
+geometry and clipping recipes locally. Every project implements
+`all`, `deps`, `system-deps`, `test`, `data`, `open`, `clean`, `clean-deps` and
+`clean-venv`. Snapshot-enabled projects also expose `snapshot-browser`,
+`snapshots`, and `browser-test` (explicit offline browser fixtures).
 
-```make
-PROJECT := example-map
-OUTPUTS := output/$(PROJECT).html
+Scripts resolve paths relative to their own project root. The primary output
+is `output/<project>.html`; secondary artifacts share the stem. Generated pages
+must name and link their data sources. Commit rebuilt outputs and review
+snapshots with visual changes. JSON stays readable with `indent=2`.
 
-include ../python-project.mk
+`generate_manifest.py` reads every project's `site.toml` and writes the unchanged
+`sites.json` schema used by downstream consumers. `[site].description` starts
+with `"<title> — "`; the prefix is removed in the generated manifest. Run
+`make manifest` after adding a project or changing its listing metadata.
 
-$(OUT): src/build_map.py data/locations.json
-	$(PY) src/build_map.py
-```
+## Data refresh guarantees
 
-The template supplies dependency setup/validation, pytest, data refresh followed
-by a rebuild, opening output, cleanup, and explicit Homebrew installation.
-Projects configure these through variables before the include:
+Only explicit `make data` / `make refresh` fetches or prepares datasets. Ordinary
+builds and tests stay offline after dependency setup. Validate every required
+source before publishing, normalize unordered records, preserve timestamps and
+bytes when substantive content is unchanged, and fail without publishing a
+partial dataset. Preserve successful geocodes and cache genuine no-matches,
+never service errors. Credentials remain operator-supplied. Large OSM/GTFS
+inputs stay ignored and documented in project data READMEs.
 
-| Variables | Default / purpose |
-| --- | --- |
-| `PROJECT`, `OUT`, `OUTPUTS` | Project directory name; primary HTML; all generated artifacts |
-| `VENV`, `PY`, `STAMP` | `.venv`, its Python executable, and dependency stamp |
-| `FETCH_SCRIPT`, `PYTEST_ARGS` | `src/fetch_data.py`, `-q` |
-| `OPEN_FILE`, `CLEAN_FILES` | Primary HTML to open; declared outputs to clean |
-| `BREW_FORMULAE`, `BREW_CASKS` | `uv`; no casks by default |
+Review snapshot capture is separate from builds/tests/data refresh. Maps may
+load their existing remote assets; charts block external requests. Run
+`make -C <project> snapshot-browser` explicitly after Playwright upgrades and
+`make -C <project> snapshots` to capture desktop/mobile JPEGs. The images show
+the initial viewport; longer pages continue below the captured image.
 
-Rendering recipes and their source/data prerequisites stay in project Makefiles.
-Charts declare their additional PNG output; transit declares its GeoJSON,
-Java/osmium packages, extra cleanup, and OSM clipping target. Each project keeps
-its own Python dependencies and environment. Copying a project out of this repo
-also requires the shared `.mk` file at the expected parent path.
+## Local CI and GitHub statuses
 
-| Target | What it does | Network |
-| --- | --- | --- |
-| `make` / `make all` | Rebuild `output/` from committed `data/` | **No** |
-| `make system-deps` | Explicitly install project system tools (macOS/Homebrew) | **Yes** |
-| `make deps` | Install the complete locked environment when new or manifests change | Setup |
-| `make test` | Run the project's pytest suite | **No** |
-| `make data` | Install dependencies as needed, refresh all required inputs, then rebuild | **Yes** |
-| `make open` | Open `output/<project>.html` | No |
-| `make clean` | Remove generated output | No |
-| `make clean-deps` | Remove the configured environment and stamp for a fresh install (`clean-venv` is an alias) | No |
+`local_ci.py` discovers projects through `*/Makefile`, runs `make check` and
+separate project test/build processes, and continues after independent failures.
+Separate processes keep local module names such as `fetch_data` from colliding.
+It uses the same root environment throughout.
 
-The command rules apply to every project and to newly scaffolded projects:
+`STATUSES=off` is local only; `auto` publishes `local-ci/metadata` and each
+`local-ci/<project>` for a clean pushed commit; `required` refuses dirty or
+unpublished state. A run pins HEAD and checks all tracked/untracked changes
+before publishing success. Status-publication failures are visible and nonzero.
+Logs remain ignored under `.local-ci/<sha>/`. There are no hosted workflows.
+The existing `gh` session/keychain supplies authentication; never print tokens.
 
-- Target names and common Python/uv recipes come from `python-project.mk`;
-  project Makefiles declare their own configuration, inputs, and build recipes.
-  The root Makefile delegates `test` and `data` without owning project build rules.
-- `make deps` installs all Python dependencies for fetching, building, and testing
-  from the project's committed lockfile. Separate manual package installs are
-  unnecessary.
-- `make data` ensures dependency setup, obtains every required upstream input,
-  prepares it, and rebuilds all outputs. Curated inputs remain committed; a
-  required-source failure fails the command.
-- Existing environments are reused without automatic repair. Use
-  `make clean-deps && make deps` to reinstall explicitly. Cleanup removes only
-  the configured environment and stamp (normally `.venv` and `.venv/.stamp`),
-  preserving data, caches, lockfiles, and outputs.
-- System tools have their own explicit `make system-deps` command; other targets
-  never invoke it. Homebrew is required on macOS; other platforms require manual
-  installation. Credentials remain operator-supplied prerequisites.
-
-The load-bearing rule is that **build and test logic stays offline** —
-every source fetch, download, and geocode lives behind `make data`, and its results are
-committed. That is what lets CI build and test all projects hermetically,
-and what lets you rebuild any site offline after dependency setup. Dependency
-bootstrap can need the network for a new environment or changed manifests.
-All targets reuse an installed environment until the dependency manifests change.
-To reinstall it, run `make clean-deps && make deps` inside the project.
-Missing or stale locks fail instead of being rewritten.
-Use `uv add` / `uv lock` deliberately; use `uv lock --upgrade` for upgrades.
-
-A successful `make data` refreshes all required sources and rebuilds outputs.
-Unchanged content preserves data timestamps and bytes; missing generated files
-are restored. Required-source failures retain previous datasets and return an
-error instead of publishing a partial refresh.
-
-## Local checks and GitHub statuses
-
-GitHub Actions workflows have been removed. Run the complete checks locally:
-
-```bash
-make test                      # metadata checks + every project's test and all
-make test STATUSES=off         # no GitHub access (dependency setup may need network)
-make test STATUSES=required    # require a clean, committed, pushed HEAD and status publication
-```
-
-Projects are discovered from one-level-deep `*/Makefile` files. The root target
-runs `make check`, then `make -C <project> test all` for every project in sorted
-order, continuing to the next project after a failure and exiting nonzero if any
-check fails. Build and test commands remain project-local and offline once their
-locked environments are installed. Existing incomplete environments fail with
-instructions for explicit `make clean-deps && make deps`; they are not repaired.
-For verification in a separate environment while preserving an existing one,
-use `make test CI_VENV=.venv/ci-verification`. This configures a distinct locked
-environment inside each project; it does not change the normal `.venv` setup.
-
-`STATUSES=auto` is the default: uncommitted work is checked locally without
-attaching results to an older commit. For a clean checkout, the runner uses your
-existing [GitHub CLI](https://cli.github.com/) login to publish `pending` then
-`success`, `failure`, or `error` commit statuses under `local-ci/<project>`, plus
-`local-ci/metadata`. Commit and push first. It pins the SHA for the whole run and
-rechecks HEAD and the complete working tree before reporting success. Generated
-output changes require committing the output and rerunning. Status/API errors
-return a nonzero exit code while local checks still run. No commits, pushes,
-pull requests, or credentials are created by `make test`.
-
-Full transcripts stay in ignored `.local-ci/<commit>/<project>.log` files; GitHub
-receives only a short result. To require these statuses for merging, select the
-`local-ci/...` contexts in your repository's branch protection after their first
-successful publication. Old GitHub Actions required checks must be removed from
-that configuration separately.
-
-## Refreshing data and outputs locally
-
-```bash
-make data                      # refresh data and outputs for every project
-make refresh                   # alias for make data
-make -C toronto-dinesafe-map data  # refresh just one project
-```
-
-Before a full refresh, provide the SEC identification required by the FCF
-project, using your own name/organization and contact email:
-
-```bash
-export SEC_USER_AGENT='Your Name contact@example.com'
-make data
-make test
-```
-
-With system tools installed and credentials supplied, these Make commands handle
-fetching, preparation, and rendering. Toronto permit downloads retry interrupted
-transfers; DineSafe automatically falls back from failed pagination to the
-official bulk CSV. Both validate exact source counts before publishing data.
-Persistent upstream failures still return an error and preserve the last snapshot.
-
-If an existing environment is damaged, explicitly run
-`make -C <project> clean-deps` followed by `make -C <project> deps` before retrying.
-To preserve it and use a separate environment instead, the matching commands are
-`make data VENV=.venv/ci-verification` and
-`make test CI_VENV=.venv/ci-verification`; each project still has its own environment.
-
-Root `make data` invokes each project's existing `make data` sequentially. Each
-project fetches all its required inputs and rebuilds its output; failures are
-reported and the other independent projects still get an attempt. This is an
-explicit network operation, including the transit project's large OSM/GTFS
-inputs, Java 21 / `osmium` prerequisites, and any required operator credentials
-such as `SEC_USER_AGENT`. It does not install system tools, publish statuses,
-commit changes, push, or open PRs. Review generated changes, commit them, then
-run `make test` to publish checks for that commit.
-
-Data refreshes run only when root `make data` / `make refresh` or a project's
-`make data` is invoked. Outputs are rebuilt by those commands and by explicit
-build commands (`make` / `make all` inside a project, including the build step in
-root `make test`). There is no configured update frequency or automatic refresh.
+Optional interaction checks: `node admin_tests/map_explorer.cjs`,
+`node admin_tests/permit_search.cjs`, and each plot project's Node model tests.
 
 ## Adding a project
 
-Use the scaffolder — it is the recommended way to start a project, and it writes
-the layout and target contract above for you:
+Always run `./new-project.py my-new-project`. It creates the standard layout
+and a working placeholder using the root environment. Replace the fetch/build
+placeholders and README TODOs, configure shared components, update `site.toml`,
+add a catalog row above, then run `make manifest`. New projects inherit the root
+lock; add genuinely new dependencies at the root rather than creating another
+environment. Update the scaffolder whenever the standard changes.
 
-```bash
-./new-project.py my-new-map
-cd my-new-map && make && make test    # both pass immediately
-```
+## Reuse audit
 
-The generated project is a working end-to-end placeholder: `src/fetch_data.py`
-writes `data/`, `src/build_site.py` renders `output/my-new-map.html` from it, and
-a smoke test covers the build. Replace those three with the real thing, fill in
-the `TODO`s in the project's `README.md`, set the homepage blurb in
-`pyproject.toml` (`[project].description` + `[tool.staticsite].title`), and add a
-row to the table at the top of this README. Make its real fetch content-aware
-so unchanged upstream data preserves committed bytes and timestamps. Root
-`make test` and `make data` discover the project automatically.
+The common Make recipes live in environment.mk, python-project.mk and
+artifact-project.mk. Project Makefiles now declare their builder, inputs and
+formats; transit retains its routing, GeoJSON and osmium rules. Makefile/fragment
+changes also invalidate their configured artifacts. Successful builds must
+produce the declared output; unchanged bytes still advance the build mtime so
+Make does not repeatedly rerun a content-aware publisher. Keep these small
+configuration files rather than inferring build dependencies from filenames.
 
-Do not hand-roll a new project directory; scaffolding keeps the projects
-identical in shape.
+This pass also consolidated safe script JSON, atomic HTML publication,
+monthly/quarterly time-series mechanics, search normalization and existing map
+HTML escaping. The cleanup guard rejects ancestor/source/data directories, and
+Python-version changes invalidate environment setup.
 
-## Machine-readable index (`sites.json`)
+The remaining candidates have different policies and should not be merged
+blindly:
 
-Each project's title and one-line blurb are aggregated into
-[`sites.json`](sites.json) — a structured index that downstream consumers (e.g.
-[tianle91.github.io](https://github.com/tianle91/tianle91.github.io), which
-vendors this repo as a submodule) read to regenerate their site list without
-parsing prose. Regenerate it from the repo root whenever a project's metadata
-changes:
+- **Downloads:** a shared streaming/staging helper could serve permits, DineSafe
+  and transit. Preserve conditional requests, fresh-stream retries, bulk-export
+  fallback and read-only operator-supplied files as explicit caller policies.
+- **ArcGIS batches:** crime and flood maps both enumerate IDs and validate
+  complete batches. Share the mechanics only with hooks for ID extraction,
+  GET/POST transport, geometry format and source-change checks. Keep schema
+  validation, joins and geometry simplification local.
+- **Map initialization and marker factories:** repeated Leaflet setup, tile
+  attribution and marker styling are candidates. Preserve clustering, pane order
+  and project-specific styling; do not turn all map logic into a generic framework.
+- **DOM/SVG primitives:** the Ontario dual-axis plot and shared plot renderer
+  still have small element/date-tick helpers in common. Share primitives before
+  trying to unify their different axis, coverage and observation semantics.
+- **Provenance fallback:** the shared plot helper retains the existing CSV-mtime
+  fallback when the retrieval sidecar is absent. Prefer a preserved source or
+  reported retrieval date before that fallback; clone time should not imply new
+  upstream data.
+- **Dependency groups:** shared Python files currently invalidate all HTML/PNG
+  outputs. Separate map/plot/pipeline prerequisites would avoid unrelated rebuilds
+  as the package grows, without invalidating cached data-derived GeoJSON.
 
-```bash
-make manifest    # rewrite sites.json from the projects' pyproject.toml
-make check       # fail if sites.json is stale (also included in root make test)
-```
-
-See [AGENTS.md](AGENTS.md#site-listing-metadata-sitesjson) for the metadata
-fields and conventions.
+Address matching, business-name matching, reporting-period policies, source
+parsers, outlier rejection and fallback geography remain local by design.

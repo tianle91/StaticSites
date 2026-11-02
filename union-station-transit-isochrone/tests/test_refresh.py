@@ -44,6 +44,7 @@ def local(tmp_path, monkeypatch):
     (data / "transit_model.json").write_text("{}")
     (src / "fetch_isochrones.py").write_text("# routing")
     (tmp_path / "uv.lock").write_text("lock")
+    monkeypatch.setattr(refresh, "LOCK_FILE", tmp_path / "uv.lock")
     return data
 
 
@@ -181,14 +182,18 @@ def test_routing_cache_invalidation_and_failure_preserves_previous(local, monkey
     refresh.refresh_routing(state, osm, [gtfs], DATE)
     destination = local / "reachability.json"
     before = destination.stat().st_mtime_ns
+    sidecar = local / "station_itineraries.json"
+    assert sidecar.exists()
+    sidecar.unlink()
     refresh.refresh_routing(state, osm, [gtfs], DATE)
+    assert sidecar.exists()
     assert len(runs) == 1
     assert destination.stat().st_mtime_ns == before
     monkeypatch.setattr(refresh.routing, "PERCENTILE", 50)
     refresh.refresh_routing(state, osm, [gtfs], DATE)
     assert len(runs) == 2
     assert destination.stat().st_mtime_ns == before  # same substantive result
-    for path in (osm, refresh.ROOT / "uv.lock", refresh.ROOT / "src/fetch_isochrones.py"):
+    for path in (osm, refresh.LOCK_FILE, refresh.ROOT / "src/fetch_isochrones.py"):
         path.write_text("changed")
         refresh.refresh_routing(state, osm, [gtfs], DATE)
     assert len(runs) == 5

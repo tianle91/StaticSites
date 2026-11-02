@@ -17,7 +17,7 @@ const expected = {
   "union-station-transit-isochrone": [129, 129],
 };
 const shared = fs.readFileSync(
-  path.join(root, "toronto-crime-map/src/explorer.js"),
+  path.join(root, "src/staticsites/assets/maps/explorer.js"),
   "utf8",
 );
 async function harness(slug, mobile = false, override = {}) {
@@ -317,13 +317,15 @@ async function harness(slug, mobile = false, override = {}) {
     console: override.console || console,
   });
   const code = fs.readFileSync(
-    path.join(root, slug, "src/explorer.js"),
+    path.join(root, "src/staticsites/assets/maps/explorer.js"),
     "utf8",
   );
   if (slug !== "toronto-building-permits-map")
     assert.equal(code, shared, slug + " has drifted from the common controls");
-  if (["toronto-building-permits-map", "toronto-dinesafe-map"].includes(slug))
+  if (["toronto-building-permits-map", "toronto-dinesafe-map"].includes(slug)) {
+    vm.runInContext(fs.readFileSync(path.join(root, "src/staticsites/assets/maps/query.js"), "utf8"), context);
     vm.runInContext(fs.readFileSync(path.join(root, slug, "src/search.js"), "utf8"), context);
+  }
   if (slug === "toronto-building-permits-map") {
     vm.runInContext(fs.readFileSync(path.join(root, slug, "src/startup.js"), "utf8"), context);
     for (const fn of document.listeners.DOMContentLoaded || []) fn();

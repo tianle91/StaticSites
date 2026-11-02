@@ -9,6 +9,9 @@ client-side (in the browser) when opened with an internet connection.
 import datetime
 import json
 import pathlib
+from staticsites.assets import source_text, read_template
+from staticsites.assets import script_json
+from staticsites.pipeline import write_if_changed
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent  # project root (src/ is one level down)
 DATA_DIR = ROOT / "data"
@@ -56,20 +59,16 @@ if shelters and shelters.get("locations"):
     shelter_meta = {"snapshot": shelters.get("date", ""), "pulled": pulled, "count": shelter_count}
 
 # Data passed to the browser as JSON (only what the page needs).
-PAYLOAD = json.dumps(
-    {
+PAYLOAD = script_json({
         "categories": CATEGORIES,
         "locations": LOCATIONS,
         "directories": DIRECTORIES,
         "center": CENTER,
         "zoom": ZOOM,
         "shelter_meta": shelter_meta,
-    },
-    indent=2,
-    ensure_ascii=False,
-)
+    })
 
-HTML = (ROOT / "src/page.html").read_text(encoding="utf-8")
+HTML = read_template(ROOT / "src/page.html")
 
 
 def main() -> None:
@@ -78,11 +77,11 @@ def main() -> None:
     # < inside the JSON string literals, leaving the parsed data unchanged.
     out = HTML
     for token, filename in [("__EXPLORER_CSS__", "explorer.css"), ("__EXPLORER_JS__", "explorer.js"), ("__APP_JS__", "app.js")]:
-        out = out.replace(token, (ROOT / "src" / filename).read_text(encoding="utf-8"))
+        out = out.replace(token, source_text(ROOT, filename))
     out = out.replace("__PAYLOAD__", PAYLOAD.replace("<", "\\u003c"))
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     target = OUT_DIR / "toronto-vulnerable-services-map.html"
-    target.write_text(out, encoding="utf-8")
+    write_if_changed(target, out)
     curated = len(LOCATIONS) - shelter_count
     print(f"Wrote {target} ({curated} curated locations + {shelter_count} live shelter "
           f"locations, {len(DIRECTORIES)} directory links)")

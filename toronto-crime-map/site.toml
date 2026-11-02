@@ -1,0 +1,4 @@
+[site]
+name = "toronto-crime-map"
+title = "Toronto reported crime map"
+description = "Toronto reported crime map — Toronto Police reports merged by incident ID with seven type layers, text search and approximate intersection locations."

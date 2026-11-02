@@ -12,9 +12,9 @@ of parsing prose out of the READMEs. Each entry is:
 
 where, per project (see AGENTS.md):
 
-  - `slug`        = the directory name = [project].name
-  - `title`       = [tool.staticsite].title            (the link text)
-  - `description` = [project].description with the leading "<title> - " stripped
+  - `slug`        = the directory name = [site].name
+  - `title`       = [site].title            (the link text)
+  - `description` = [site].description with the leading "<title> - " stripped
                     (so description reads as a standalone sentence, and the blurb
                     after the title is not duplicated)
   - `output`      = "<slug>/output/<slug>.html"        (the standard artifact)
@@ -32,18 +32,18 @@ ROOT = pathlib.Path(__file__).resolve().parent
 MANIFEST = ROOT / "sites.json"
 
 # Space + em dash + space: the separator between a site's title and its blurb in
-# every [project].description. Kept as a named constant so the write side (the
-# pyproject files) and this read side agree on the exact character.
+# every [site].description. Kept as a named constant so the write side (the
+# site.toml files) and this read side agree on the exact character.
 TITLE_SEP = " — "
 
 
-def read_pyproject_subset(text):
+def read_metadata_subset(text):
     """Return {table: {key: str_value}} for the simple `key = "value"` lines.
 
     Deliberately minimal: it only understands single-line string assignments,
     which is all this script needs (name, description, title). Arrays, numbers,
     and multi-line values are ignored, and `#` comments are skipped. Good enough
-    for our own controlled pyproject.toml files, and avoids a tomllib dependency
+    for our own controlled site.toml files, and avoids a tomllib dependency
     that the system python 3.9 does not have.
     """
     data = {}
@@ -63,6 +63,12 @@ def read_pyproject_subset(text):
         quote = rest[:1]
         if quote not in ('"', "'"):
             continue  # not a string value (array, number, bool) -- not needed
+        if quote == '"':
+            try:
+                data[table][key.strip()] = json.JSONDecoder().raw_decode(rest)[0]
+                continue
+            except ValueError:
+                pass
         end = rest.find(quote, 1)
         if end == -1:
             continue
@@ -76,23 +82,23 @@ def collect_sites():
     for makefile in sorted(ROOT.glob("*/Makefile")):
         project_dir = makefile.parent
         slug = project_dir.name
-        pyproject = project_dir / "pyproject.toml"
-        if not pyproject.exists():
-            raise SystemExit("{}: has a Makefile but no pyproject.toml".format(slug))
+        metadata = project_dir / "site.toml"
+        if not metadata.exists():
+            raise SystemExit("{}: has a Makefile but no site.toml".format(slug))
 
-        meta = read_pyproject_subset(pyproject.read_text(encoding="utf-8"))
-        project = meta.get("project", {})
-        staticsite = meta.get("tool.staticsite", {})
+        meta = read_metadata_subset(metadata.read_text(encoding="utf-8"))
+        project = meta.get("site", {})
+        staticsite = project
 
         name = project.get("name")
         if name != slug:
             raise SystemExit(
-                "{}: [project].name is {!r}, expected to match the directory name"
+                "{}: [site].name is {!r}, expected to match the directory name"
                 .format(slug, name))
         title = staticsite.get("title")
         if not title:
             raise SystemExit(
-                "{}: missing [tool.staticsite].title -- add it (see AGENTS.md)"
+                "{}: missing [site].title -- add it (see AGENTS.md)"
                 .format(slug))
         description = project.get("description", "")
         prefix = title + TITLE_SEP

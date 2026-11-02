@@ -14,6 +14,9 @@ a pin.
 """
 import json
 import pathlib
+from staticsites.assets import source_text, read_template
+from staticsites.assets import script_json
+from staticsites.pipeline import write_if_changed
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent  # project root (src/ is one level down)
 DATA_DIR = ROOT / "data"
@@ -70,8 +73,7 @@ for e in DATA.get("establishments", []):
 CENTER = [43.6532, -79.3832]  # downtown Toronto; the user's location recenters when permitted
 ZOOM = 13
 
-PAYLOAD = json.dumps(
-    {
+PAYLOAD = script_json({
         "categories": STATUS_CATEGORIES,
         "establishments": establishments,
         "center": CENTER,
@@ -83,12 +85,9 @@ PAYLOAD = json.dumps(
             "counts": counts,
             "sample": bool(DATA.get("sample")),
         },
-    },
-    indent=2,
-    ensure_ascii=False,
-)
+    })
 
-HTML = (ROOT / "src/page.html").read_text(encoding="utf-8")
+HTML = read_template(ROOT / "src/page.html")
 
 
 def main() -> None:
@@ -96,12 +95,12 @@ def main() -> None:
     # JSON can't close the <script> element and break the page. These become
     # < inside the JSON string literals, leaving the parsed data unchanged.
     out = HTML
-    for token, filename in [("__SEARCH_JS__", "search.js"), ("__EXPLORER_CSS__", "explorer.css"), ("__EXPLORER_JS__", "explorer.js"), ("__APP_JS__", "app.js")]:
-        out = out.replace(token, (ROOT / "src" / filename).read_text(encoding="utf-8"))
+    for token, filename in [("__QUERY_JS__", "query.js"), ("__SEARCH_JS__", "search.js"), ("__EXPLORER_CSS__", "explorer.css"), ("__EXPLORER_JS__", "explorer.js"), ("__APP_JS__", "app.js")]:
+        out = out.replace(token, source_text(ROOT, filename))
     out = out.replace("__PAYLOAD__", PAYLOAD.replace("<", "\\u003c"))
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     target = OUT_DIR / "toronto-dinesafe-map.html"
-    target.write_text(out, encoding="utf-8")
+    write_if_changed(target, out)
     breakdown = ", ".join(
         f"{counts[k]} {STATUS_CATEGORIES[k]['label']}" for k in STATUS_CATEGORIES if counts[k]
     )

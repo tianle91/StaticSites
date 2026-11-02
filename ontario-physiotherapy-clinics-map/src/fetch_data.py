@@ -26,6 +26,9 @@ import requests
 from geopy.distance import geodesic
 from geopy.extra.rate_limiter import RateLimiter
 from geopy.geocoders import Nominatim
+from staticsites.pipeline import write_if_changed, cached_lookup
+from staticsites.sources import ckan_action
+from staticsites.geocoding import nominatim
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent  # project root (src/ is one level down)
 DATA_DIR = ROOT / "data"
@@ -41,30 +44,12 @@ USER_AGENT = "ontario-physiotherapy-clinics-map/1.0 (+https://github.com/tianle9
 
 # RateLimiter sleeps between calls for us, which is what keeps this inside
 # Nominatim's 1 request/second policy.
-_nominatim = Nominatim(user_agent=USER_AGENT, timeout=30)
-_lookup = RateLimiter(_nominatim.geocode, min_delay_seconds=1.1, swallow_exceptions=False)
+_nominatim, _lookup = nominatim(USER_AGENT)
 
 cache = json.loads(CACHE_PATH.read_text(encoding="utf-8")) if CACHE_PATH.exists() else {}
 
 
-def write_if_changed(path, content):
-    """Publish validated content atomically; unchanged files keep their mtime."""
-    if path.exists() and path.read_text(encoding="utf-8") == content:
-        return False
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=path.parent,
-                                     delete=False) as stream:
-        temporary = pathlib.Path(stream.name)
-        try:
-            stream.write(content)
-        except BaseException:
-            temporary.unlink(missing_ok=True)
-            raise
-    try:
-        temporary.replace(path)
-    finally:
-        temporary.unlink(missing_ok=True)
-    return True
+
 
 
 def save_cache() -> None:
@@ -148,12 +133,7 @@ def address_candidates(street, city, postal):
 def _cached(params):
     """Run one Nominatim query, memoised on its parameters."""
     key = params.get("q") or "|".join(f"{k}={v}" for k, v in sorted(params.items()))
-    if key in cache:
-        return cache[key]
-    result = lookup(**params)
-    cache[key] = result  # cache misses too, so reruns don't re-hammer
-    save_cache()
-    return result
+    return cached_lookup(cache, key, lambda: lookup(**params), save_cache)
 
 
 def geocode(street, city, postal, center):
@@ -207,13 +187,7 @@ OUTLIER_KM = 40
 
 
 def ckan(action, **params):
-    r = requests.get(f"{CKAN}/api/3/action/{action}", params=params,
-                     headers={"User-Agent": USER_AGENT}, timeout=60)
-    r.raise_for_status()
-    payload = r.json()
-    if not payload.get("success"):
-        raise RuntimeError(f"CKAN {action} failed: {payload}")
-    return payload["result"]
+    return ckan_action(CKAN, action, params, user_agent=USER_AGENT, get=requests.get, timeout=60)
 
 
 def clean(value) -> str:

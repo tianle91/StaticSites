@@ -1203018,15 +1203018,21 @@ const Explorer = (() => {
 ;
     </script>
     <script>
-      /* Keep this helper project-local. House numbers are identifiers, not substrings. */
-const FeatureSearch = (() => {
-  const normalize = (value) =>
-    String(value ?? "")
+      /* Shared text normalization; address/business-name matching stays in adapters. */
+const SearchQuery = {
+  normalize(value) {
+    return String(value ?? "")
       .toLowerCase()
       .replace(/[.,]/g, " ")
       .replace(/[\u2010-\u2015]/g, "-")
       .replace(/\s+/g, " ")
       .trim();
+  },
+};
+
+/* Keep this helper project-local. House numbers are identifiers, not substrings. */
+const FeatureSearch = (() => {
+  const normalize = SearchQuery.normalize;
   function compile(value, { addressOnly = true } = {}) {
     const query = normalize(value);
     // Full permit numbers begin with two numeric groups, so they stay in the
@@ -1203074,12 +1203080,7 @@ L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
 const layers = {};
 for (const key in DATA.categories) layers[key] = L.layerGroup().addTo(map);
 
-function esc(s) {
-  return String(s == null ? "" : s).replace(
-    /[&<>"]/g,
-    (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c],
-  );
-}
+const esc = Explorer.esc;
 function catFor(key) {
   return DATA.categories[key] || { label: "Other / Unknown", color: "#777" };
 }

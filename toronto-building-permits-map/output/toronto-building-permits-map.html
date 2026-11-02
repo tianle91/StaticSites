@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Toronto building permits</title>
-    <meta name="permits-build" content="60b676f9a5dc" />
+    <meta name="permits-build" content="02028f0f8e1f" />
     <script>/* Installed before external scripts and the large payload: even an early load
  * failure must leave a useful screen on a phone without a developer console. */
 const PermitStartup = (() => {
@@ -3015964,15 +3015964,21 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
     ]
   ]
 }</script>
-    <script>/* Keep this helper project-local. House numbers are identifiers, not substrings. */
-const FeatureSearch = (() => {
-  const normalize = (value) =>
-    String(value ?? "")
+    <script>/* Shared text normalization; address/business-name matching stays in adapters. */
+const SearchQuery = {
+  normalize(value) {
+    return String(value ?? "")
       .toLowerCase()
       .replace(/[.,]/g, " ")
       .replace(/[\u2010-\u2015]/g, "-")
       .replace(/\s+/g, " ")
       .trim();
+  },
+};
+
+/* Keep this helper project-local. House numbers are identifiers, not substrings. */
+const FeatureSearch = (() => {
+  const normalize = SearchQuery.normalize;
   function compile(value) {
     const query = normalize(value);
     // A house number (with optional street text) must match as a complete

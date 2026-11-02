@@ -1,18 +1,10 @@
-# FINRA margin debt vs. S&P 500 / M2 / CPI / PPI, rebased to an anchor date.
-# Run from this directory: cd margin-sp500-m2-visualization && make
-# Layout and target contract are the repo standard - see ../AGENTS.md.
-
+# Artifact configuration; recipes and environment management are shared.
 PROJECT := margin-sp500-m2-visualization
-OUT_PNG := output/$(PROJECT).png
-OUTPUTS := output/$(PROJECT).html $(OUT_PNG)
-SCRIPT := src/plot_macro_series.py
-
+BUILD_SCRIPT := src/plot_macro_series.py
+DATA_INPUTS := data/series.csv $(wildcard data/generated_at.txt)
+ARTIFACT_FORMATS := html png
+BUILD_OUTPUT_FLAG := -o
+BUILD_INPUTS := $(BUILD_SCRIPT)
 SNAPSHOT_SCRIPT := src/snapshot_site.py
 
-include ../python-project.mk
-
-$(OUT): $(SCRIPT) src/chart_style.py src/chart.css src/chart.js data/series.csv $(wildcard data/generated_at.txt data/fcf_source.txt)
-	$(PY) $(SCRIPT) -o $(OUT)
-
-$(OUT_PNG): $(SCRIPT) src/chart_style.py data/series.csv $(wildcard data/generated_at.txt data/fcf_source.txt)
-	$(PY) $(SCRIPT) -o $(OUT_PNG)
+include ../artifact-project.mk

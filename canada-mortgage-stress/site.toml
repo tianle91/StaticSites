@@ -1,0 +1,4 @@
+[site]
+name = "canada-mortgage-stress"
+title = "Ontario Mortgage Stress"
+description = "Ontario Mortgage Stress — monthly Ontario bank mortgage arrears including CMHC forecasts and Toronto-area house prices, plotted over their shared available period."

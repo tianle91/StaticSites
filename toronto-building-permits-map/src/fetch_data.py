@@ -17,6 +17,7 @@ import urllib.parse
 
 import ijson
 import requests
+from staticsites.pipeline import write_snapshot
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 DATA_DIR = ROOT / "data"
@@ -169,26 +170,7 @@ def normalize(permits, addresses, expected_count=None):
     return {"columns": COLUMNS, "stats": {"total": len(result), "mapped": len(result) - unmatched, "unmatched": unmatched}, "permits": result}
 
 
-def write_snapshot(path, substantive):
-    existing = json.loads(path.read_text()) if path.exists() else {}
-    previous = {k: v for k, v in existing.items() if k != "retrieved_at"}
-    if previous == substantive:
-        return False
-    payload = {"retrieved_at": datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds"), **substantive}
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=path.parent, delete=False) as stream:
-        temporary = pathlib.Path(stream.name)
-        try:
-            json.dump(payload, stream, indent=2, ensure_ascii=False, allow_nan=False)
-            stream.write("\n")
-        except BaseException:
-            temporary.unlink(missing_ok=True)
-            raise
-    try:
-        temporary.replace(path)
-    finally:
-        temporary.unlink(missing_ok=True)
-    return True
+
 
 
 def source_count(resources, directory):

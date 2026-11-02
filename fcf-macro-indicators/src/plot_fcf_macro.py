@@ -27,7 +27,8 @@ import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from chart_style import chart_page, compact_label, matplotlib_style, png_sources, series_data
+from staticsites.charts import chart_page, compact_label, matplotlib_style, png_sources, series_data
+from staticsites import timeseries
 
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT_DIR = ROOT / "output"
@@ -205,46 +206,23 @@ def data_sources() -> list[tuple[str, str]]:
 
 
 def data_pulled_date() -> str:
-    """The date the committed data was pulled (stamped by `make data`), falling
-    back to the CSV's own modification date so every chart carries a data date."""
-    if PULLED_STAMP.exists():
-        stamp = PULLED_STAMP.read_text(encoding="utf-8").strip()
-        if stamp:
-            return stamp[:10]
-    if SERIES_CSV.exists():
-        return date.fromtimestamp(SERIES_CSV.stat().st_mtime).isoformat()
-    return ""
+    return timeseries.data_pulled_date(PULLED_STAMP, SERIES_CSV)
 
 
 def _quarter_end(ts: pd.Timestamp) -> pd.Timestamp:
-    ts = pd.Timestamp(ts).normalize()
-    return ts.to_period("Q").to_timestamp(how="end").normalize()
+    return timeseries.period_end(ts, "Q")
 
 
 def _baseline_level(s: pd.Series, anchor: pd.Timestamp) -> float:
-    """Last non-null observation on or before the quarter-end of the anchor."""
-    anchor_qe = _quarter_end(anchor)
-    s = s.dropna().sort_index()
-    if s.empty:
-        raise ValueError("Series is empty after dropping NaNs.")
-    head = s.loc[:anchor_qe]
-    if head.empty:
-        raise ValueError(f"No observations on or before {anchor_qe:%Y-%m-%d}.")
-    return float(head.iloc[-1])
+    return timeseries.baseline_level(s, anchor, frequency="Q")
 
 
 def _rebase_to_anchor(s: pd.Series, anchor: pd.Timestamp) -> pd.Series:
-    base = _baseline_level(s, anchor)
-    if base == 0:
-        raise ValueError("Baseline level is zero; cannot rebase.")
-    return 100.0 * s / base
+    return timeseries.rebase(s, anchor, frequency="Q")
 
 
 def load_series() -> pd.DataFrame:
-    """Load the committed quarterly grid written by fetch_data.py."""
-    if not SERIES_CSV.exists():
-        raise SystemExit(f"{SERIES_CSV} is missing - run `make data` to fetch it.")
-    return pd.read_csv(SERIES_CSV, parse_dates=["date"], index_col="date").sort_index()
+    return timeseries.load_series(SERIES_CSV)
 
 
 def _aggregate(frame: pd.DataFrame, prefix: str) -> pd.Series:

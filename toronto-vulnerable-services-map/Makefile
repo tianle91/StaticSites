@@ -1,12 +1,7 @@
-# Interactive map of Toronto/Ontario services for vulnerable populations.
-# Run from this directory: cd toronto-vulnerable-services-map && make
-# Layout and target contract are the repo standard - see ../AGENTS.md.
-
+# Artifact configuration; recipes and environment management are shared.
 PROJECT := toronto-vulnerable-services-map
-
+BUILD_SCRIPT := src/build_map.py
+DATA_INPUTS := data/services.json $(wildcard data/shelters.json data/geocode_cache.json)
 SNAPSHOT_SCRIPT := src/snapshot_site.py
 
-include ../python-project.mk
-
-$(OUT): $(wildcard src/*.html src/*.js src/*.css src/vendor/*) src/build_map.py data/services.json $(wildcard data/shelters.json data/geocode_cache.json)
-	$(PY) src/build_map.py
+include ../artifact-project.mk

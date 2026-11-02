@@ -59,3 +59,25 @@ def test_map_html_rendered(built):
     assert "__PAYLOAD__" not in html          # payload was substituted
     assert "Morning commute to Union Station" in html
     assert "service_assumption" in html       # data wired through
+
+
+def test_routed_station_snapshot_survives_without_large_grid(tmp_path):
+    for sub in ('src','data','output'):
+        (tmp_path/sub).mkdir()
+    shutil.copytree(ROOT/'src',tmp_path/'src',dirs_exist_ok=True)
+    for name in ('transit_model.json','station_itineraries.json'):
+        shutil.copy(ROOT/'data'/name,tmp_path/'data'/name)
+    (tmp_path/'output/isochrones.geojson').write_text(json.dumps({
+        'type':'FeatureCollection','properties':{'source':'r5py travel-time grid'},'features':[]}))
+    subprocess.run([sys.executable,'src/build_map.py'],cwd=tmp_path,check=True)
+    html=(tmp_path/'output/union-station-transit-isochrone.html').read_text()
+    payload=json.JSONDecoder().raw_decode(html.split('const DATA = ',1)[1])[0]
+    cached=json.loads((ROOT/'data/station_itineraries.json').read_text())
+    assert payload['stations'] == cached['stations']
+    assert payload['generated_at'] == cached['generated_at']
+    # A deliberate curated rebuild must not inherit routed station trip claims.
+    subprocess.run([sys.executable,'src/build_isochrones.py'],cwd=tmp_path,check=True)
+    subprocess.run([sys.executable,'src/build_map.py'],cwd=tmp_path,check=True)
+    html=(tmp_path/'output/union-station-transit-isochrone.html').read_text()
+    payload=json.JSONDecoder().raw_decode(html.split('const DATA = ',1)[1])[0]
+    assert payload['stations'] == []

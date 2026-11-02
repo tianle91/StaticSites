@@ -1,0 +1,37 @@
+[project]
+name = "staticsites"
+version = "0.1.0"
+description = "Build-time components for standalone static maps and plots"
+requires-python = ">=3.11"
+dependencies = [
+    "requests>=2.34.2",  # HTTP clients used by data-source adapters
+    "beautifulsoup4>=4.15.0",  # CMHC accessible tables
+    "pypdf>=6.21.4",  # TRREB report extraction
+    "ijson>=3.3",  # streamed municipal bulk exports
+]
+
+[dependency-groups]
+dev = ["pytest>=8.0", "playwright>=1.50"] # tests and explicit review snapshots
+plots = ["matplotlib>=3.8", "numpy>=1.26", "pandas>=2.1", "pandas-datareader>=0.11", "openpyxl>=3.1", "yfinance>=0.2.40"]
+maps = ["geopy>=2.4", "shapely>=2.0"] # geocoding/rate limits and polygon operations
+transit = ["geopandas>=0.14", "r5py>=1.1"] # optional routing tools; Java setup remains explicit
+
+[build-system]
+requires = ["hatchling>=1.26"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/staticsites"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+
+[tool.uv]
+default-groups = ["dev", "plots", "maps", "transit"]
+# Preserve the existing numeric/geometry engines during extraction; upgrade them
+# separately so refactoring does not silently change polygons or chart values.
+constraint-dependencies = [
+    "matplotlib==3.11.1; python_version >= '3.12'", "numpy==2.5.1; python_version >= '3.12'", "pandas==3.0.3",
+    "python-dateutil==2.9.0.post0", "shapely==2.1.2", "geopandas==1.1.4",
+]

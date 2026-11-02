@@ -1,9 +1,10 @@
 # Generic Python/venv rules live in the repo-root .gitignore.
 # r5py inputs (large OSM extracts + GTFS feeds), R5's build cache, and the
-# generated travel-time grid. Only the curated model + the data README ship.
+# generated travel-time grid. Ship the curated model and small station snapshot.
 data/*
 !data/README.md
 !data/transit_model.json
+!data/station_itineraries.json
 *.osm.pbf
 *.mapdb
 *.mapdb.p

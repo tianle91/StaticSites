@@ -82,7 +82,7 @@ Optional browser fixtures check incomplete rendering, moving paths, page errors,
 overflow and blocked external resources without live data or network assets:
 
 ```sh
-.venv/bin/python -m pytest -q tests/browser_snapshots.py
+make browser-test # shared offline browser fixtures; browser setup is explicit
 ```
 
 ## Build, test and refresh
@@ -136,3 +136,9 @@ The committed artifact is `output/canada-mortgage-stress.html`.
   and [September 2026](https://public.trreb.ca/wp-content/files/market-stats/market-watch/mw2609.pdf)
   Market Watch reports: monthly sale-price tables. Copyright Toronto Regional
   Real Estate Board. Exact report URLs are also in the HTML and JSON.
+
+Shared build-time components and the single Python environment are documented
+in the [repo README](../README.md). Project `make clean-deps` removes that shared
+environment, not a private environment. Add dependencies at the repository root;
+`site.toml` holds listing metadata and `pytest.ini` configures this project’s tests.
+The generated HTML remains standalone and embeds its application assets/data.

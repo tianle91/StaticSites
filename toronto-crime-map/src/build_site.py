@@ -2,6 +2,9 @@
 """Render a portable HTML map from committed data and browser libraries, offline."""
 import json
 import pathlib
+from staticsites.assets import source_text, read_template
+from staticsites.assets import script_json
+from staticsites.pipeline import write_if_changed
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 DATA_DIR = ROOT / "data"
@@ -24,24 +27,23 @@ def prepare_payload(data):
 
 def render(data_dir=DATA_DIR):
     data = prepare_payload(json.loads((data_dir / "crimes.json").read_text(encoding="utf-8")))
-    template = (ROOT / "src/page.html").read_text(encoding="utf-8")
+    template = read_template(ROOT / "src/page.html")
     for token, filename in [("__EXPLORER_CSS__", "explorer.css"), ("__EXPLORER_JS__", "explorer.js"), ("__APP_JS__", "app.js")]:
-        template = template.replace(token, (ROOT / "src" / filename).read_text(encoding="utf-8"))
+        template = template.replace(token, source_text(ROOT, filename))
     for key, files in {
         "__CSS__": ["leaflet.css", "markercluster.css", "markercluster-default.css"],
         "__JS__": ["leaflet.js", "markercluster.js"],
     }.items():
         template = template.replace(key, "\n".join((data_dir / name).read_text(encoding="utf-8") for name in files))
     # Insert data last so upstream text cannot be mistaken for template tokens.
-    return template.replace("__PAYLOAD__", json.dumps(data, indent=2, ensure_ascii=False).replace("<", "\\u003c"))
+    return template.replace("__PAYLOAD__", script_json(data))
 
 
 def main():
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     target = OUT_DIR / "toronto-crime-map.html"
     html = render()
-    if not target.exists() or target.read_text(encoding="utf-8") != html:
-        target.write_text(html, encoding="utf-8")
+    write_if_changed(target, html)
     print(f"Built {target} ({len(html):,} characters)")
 
 

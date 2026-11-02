@@ -58,36 +58,7 @@
 
         <noscript>Enable JavaScript to search permits.</noscript>
         <div id="stats" role="status" aria-live="polite"></div>
-        <nav class="explorer-tabs" role="tablist" aria-label="Map exploration">
-          <button
-            type="button"
-            role="tab"
-            id="layers-tab"
-            data-tab="layers"
-            aria-controls="layers-panel"
-            aria-selected="true"
-          >
-            Layers</button
-          ><button
-            type="button"
-            role="tab"
-            id="results-tab"
-            data-tab="results"
-            aria-controls="results-panel"
-            aria-selected="false"
-          >
-            Results</button
-          ><button
-            type="button"
-            role="tab"
-            id="sources-tab"
-            data-tab="sources"
-            aria-controls="sources-panel"
-            aria-selected="false"
-          >
-            Data sources
-          </button>
-        </nav>
+        __MAP_TABS__
         <section
           id="layers-panel"
           class="explorer-panel"
@@ -220,7 +191,8 @@
       __CLUSTER_JS__;
     </script>
     <script type="application/json" id="permit-data">__PAYLOAD__</script>
-    <script>__SEARCH_JS__</script>
+    <script>__QUERY_JS__
+__SEARCH_JS__</script>
     <script>
       __EXPLORER_JS__;
     </script>

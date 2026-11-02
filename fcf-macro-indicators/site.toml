@@ -1,0 +1,4 @@
+[site]
+name = "fcf-macro-indicators"
+title = "Free cash flow vs. the macro backdrop"
+description = "Free cash flow vs. the macro backdrop — quarterly free cash flow and cash balances of a basket of large public companies against M2 money supply, the S&P 500, and the 3M / 2Y / 10Y / 30Y Treasury curve, rebased to a chosen anchor date."

@@ -6,7 +6,7 @@ import re
 import pandas as pd
 import pytest
 
-from chart_style import chart_page, series_data
+from staticsites.charts import chart_page, series_data
 from plot_fcf_macro import build_rebased, chart_payload, render_html
 
 
