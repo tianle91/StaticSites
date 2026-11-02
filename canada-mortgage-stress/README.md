@@ -109,6 +109,9 @@ Fetching uses requests, BeautifulSoup for CMHC accessible chart tables, and
 pypdf layout extraction for TRREB PDFs. All required inputs must validate before
 one `data/series.json` is replaced atomically. Missing periods, duplicates,
 implausible values, truncated tables and missing report links fail the refresh.
+The latest monthly price table must cover the full previous year and January
+through the report month discovered from its PDF filename. Combined history
+must also reach that month; surviving extracted rows cannot shorten the endpoint.
 Unchanged normalized records preserve bytes, timestamps and mtime. Raw PDFs are
 not retained. Network access is confined to `make data` and dependency setup;
 installed builds/tests stay offline. Failed refreshes retain previous data/output.

@@ -9,6 +9,8 @@ import pytest
 from fetch_data import (collect, parse_monthly_text, publish, quarterly_group,
                         validate_dataset)
 import build_site
+import fetch_data
+from types import SimpleNamespace
 
 ROOT = Path(__file__).resolve().parent.parent
 FIXTURES = Path(__file__).parent / 'fixtures'
@@ -103,6 +105,40 @@ def test_required_source_failure_does_not_publish(data, tmp_path):
     def fail(url): raise RuntimeError('required-source download failed')
     with pytest.raises(RuntimeError): publish(collect(fail), target)
     assert target.read_bytes() == original
+
+
+@pytest.mark.parametrize('damage', [None, 'terminal', 'prior_year', 'future'])
+def test_latest_report_coverage_is_anchored_to_filename(data, tmp_path, monkeypatch, damage):
+    """A readable but truncated latest PDF must never replace published history."""
+    monkeypatch.setattr(fetch_data, 'parse_cmhc', lambda _: deepcopy(data['groups'][:-2]))
+    monkeypatch.setattr(fetch_data, 'parse_annual', lambda _: data['groups'][-1]['series'][0]['points'])
+
+    def parse_fixture(content, source):
+        vintage = {'mw2112.pdf': '2021', 'mw2312.pdf': '2023',
+                   'mw2512.pdf': '2025', 'mw2609.pdf': 'latest'}[source.rsplit('/', 1)[-1]]
+        parsed = parse_monthly_text((FIXTURES / f'trreb-{vintage}.txt').read_text(), source)
+        if vintage == 'latest':
+            if damage == 'terminal': parsed.pop('2026-09')
+            elif damage == 'prior_year': parsed.pop('2025-01')
+            elif damage == 'future': parsed['2026-10'] = {**parsed['2026-09'], 'period': '2026-10'}
+        return parsed
+
+    monkeypatch.setattr(fetch_data, 'parse_monthly', parse_fixture)
+
+    def get(url):
+        return SimpleNamespace(content=b'', text='<a href="/mw2609.pdf">September report</a>')
+
+    target = tmp_path / 'series.json'
+    target.write_text(json.dumps(data, indent=2))
+    original, mtime = target.read_bytes(), target.stat().st_mtime_ns
+    if damage:
+        with pytest.raises(ValueError, match='Latest TRREB report must cover.*2026-09'):
+            publish(collect(get), target)
+        assert target.read_bytes() == original
+        assert target.stat().st_mtime_ns == mtime
+    else:
+        result = collect(get)
+        assert result['groups'][-2]['series'][-1]['points'][-1]['period'] == '2026-09'
 
 
 def test_offline_build_is_deterministic_and_embeds_sources(data, tmp_path, monkeypatch):
