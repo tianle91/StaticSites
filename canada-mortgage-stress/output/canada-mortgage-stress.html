@@ -23,6 +23,8 @@ footer { color:var(--muted); font-size:11px; margin:15px 2px 0; }
 .plot-hover { position:absolute; z-index:1; pointer-events:none; width:max-content; max-width:100%;
   padding:8px 10px; background:var(--surface); border:1px solid var(--line);
   border-radius:5px; box-shadow:0 3px 12px #182d3722; }
+.plot-hover-marker { pointer-events:none; stroke:var(--surface); stroke-width:2; }
+.plot-hover-closest { font-weight:700; }
 .plot-hover-dot { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:6px; }
 .plot-hover-period { font-size:11px; font-weight:600; margin-bottom:4px; }
 .plot-hover > .readout-row, .plot-hover > .readout-row + .readout-row { padding:2px 0; border:0; }
@@ -8441,7 +8443,14 @@ const plotHover = (() => {
   tooltip.className = 'plot-hover';
   tooltip.setAttribute('aria-hidden', 'true');
   tooltip.hidden = true;
-  const hide = () => { tooltip.hidden = true; };
+  const marker = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+  marker.classList.add('plot-hover-marker');
+  marker.setAttribute('r', '5');
+  marker.setAttribute('aria-hidden', 'true');
+  const hide = () => {
+    tooltip.hidden = true;
+    marker.remove();
+  };
   document.addEventListener('pointerdown', event => {
     if (!chart.contains(event.target)) hide();
   });
@@ -8451,21 +8460,38 @@ const plotHover = (() => {
   chart.addEventListener('focusout', hide);
   window.addEventListener('resize', hide);
 
-  function show(clientX, clientY, panel) {
+  function show(clientX, clientY, panel, pointerY, graphic) {
     const title = document.createElement('div');
     title.className = 'plot-hover-period';
     title.textContent = period.textContent;
-    const rows = Array.from(readout.children)
-      .filter(row => row.dataset.panel === panel)
-      .map(row => {
-        const copy = row.cloneNode(true);
-        const dot = document.createElement('span');
-        dot.className = 'plot-hover-dot';
-        dot.style.backgroundColor = row.dataset.color;
-        copy.firstElementChild.prepend(dot);
-        return copy;
-      });
-    tooltip.replaceChildren(title, ...rows);
+    const rows = Array.from(readout.children).filter(row => row.dataset.panel === panel);
+    let closest;
+    let minDistance = Infinity;
+    for (const row of rows) {
+      const distance = Math.abs(Number(row.dataset.plotY) - pointerY);
+      if (distance < minDistance) {
+        closest = row;
+        minDistance = distance;
+      }
+    }
+    if (closest && graphic) {
+      marker.setAttribute('cx', closest.dataset.plotX);
+      marker.setAttribute('cy', closest.dataset.plotY);
+      marker.setAttribute('fill', closest.dataset.color);
+      if (marker.parentNode !== graphic) graphic.append(marker);
+    } else {
+      marker.remove();
+    }
+    const copies = rows.map(row => {
+      const copy = row.cloneNode(true);
+      const dot = document.createElement('span');
+      dot.className = 'plot-hover-dot';
+      dot.style.backgroundColor = row.dataset.color;
+      copy.firstElementChild.prepend(dot);
+      if (row === closest) copy.firstElementChild.classList.add('plot-hover-closest');
+      return copy;
+    });
+    tooltip.replaceChildren(title, ...copies);
     if (!tooltip.isConnected) chart.append(tooltip);
     tooltip.hidden = false;
 
@@ -8485,7 +8511,10 @@ const plotHover = (() => {
   function bind(overlay, inspect, panel) {
     function inspectPointer(event) {
       inspect(event);
-      show(event.clientX, event.clientY, panel);
+      const transform = overlay.getScreenCTM();
+      const pointer = new DOMPoint(event.clientX, event.clientY);
+      const pointerY = transform ? pointer.matrixTransform(transform.inverse()).y : undefined;
+      show(event.clientX, event.clientY, panel, pointerY, overlay.ownerSVGElement);
     }
     overlay.addEventListener('pointermove', event => {
       if (event.pointerType !== 'touch') inspectPointer(event);
@@ -8594,9 +8623,12 @@ function inspectMonth(period) {
     row.append(text('span', metric.id === 'bank' ? 'Ontario bank arrears' : 'Toronto-area price'));
     const match = metric.series.map(series => T.nearestObservation(series,state.inspect,metric.frequency,state)).find(Boolean);
     const detail = text('span','','readout-value');
-    if (match) detail.append(text('strong',format(match.value,metric.unit)),
-      text('span',match.period.replace('-Q',' Q') + (match.status === 'forecast' ? ' · forecast' : ' · observed'),'readout-period'));
-    else detail.append(text('span','No nearby observation','readout-period'));
+    if (match) {
+      row.dataset.plotX = xAt(T.stamp(match.period));
+      row.dataset.plotY = layout.yByMetric.get(metric.id)(match.value);
+      detail.append(text('strong',format(match.value,metric.unit)),
+        text('span',match.period.replace('-Q',' Q') + (match.status === 'forecast' ? ' · forecast' : ' · observed'),'readout-period'));
+    } else detail.append(text('span','No nearby observation','readout-period'));
     row.append(detail);
     $('readout').append(row);
   }
@@ -8609,6 +8641,7 @@ function render() {
   width = Math.max(300,$('chart').clientWidth);
   layout = {left:width < 480 ? 58 : 76, right:width < 480 ? 65 : 76,
     top:32, bottom:45, height:width < 480 ? 330 : 390};
+  layout.yByMetric = new Map();
   layout.plotWidth = width-layout.left-layout.right;
   const {left,right,top,bottom,height} = layout;
   const plotBottom = height-bottom;
@@ -8643,6 +8676,7 @@ function render() {
     // Both axes start at zero; their independent units are labelled and colored.
     // Keeping separate scales avoids treating a mortgage percentage as a price.
     const yAt=value=>plotBottom-value/high*(plotBottom-top);
+    layout.yByMetric.set(metric.id, yAt);
     for (let i=0;i<=4 && values.length;i++) {
       const value=high*i/4;
       const label=isBank ? value.toFixed(high < 1 ? 2 : 1)+'%' : '$'+(value/1e6).toFixed(2)+'m';
