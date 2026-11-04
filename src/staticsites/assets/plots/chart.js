@@ -1,4 +1,4 @@
-/* Native SVG chart components, copied locally to keep each project independent. */
+/* Shared native SVG chart components embedded at build time. */
 (function (root) {
   'use strict';
   const model = {
@@ -11,7 +11,7 @@
         choice.series.flatMap(series => series.points.map(point => point.date)))))].sort();
     },
     nearest(dates, value) {
-      const target = Date.parse(value);
+      const target = new Date(value).getTime();
       return dates.reduce((best, date) => Math.abs(Date.parse(date)-target) < Math.abs(Date.parse(best)-target) ? date : best);
     },
     segments(points) {
@@ -150,11 +150,10 @@
     const inspectPointer = event=>{
       const bounds=graphic.getBoundingClientRect();
       const px=(event.clientX-bounds.left)/bounds.width*width;
-      const date=new Date(start+Math.max(0,Math.min(1,(px-left)/(width-left-right)))*(end-start)).toISOString().slice(0,10);
+      const date=new Date(start+Math.max(0,Math.min(1,(px-left)/(width-left-right)))*(end-start));
       inspect(date);
     };
-    overlay.addEventListener('pointermove',inspectPointer);
-    overlay.addEventListener('pointerdown',inspectPointer);
+    plotHover(overlay, inspectPointer);
     target.append(graphic);
   }
   function render() {

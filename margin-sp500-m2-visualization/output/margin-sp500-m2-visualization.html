@@ -16,6 +16,14 @@ h1 { font-size:clamp(27px,3.5vw,38px); font-weight:650; letter-spacing:-1px; lin
 #inspect-period { margin:0 0 4px; color:var(--muted); font-size:10px; }
 .hint { color:var(--muted); font-size:10px; margin:7px 0 0; }
 footer { color:var(--muted); font-size:11px; margin:15px 2px 0; }
+.chart { position:relative; }
+.plot-hover { position:absolute; z-index:1; pointer-events:none; width:max-content; max-width:100%;
+  padding:8px 10px; background:var(--surface); border:1px solid var(--line);
+  border-radius:5px; box-shadow:0 3px 12px #182d3722; }
+.plot-hover-period { font-size:11px; font-weight:600; margin-bottom:4px; }
+.plot-hover > .readout-row, .plot-hover > .readout-row + .readout-row { padding:2px 0; border:0; }
+.plot-hover .readout-value strong { font-size:12px; }
+.plot-hover .readout-value:has(.readout-unit) { display:flex; align-items:baseline; gap:4px; }
 /* Project-local native chart/page components, following the Ontario chart. */
 :root { --ink:#182d37; --muted:#596b71; --paper:#f5f6f3; --surface:#fff; --line:#dce2df; --accent:#116965; }
 .eyebrow { color:var(--accent); font-size:10px; font-weight:700; letter-spacing:1.8px; margin:0 0 5px; }
@@ -6576,7 +6584,56 @@ footer ul { padding-left:18px; } footer li { margin:5px 0; }
       "label": "SVB"
     }
   ]
-}</script><script>/* Native SVG chart components, copied locally to keep each project independent. */
+}</script><script>/* Show the same observations beside the pointer and in the persistent readout. */
+const plotHover = (() => {
+  const chart = document.getElementById('chart');
+  const period = document.getElementById('inspect-period');
+  const readout = document.getElementById('readout');
+  const tooltip = document.createElement('div');
+  tooltip.className = 'plot-hover';
+  tooltip.setAttribute('aria-hidden', 'true');
+  tooltip.hidden = true;
+  const hide = () => { tooltip.hidden = true; };
+  document.addEventListener('pointerdown', event => {
+    if (!chart.contains(event.target)) hide();
+  });
+  chart.addEventListener('keydown', hide);
+  window.addEventListener('resize', hide);
+
+  return (overlay, inspect) => {
+    function show(event) {
+      inspect(event);
+      const title = document.createElement('div');
+      title.className = 'plot-hover-period';
+      title.textContent = period.textContent;
+      tooltip.replaceChildren(title, ...Array.from(readout.children, row => row.cloneNode(true)));
+      if (!tooltip.isConnected) chart.append(tooltip);
+      tooltip.hidden = false;
+
+      const bounds = chart.getBoundingClientRect();
+      const gap = 14;
+      const x = event.clientX - bounds.left;
+      const w = tooltip.offsetWidth;
+      const h = tooltip.offsetHeight;
+      const left = x + gap + w <= bounds.width ? x + gap : x - gap - w;
+      const below = event.clientY + gap;
+      const above = event.clientY - gap - h;
+      const y = below + h <= window.innerHeight ? below : above;
+      tooltip.style.left = Math.max(0, Math.min(left, bounds.width - w)) + 'px';
+      tooltip.style.top = Math.max(4, Math.min(y, window.innerHeight - h - 4)) - bounds.top + 'px';
+    }
+    overlay.addEventListener('pointermove', event => {
+      if (event.pointerType !== 'touch') show(event);
+    });
+    overlay.addEventListener('pointerdown', show);
+    overlay.addEventListener('pointerleave', event => {
+      if (event.pointerType !== 'touch') hide();
+    });
+    overlay.addEventListener('pointercancel', hide);
+  };
+})();
+
+/* Shared native SVG chart components embedded at build time. */
 (function (root) {
   'use strict';
   const model = {
@@ -6589,7 +6646,7 @@ footer ul { padding-left:18px; } footer li { margin:5px 0; }
         choice.series.flatMap(series => series.points.map(point => point.date)))))].sort();
     },
     nearest(dates, value) {
-      const target = Date.parse(value);
+      const target = new Date(value).getTime();
       return dates.reduce((best, date) => Math.abs(Date.parse(date)-target) < Math.abs(Date.parse(best)-target) ? date : best);
     },
     segments(points) {
@@ -6728,11 +6785,10 @@ footer ul { padding-left:18px; } footer li { margin:5px 0; }
     const inspectPointer = event=>{
       const bounds=graphic.getBoundingClientRect();
       const px=(event.clientX-bounds.left)/bounds.width*width;
-      const date=new Date(start+Math.max(0,Math.min(1,(px-left)/(width-left-right)))*(end-start)).toISOString().slice(0,10);
+      const date=new Date(start+Math.max(0,Math.min(1,(px-left)/(width-left-right)))*(end-start));
       inspect(date);
     };
-    overlay.addEventListener('pointermove',inspectPointer);
-    overlay.addEventListener('pointerdown',inspectPointer);
+    plotHover(overlay, inspectPointer);
     target.append(graphic);
   }
   function render() {

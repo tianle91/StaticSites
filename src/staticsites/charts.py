@@ -67,7 +67,7 @@ def chart_page(payload, *, title, subtitle, sources, pulled, context=''):
     """One offline HTML artifact using native SVG, with no plotting runtime/CDN."""
     source = Path(__file__).parent / 'assets' / 'plots'
     style = (source / 'page.css').read_text(encoding='utf-8') + (source / 'chart.css').read_text(encoding='utf-8') + (source / 'page-mobile.css').read_text(encoding='utf-8')
-    behavior = (source / 'chart.js').read_text(encoding='utf-8')
+    behavior = '\n'.join((source / name).read_text(encoding='utf-8') for name in ('hover.js', 'chart.js'))
     title = escape(unescape(title))
     encoded = script_json(payload)
     links = ''.join(f'<li><a href="{escape(url, quote=True)}" target="_blank" rel="noopener">{escape(name)}</a></li>'
