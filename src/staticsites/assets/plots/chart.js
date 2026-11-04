@@ -68,10 +68,12 @@
     current = model.nearest(dates,date);
     $('inspect-period').textContent = 'Inspecting '+current+' · aligned observations';
     $('readout').replaceChildren();
-    for (const panel of panels) for (const series of panel.series) {
+    for (const [index, panel] of panels.entries()) for (const series of panel.series) {
       if (hidden.has(series.id)) continue;
       const point = series.points.find(point => point.date === current);
       const row = text('div','','readout-row');
+      row.dataset.panel = index;
+      row.dataset.color = series.color;
       row.append(text('span',series.name));
       const value = text('span','','readout-value');
       if (point && point.value !== null) {
@@ -145,7 +147,7 @@
         marker.append(svg('title',{},series.name+' · '+point.date+' · '+format(point.value,panel.unit)));plot.append(marker);
       }
     }
-    graphic.append(svg('line',{x1:x(current),x2:x(current),y1:top,y2:bottom,stroke:'var(--ink)','stroke-dasharray':'2 3',class:'inspection-cursor'}));
+    graphic.append(svg('line',{x1:x(current),x2:x(current),y1:top,y2:bottom,stroke:'var(--ink)','stroke-dasharray':'2 3',class:'inspection-cursor','data-panel':index}));
     const overlay=svg('rect',{x:left,y:top,width:width-left-right,height:bottom-top,fill:'transparent'});graphic.append(overlay);
     const inspectPointer = event=>{
       const bounds=graphic.getBoundingClientRect();
@@ -153,7 +155,7 @@
       const date=new Date(start+Math.max(0,Math.min(1,(px-left)/(width-left-right)))*(end-start));
       inspect(date);
     };
-    plotHover(overlay, inspectPointer);
+    plotHover(overlay, inspectPointer, String(index));
     target.append(graphic);
   }
   function render() {

@@ -20,6 +20,7 @@ footer { color:var(--muted); font-size:11px; margin:15px 2px 0; }
 .plot-hover { position:absolute; z-index:1; pointer-events:none; width:max-content; max-width:100%;
   padding:8px 10px; background:var(--surface); border:1px solid var(--line);
   border-radius:5px; box-shadow:0 3px 12px #182d3722; }
+.plot-hover-dot { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:6px; }
 .plot-hover-period { font-size:11px; font-weight:600; margin-bottom:4px; }
 .plot-hover > .readout-row, .plot-hover > .readout-row + .readout-row { padding:2px 0; border:0; }
 .plot-hover .readout-value strong { font-size:12px; }
@@ -6599,11 +6600,21 @@ const plotHover = (() => {
   chart.addEventListener('focusout', hide);
   window.addEventListener('resize', hide);
 
-  function show(clientX, clientY) {
+  function show(clientX, clientY, panel) {
     const title = document.createElement('div');
     title.className = 'plot-hover-period';
     title.textContent = period.textContent;
-    tooltip.replaceChildren(title, ...Array.from(readout.children, row => row.cloneNode(true)));
+    const rows = Array.from(readout.children)
+      .filter(row => row.dataset.panel === panel)
+      .map(row => {
+        const copy = row.cloneNode(true);
+        const dot = document.createElement('span');
+        dot.className = 'plot-hover-dot';
+        dot.style.backgroundColor = row.dataset.color;
+        copy.firstElementChild.prepend(dot);
+        return copy;
+      });
+    tooltip.replaceChildren(title, ...rows);
     if (!tooltip.isConnected) chart.append(tooltip);
     tooltip.hidden = false;
 
@@ -6620,10 +6631,10 @@ const plotHover = (() => {
     tooltip.style.top = Math.max(4, Math.min(y, window.innerHeight - h - 4)) - bounds.top + 'px';
   }
 
-  function bind(overlay, inspect) {
+  function bind(overlay, inspect, panel) {
     function inspectPointer(event) {
       inspect(event);
-      show(event.clientX, event.clientY);
+      show(event.clientX, event.clientY, panel);
     }
     overlay.addEventListener('pointermove', event => {
       if (event.pointerType !== 'touch') inspectPointer(event);
@@ -6636,9 +6647,13 @@ const plotHover = (() => {
   }
 
   bind.showAtCursor = selector => {
-    const guides = Array.from(chart.querySelectorAll(selector), guide => guide.getBoundingClientRect());
-    const visible = guides.find(guide => guide.bottom > 0 && guide.top < window.innerHeight);
-    if (visible) show(visible.left, Math.max(0, visible.top) + 12);
+    for (const guide of chart.querySelectorAll(selector)) {
+      const bounds = guide.getBoundingClientRect();
+      if (bounds.bottom > 0 && bounds.top < window.innerHeight) {
+        show(bounds.left, Math.max(0, bounds.top) + 12, guide.dataset.panel);
+        break;
+      }
+    }
   };
   return bind;
 })();
@@ -6713,10 +6728,12 @@ const plotHover = (() => {
     current = model.nearest(dates,date);
     $('inspect-period').textContent = 'Inspecting '+current+' · aligned observations';
     $('readout').replaceChildren();
-    for (const panel of panels) for (const series of panel.series) {
+    for (const [index, panel] of panels.entries()) for (const series of panel.series) {
       if (hidden.has(series.id)) continue;
       const point = series.points.find(point => point.date === current);
       const row = text('div','','readout-row');
+      row.dataset.panel = index;
+      row.dataset.color = series.color;
       row.append(text('span',series.name));
       const value = text('span','','readout-value');
       if (point && point.value !== null) {
@@ -6790,7 +6807,7 @@ const plotHover = (() => {
         marker.append(svg('title',{},series.name+' · '+point.date+' · '+format(point.value,panel.unit)));plot.append(marker);
       }
     }
-    graphic.append(svg('line',{x1:x(current),x2:x(current),y1:top,y2:bottom,stroke:'var(--ink)','stroke-dasharray':'2 3',class:'inspection-cursor'}));
+    graphic.append(svg('line',{x1:x(current),x2:x(current),y1:top,y2:bottom,stroke:'var(--ink)','stroke-dasharray':'2 3',class:'inspection-cursor','data-panel':index}));
     const overlay=svg('rect',{x:left,y:top,width:width-left-right,height:bottom-top,fill:'transparent'});graphic.append(overlay);
     const inspectPointer = event=>{
       const bounds=graphic.getBoundingClientRect();
@@ -6798,7 +6815,7 @@ const plotHover = (() => {
       const date=new Date(start+Math.max(0,Math.min(1,(px-left)/(width-left-right)))*(end-start));
       inspect(date);
     };
-    plotHover(overlay, inspectPointer);
+    plotHover(overlay, inspectPointer, String(index));
     target.append(graphic);
   }
   function render() {
