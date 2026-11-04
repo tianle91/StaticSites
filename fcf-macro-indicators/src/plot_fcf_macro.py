@@ -373,14 +373,36 @@ def render_png(rebased: pd.DataFrame, out_path: Path) -> None:
     plt.close(fig)
 
 
+LEVEL_UNITS = {
+    "Aggregate FCF (basket sum)": "USD",
+    "Aggregate cash & equivalents (basket sum)": "USD",
+    "Money-market-fund assets (FRED: MMMFFAQ027S)": "million USD",
+    "M2 money supply (FRED: M2SL)": "billion USD",
+    SP500_LABEL: "pts",
+}
+
+
+def indexed_series(values, original, *, unit, decimals=2, **style):
+    series = series_data(values, **style)
+    series['originalUnit'] = unit
+    series['originalDecimals'] = decimals
+    for point, raw_point in zip(
+        series['points'], series_data(original.reindex(values.index), **style)['points'], strict=True
+    ):
+        point['original'] = raw_point['value']
+    return series
+
+
 def chart_payload(rebased: pd.DataFrame) -> dict:
     anchor = rebased.attrs['anchor']
     levels, yields = _split_columns(rebased.columns)
     start, end = rebased.index.min(), rebased.index.max()
+    original = rebased.attrs['raw']
     panels = [
         {'id': 'levels', 'title': 'Corporate cash & the macro backdrop', 'unit': 'index',
          'axis': f'Index (100 = {anchor:%Y-%m-%d})', 'reference': 100,
-         'series': [series_data(rebased[col], name=compact_label(col), color=SERIES_COLORS[col], key=col)
+         'series': [indexed_series(rebased[col], original[col], unit=LEVEL_UNITS[col],
+                                   name=compact_label(col), color=SERIES_COLORS[col], key=col)
                     for col in levels]},
         {'id': 'yields', 'title': 'Treasury yields', 'unit': '%', 'axis': 'Treasury yield (%)', 'zero': True,
          'series': [series_data(rebased[col], name=compact_label(col), color=SERIES_COLORS[col], key=col)
@@ -394,8 +416,9 @@ def chart_payload(rebased: pd.DataFrame) -> dict:
         values = _rebase_to_anchor(raw, anchor).loc[start:end]
         choices.append({'key': measure['key'], 'label': measure['name'],
                         'description': 'Pro: ' + measure['pro'] + '. Limitation: ' + measure['con'] + '.',
-                        'series': [series_data(values, name='S&P 500 ÷ ' + measure['name'],
-                                               color=measure['color'], key='ratio-' + measure['key'])]})
+                        'series': [indexed_series(values, raw, unit='pts per ' + LEVEL_UNITS[measure['column']],
+                                                   decimals=6, name='S&P 500 ÷ ' + measure['name'],
+                                                   color=measure['color'], key='ratio-' + measure['key'])]})
     if choices:
         panels.append({'id': 'ratio', 'title': 'Equities relative to liquidity', 'unit': 'index',
                        'axis': f'Index (100 = {anchor:%Y-%m-%d})', 'reference': 100,
@@ -408,7 +431,7 @@ def chart_payload(rebased: pd.DataFrame) -> dict:
 
 
 def render_html(rebased: pd.DataFrame, out_path: Path) -> None:
-    """Native SVG panels share one calendar axis, with inspection below the chart."""
+    """Native SVG panels share one calendar axis, with on-plot inspection."""
     anchor = rebased.attrs['anchor']
     tickers = rebased.attrs.get('tickers', [])
     basket = 'Basket: ' + ', '.join(tickers) + '.' if tickers else ''

@@ -86,8 +86,9 @@ function inspectMonth(period) {
     const detail = text('span','','readout-value');
     if (match) {
       row.dataset.plotX = xAt(T.stamp(match.period));
-      row.dataset.plotY = layout.yByMetric.get(metric.id)(match.value);
-      detail.append(text('strong',format(match.value,metric.unit)),
+      const index = metric.toIndex(match.value);
+      row.dataset.plotY = layout.yAt(index);
+      detail.append(text('strong', index.toFixed(1) + ' index · ' + format(match.value,metric.unit)),
         text('span',match.period.replace('-Q',' Q') + (match.status === 'forecast' ? ' · forecast' : ' · observed'),'readout-period'));
     } else detail.append(text('span','No nearby observation','readout-period'));
     row.append(detail);
@@ -97,23 +98,42 @@ function inspectMonth(period) {
 
 function render() {
   useSharedHistory();
-  selected = T.panels(DATA,state);
+  const [start,end] = T.domain(state);
+  const anchor = new Date(start).toISOString().slice(0,7);
+  selected = T.panels(DATA,state).map(metric => {
+    const series = metric.series.map(series => ({...series, points:T.pointsFor(series,state)}));
+    // Both price vintages use the same base, so the coverage break does not reset the index.
+    const base = series.flatMap(series => series.points).find(point => point.period === anchor)?.value;
+    if (!Number.isFinite(base) || base <= 0) {
+      throw new Error(metric.title + ' needs a positive observation in the base month ' + anchor);
+    }
+    return {...metric, series, toIndex: value => value / base * 100};
+  });
   $('chart').replaceChildren();
   width = Math.max(300,$('chart').clientWidth);
-  layout = {left:width < 480 ? 58 : 76, right:width < 480 ? 65 : 76,
+  layout = {left:width < 480 ? 58 : 76, right:24,
     top:32, bottom:45, height:width < 480 ? 330 : 390};
-  layout.yByMetric = new Map();
   layout.plotWidth = width-layout.left-layout.right;
   const {left,right,top,bottom,height} = layout;
   const plotBottom = height-bottom;
-  const [start,end] = T.domain(state);
+  const values = selected.flatMap(metric => metric.series.flatMap(series =>
+    series.points.map(point => metric.toIndex(point.value))));
+  const minimum = Math.min(...values), maximum = Math.max(...values);
+  const step = Math.max(5, Math.ceil((maximum - minimum) / 25) * 5);
+  const low = 100 + Math.floor((minimum - 100) / step) * step - step;
+  const high = 100 + Math.ceil((maximum - 100) / step) * step + step;
+  const yAt = index => plotBottom - (index - low) / (high - low) * (plotBottom - top);
+  layout.yAt = yAt;
+  const axisTitle = 'Index (' + anchor + ' = 100)';
   const svg = svgNode('svg', {viewBox:`0 0 ${width} ${height}`,role:'img',tabindex:'0',
-    'aria-label':`Ontario bank arrears on the left percentage axis and Toronto-area prices on the right Canadian-dollar axis, ${state.from}–${state.to}. Use left and right arrow keys to inspect months.`,
+    'aria-label':`Ontario bank arrears and Toronto-area prices, both indexed to 100 in ${anchor}. Use left and right arrow keys to inspect months.`,
     'data-domain-start':start,'data-domain-end':end});
   $('chart').append(svg);
-  for (let i=0;i<=4;i++) {
-    const y=top+(plotBottom-top)*i/4;
-    svg.append(svgNode('line',{x1:left,x2:width-right,y1:y,y2:y,class:'gridline'}));
+  svg.append(svgNode('text',{x:left,y:15,class:'axis-title'},axisTitle));
+  for (let index = low; index <= high; index += step) {
+    const y = yAt(index);
+    svg.append(svgNode('line',{x1:left,x2:width-right,y1:y,y2:y,class:index === 100 ? 'index-base' : 'gridline'}));
+    svg.append(svgNode('text',{x:left-9,y:y+4,'text-anchor':'end',class:'axis'},String(index)));
   }
   for (const tick of ticks()) {
     const x=xAt(tick.date);
@@ -122,43 +142,22 @@ function render() {
     svg.append(svgNode('text',{x,y:height-24,'text-anchor':anchor,class:'axis'},tick.label));
   }
   svg.append(svgNode('text',{x:left+layout.plotWidth/2,y:height-5,'text-anchor':'middle',class:'axis-title'},'Calendar time'));
-  const hasBank = selected[0].series.some(series => T.pointsFor(series,state).length);
-  const hasPrices = selected[1].series.some(series => T.pointsFor(series,state).length);
-  if (!hasBank || !hasPrices) {
-    const missing = !hasBank && !hasPrices ? 'Neither series has observations' : !hasBank ? 'No bank arrears observations' : 'No house-price observations';
-    svg.append(svgNode('text',{x:left+8,y:top+17,class:'axis'},missing+' in this range'));
-  }
   selected.forEach(metric => {
-    const isBank=metric.id === 'bank';
-    const color=isBank ? 'var(--bank)' : 'var(--price)';
-    const series=metric.series.map(series=>({...series,points:T.pointsFor(series,state)}));
-    const values=series.flatMap(series=>series.points.map(point=>point.value));
-    const high=values.length ? Math.max(...values)*1.1 || 1 : 1;
-    // Both axes start at zero; their independent units are labelled and colored.
-    // Keeping separate scales avoids treating a mortgage percentage as a price.
-    const yAt=value=>plotBottom-value/high*(plotBottom-top);
-    layout.yByMetric.set(metric.id, yAt);
-    for (let i=0;i<=4 && values.length;i++) {
-      const value=high*i/4;
-      const label=isBank ? value.toFixed(high < 1 ? 2 : 1)+'%' : '$'+(value/1e6).toFixed(2)+'m';
-      svg.append(svgNode('text',{x:isBank?left-9:width-right+9,y:yAt(value)+4,
-        'text-anchor':isBank?'end':'start',class:isBank?'axis bank-axis':'axis price-axis'},label));
-    }
-    svg.append(svgNode('text',{x:isBank?left:width-right,y:15,'text-anchor':isBank?'start':'end',
-      class:isBank?'axis-title bank-axis':'axis-title price-axis'},isBank?'Arrears (%)':'Price (CAD)'));
-    series.forEach(series => {
+    const color=metric.id === 'bank' ? 'var(--bank)' : 'var(--price)';
+    const yOf = point => yAt(metric.toIndex(point.value));
+    metric.series.forEach(series => {
       const observed=series.points.filter(point=>point.status === 'observed');
       const forecast=series.points.filter(point=>point.status === 'forecast');
       function path(points,dashed=false) {
         if (points.length<2) return;
-        const d=points.map((point,i)=>(i?'L':'M')+xAt(T.stamp(point.period)).toFixed(2)+','+yAt(point.value).toFixed(2)).join(' ');
+        const d=points.map((point,i)=>(i?'L':'M')+xAt(T.stamp(point.period)).toFixed(2)+','+yOf(point).toFixed(2)).join(' ');
         svg.append(svgNode('path',{d,stroke:color,class:'series-line','data-metric':metric.id,
           ...(dashed?{'stroke-dasharray':'6 5','data-forecast':'true'}:{})}));
       }
       path(observed);
       if (forecast.length) path(observed.length?[observed.at(-1),...forecast]:forecast,true);
       series.points.forEach(point=>{
-        const dot=svgNode('circle',{cx:xAt(T.stamp(point.period)),cy:yAt(point.value),r:2.5,fill:color,
+        const dot=svgNode('circle',{cx:xAt(T.stamp(point.period)),cy:yOf(point),r:2.5,fill:color,
           'data-metric':metric.id,'data-period':point.period,'data-status':point.status});
         dot.append(svgNode('title',{},metric.title+' · '+point.period+' · '+format(point.value,metric.unit)+(point.status==='forecast'?' (forecast)':'')));
         svg.append(dot);
@@ -180,9 +179,13 @@ function render() {
     const bounds=svg.getBoundingClientRect();
     const x=(event.clientX-bounds.left)/bounds.width*width;
     const date = new Date(start + Math.max(0, Math.min(1, (x-left)/layout.plotWidth)) * (end-start));
-    const month = date.toISOString().slice(0,7);
-    const next = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth()+1, 1));
-    inspectMonth(date - T.stamp(month) <= next - date ? month : next.toISOString().slice(0,7));
+    const year = date.getUTCFullYear();
+    const month = date.getUTCMonth();
+    const monthEnd = Date.UTC(year, month+1, 0);
+    const before = date < monthEnd ? Date.UTC(year, month, 0) : monthEnd;
+    const after = date < monthEnd ? monthEnd : Date.UTC(year, month+2, 0);
+    const nearest = date - before <= after - date ? before : after;
+    inspectMonth(new Date(nearest).toISOString().slice(0,7));
   });
   svg.addEventListener('keydown',event=>{
     if (!['ArrowLeft','ArrowRight','Home','End'].includes(event.key)) return;

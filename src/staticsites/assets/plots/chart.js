@@ -81,6 +81,10 @@
         row.dataset.plotX = x(current);
         row.dataset.plotY = panelScales[index](point.value);
         value.append(text('strong',format(point.value,panel.unit)),text('span',panel.unit === '%'?'yield':'index','readout-unit'));
+        if (Number.isFinite(point.original)) {
+          const original = point.original.toLocaleString('en-US', {maximumFractionDigits: series.originalDecimals});
+          value.append(text('span', original + ' ' + series.originalUnit, 'readout-original'));
+        }
       } else value.append(text('span','No observation','readout-unit'));
       row.append(value); $('readout').append(row);
     }

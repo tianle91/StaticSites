@@ -27,6 +27,11 @@ footer { color:var(--muted); font-size:11px; margin:15px 2px 0; }
 .plot-hover > .readout-row, .plot-hover > .readout-row + .readout-row { padding:2px 0; border:0; }
 .plot-hover .readout-value strong { font-size:12px; }
 .plot-hover .readout-value:has(.readout-unit) { display:flex; align-items:baseline; gap:4px; }
+.plot-hover .readout-value:has(.readout-original) { display:block; }
+.plot-hover .readout-original { display:block; color:var(--muted); font-size:10px; }
+.plot-hover .readout-value:has(.readout-original) strong,
+.plot-hover .readout-value:has(.readout-original) .readout-unit { display:inline; }
+.plot-hover .readout-value:has(.readout-original) .readout-unit { margin-left:4px; }
 /* Project-local native chart/page components, following the Ontario chart. */
 :root { --ink:#182d37; --muted:#596b71; --paper:#f5f6f3; --surface:#fff; --line:#dce2df; --accent:#116965; }
 .eyebrow { color:var(--accent); font-size:10px; font-weight:700; letter-spacing:1.8px; margin:0 0 5px; }
@@ -6770,6 +6775,10 @@ const plotHover = (() => {
         row.dataset.plotX = x(current);
         row.dataset.plotY = panelScales[index](point.value);
         value.append(text('strong',format(point.value,panel.unit)),text('span',panel.unit === '%'?'yield':'index','readout-unit'));
+        if (Number.isFinite(point.original)) {
+          const original = point.original.toLocaleString('en-US', {maximumFractionDigits: series.originalDecimals});
+          value.append(text('span', original + ' ' + series.originalUnit, 'readout-original'));
+        }
       } else value.append(text('span','No observation','readout-unit'));
       row.append(value); $('readout').append(row);
     }

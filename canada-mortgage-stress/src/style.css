@@ -14,7 +14,7 @@ button:focus-visible,select:focus-visible,svg:focus-visible,summary:focus-visibl
 .legend small { color:var(--muted); font-size:10px; font-weight:400; }
 .series-description { color:var(--muted); font-size:11px; margin:0 0 3px; }
 .series-label { font-size:10px; color:var(--muted); margin:0 0 9px; }
-.bank-axis { fill:var(--bank); }.price-axis { fill:var(--price); }
+.index-base { stroke:var(--muted); stroke-width:1; }
 .series-line { fill:none; stroke-width:2.4; stroke-linecap:round; stroke-linejoin:round; }
 .readout-row { display:flex; justify-content:space-between; gap:12px; align-items:center; font-size:11px; }
 .readout-value { text-align:right; }.readout-value strong { display:block; font-size:14px; font-variant-numeric:tabular-nums; }

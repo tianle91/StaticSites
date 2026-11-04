@@ -121,7 +121,8 @@ SEC_USER_AGENT="fcf-macro-indicators you@example.com" \
 Open the committed HTML in a browser:
 
 - Hover or tap any plot, or focus it and use Left/Right/Home/End, to inspect values
-  from the chart's aligned data. The browser does not interpolate new values.
+  from the chart's aligned data. Indexed series show the original quarterly value
+  and its unit alongside the index. The browser does not interpolate new values.
 - Tap legend entries to hide/show lines. Each panel keeps at least one visible.
 - The full available history is always shown. The page fits mobile screens
   without a separate chart toolbar or horizontal page scrolling.
