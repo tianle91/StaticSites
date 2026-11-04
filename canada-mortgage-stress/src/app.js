@@ -80,6 +80,7 @@ function inspectMonth(period) {
   $('readout').replaceChildren();
   for (const metric of selected) {
     const row = text('div', '', 'readout-row');
+    row.dataset.color = metric.id === 'bank' ? 'var(--bank)' : 'var(--price)';
     row.append(text('span', metric.id === 'bank' ? 'Ontario bank arrears' : 'Toronto-area price'));
     const match = metric.series.map(series => T.nearestObservation(series,state.inspect,metric.frequency,state)).find(Boolean);
     const detail = text('span','','readout-value');
