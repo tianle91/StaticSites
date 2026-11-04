@@ -17,6 +17,8 @@ footer { color:var(--muted); font-size:11px; margin:15px 2px 0; }
 .plot-hover { position:absolute; z-index:1; pointer-events:none; width:max-content; max-width:100%;
   padding:8px 10px; background:var(--surface); border:1px solid var(--line);
   border-radius:5px; box-shadow:0 3px 12px #182d3722; }
+.plot-hover-marker { pointer-events:none; stroke:var(--surface); stroke-width:2; }
+.plot-hover-closest { font-weight:700; }
 .plot-hover-dot { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:6px; }
 .plot-hover-period { font-size:11px; font-weight:600; margin-bottom:4px; }
 .plot-hover > .readout-row, .plot-hover > .readout-row + .readout-row { padding:2px 0; border:0; }

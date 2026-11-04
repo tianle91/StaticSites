@@ -84,9 +84,12 @@ function inspectMonth(period) {
     row.append(text('span', metric.id === 'bank' ? 'Ontario bank arrears' : 'Toronto-area price'));
     const match = metric.series.map(series => T.nearestObservation(series,state.inspect,metric.frequency,state)).find(Boolean);
     const detail = text('span','','readout-value');
-    if (match) detail.append(text('strong',format(match.value,metric.unit)),
-      text('span',match.period.replace('-Q',' Q') + (match.status === 'forecast' ? ' · forecast' : ' · observed'),'readout-period'));
-    else detail.append(text('span','No nearby observation','readout-period'));
+    if (match) {
+      row.dataset.plotX = xAt(T.stamp(match.period));
+      row.dataset.plotY = layout.yByMetric.get(metric.id)(match.value);
+      detail.append(text('strong',format(match.value,metric.unit)),
+        text('span',match.period.replace('-Q',' Q') + (match.status === 'forecast' ? ' · forecast' : ' · observed'),'readout-period'));
+    } else detail.append(text('span','No nearby observation','readout-period'));
     row.append(detail);
     $('readout').append(row);
   }
@@ -99,6 +102,7 @@ function render() {
   width = Math.max(300,$('chart').clientWidth);
   layout = {left:width < 480 ? 58 : 76, right:width < 480 ? 65 : 76,
     top:32, bottom:45, height:width < 480 ? 330 : 390};
+  layout.yByMetric = new Map();
   layout.plotWidth = width-layout.left-layout.right;
   const {left,right,top,bottom,height} = layout;
   const plotBottom = height-bottom;
@@ -133,6 +137,7 @@ function render() {
     // Both axes start at zero; their independent units are labelled and colored.
     // Keeping separate scales avoids treating a mortgage percentage as a price.
     const yAt=value=>plotBottom-value/high*(plotBottom-top);
+    layout.yByMetric.set(metric.id, yAt);
     for (let i=0;i<=4 && values.length;i++) {
       const value=high*i/4;
       const label=isBank ? value.toFixed(high < 1 ? 2 : 1)+'%' : '$'+(value/1e6).toFixed(2)+'m';

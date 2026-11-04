@@ -7,7 +7,14 @@ const plotHover = (() => {
   tooltip.className = 'plot-hover';
   tooltip.setAttribute('aria-hidden', 'true');
   tooltip.hidden = true;
-  const hide = () => { tooltip.hidden = true; };
+  const marker = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+  marker.classList.add('plot-hover-marker');
+  marker.setAttribute('r', '5');
+  marker.setAttribute('aria-hidden', 'true');
+  const hide = () => {
+    tooltip.hidden = true;
+    marker.remove();
+  };
   document.addEventListener('pointerdown', event => {
     if (!chart.contains(event.target)) hide();
   });
@@ -17,21 +24,38 @@ const plotHover = (() => {
   chart.addEventListener('focusout', hide);
   window.addEventListener('resize', hide);
 
-  function show(clientX, clientY, panel) {
+  function show(clientX, clientY, panel, pointerY, graphic) {
     const title = document.createElement('div');
     title.className = 'plot-hover-period';
     title.textContent = period.textContent;
-    const rows = Array.from(readout.children)
-      .filter(row => row.dataset.panel === panel)
-      .map(row => {
-        const copy = row.cloneNode(true);
-        const dot = document.createElement('span');
-        dot.className = 'plot-hover-dot';
-        dot.style.backgroundColor = row.dataset.color;
-        copy.firstElementChild.prepend(dot);
-        return copy;
-      });
-    tooltip.replaceChildren(title, ...rows);
+    const rows = Array.from(readout.children).filter(row => row.dataset.panel === panel);
+    let closest;
+    let minDistance = Infinity;
+    for (const row of rows) {
+      const distance = Math.abs(Number(row.dataset.plotY) - pointerY);
+      if (distance < minDistance) {
+        closest = row;
+        minDistance = distance;
+      }
+    }
+    if (closest && graphic) {
+      marker.setAttribute('cx', closest.dataset.plotX);
+      marker.setAttribute('cy', closest.dataset.plotY);
+      marker.setAttribute('fill', closest.dataset.color);
+      if (marker.parentNode !== graphic) graphic.append(marker);
+    } else {
+      marker.remove();
+    }
+    const copies = rows.map(row => {
+      const copy = row.cloneNode(true);
+      const dot = document.createElement('span');
+      dot.className = 'plot-hover-dot';
+      dot.style.backgroundColor = row.dataset.color;
+      copy.firstElementChild.prepend(dot);
+      if (row === closest) copy.firstElementChild.classList.add('plot-hover-closest');
+      return copy;
+    });
+    tooltip.replaceChildren(title, ...copies);
     if (!tooltip.isConnected) chart.append(tooltip);
     tooltip.hidden = false;
 
@@ -51,7 +75,10 @@ const plotHover = (() => {
   function bind(overlay, inspect, panel) {
     function inspectPointer(event) {
       inspect(event);
-      show(event.clientX, event.clientY, panel);
+      const transform = overlay.getScreenCTM();
+      const pointer = new DOMPoint(event.clientX, event.clientY);
+      const pointerY = transform ? pointer.matrixTransform(transform.inverse()).y : undefined;
+      show(event.clientX, event.clientY, panel, pointerY, overlay.ownerSVGElement);
     }
     overlay.addEventListener('pointermove', event => {
       if (event.pointerType !== 'touch') inspectPointer(event);

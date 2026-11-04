@@ -39,6 +39,7 @@
   const start = Date.parse(spec.domain[0]), end = Date.parse(spec.domain[1]);
   let current = dates.at(-1);
   let panels = [];
+  const panelScales = [];
   let width = 900, left = 76, right = 24;
   function text(tag, value, className) {
     const el = document.createElement(tag);
@@ -77,6 +78,8 @@
       row.append(text('span',series.name));
       const value = text('span','','readout-value');
       if (point && point.value !== null) {
+        row.dataset.plotX = x(current);
+        row.dataset.plotY = panelScales[index](point.value);
         value.append(text('strong',format(point.value,panel.unit)),text('span',panel.unit === '%'?'yield':'index','readout-unit'));
       } else value.append(text('span','No observation','readout-unit'));
       row.append(value); $('readout').append(row);
@@ -107,6 +110,7 @@
     const low = panel.zero ? Math.min(0,minimum) : minimum-padding;
     const high = maximum+padding;
     const y = value => bottom-(value-low)/(high-low)*(bottom-top);
+    panelScales[index] = y;
     const graphic = svg('svg',{viewBox:`0 0 ${width} ${height}`,role:'img',
       'aria-label':panel.title+'. '+panel.axis+'. '+spec.domain.join(' through '),
       'data-domain-start':spec.domain[0],'data-domain-end':spec.domain[1]});
