@@ -1,11 +1,10 @@
 # Ontario arrears & house prices
 
 A single-plot comparison of **Ontario bank mortgage arrears** and **Toronto-area
-house prices**. Both metrics share one calendar time scale. The left vertical
-axis shows bank mortgages 90+ days overdue as a percentage of accounts; the right
-axis shows nominal average sale prices in Canadian dollars. Axis labels and
-lines share their colors. Both vertical scales start at zero. Visual line
-crossings have no economic meaning because the units differ.
+house prices**. Both series share one calendar axis and one index axis. Each
+starts at 100 in the first shared month, so 120 means 20% above that series’
+starting value. The tooltip shows the index alongside the original share of
+mortgages 90+ days overdue or the average sale price in Canadian dollars.
 
 ## Interface
 

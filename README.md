@@ -140,7 +140,7 @@ project commands, not ten separate installations.
   mobile panels/dialogs, keyboard/location/fit behavior and styles. Search stays
   project-configured: addresses, names, categories, watersheds or stations.
 - `charts.py` and `assets/plots/`: native SVG plotting, legends, axes, shared
-  inspection, page layout/provenance and Matplotlib styling. Ontario's dual-axis
+  inspection, page layout/provenance and Matplotlib styling. Ontario's indexed
   chart remains a local adapter with its own data/coverage semantics.
 - `snapshots.py`: one capture implementation with map/chart readiness policies,
   fresh desktop/mobile contexts, explicit browser setup, and staged publication.
@@ -259,7 +259,7 @@ blindly:
 - **Map initialization and marker factories:** repeated Leaflet setup, tile
   attribution and marker styling are candidates. Preserve clustering, pane order
   and project-specific styling; do not turn all map logic into a generic framework.
-- **DOM/SVG primitives:** the Ontario dual-axis plot and shared plot renderer
+- **DOM/SVG primitives:** the Ontario mortgage plot and shared plot renderer
   still have small element/date-tick helpers in common. Share primitives before
   trying to unify their different axis, coverage and observation semantics.
 - **Provenance fallback:** the shared plot helper retains the existing CSV-mtime
