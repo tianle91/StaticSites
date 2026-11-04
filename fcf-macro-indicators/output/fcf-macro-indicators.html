@@ -12,10 +12,18 @@ h1 { font-size:clamp(27px,3.5vw,38px); font-weight:650; letter-spacing:-1px; lin
 .vertical-grid { stroke:var(--line); stroke-width:1; stroke-dasharray:2 4; }
 .axis { font-size:11px; fill:var(--muted); }
 .axis-title { font-size:11px; font-weight:600; fill:var(--muted); }
-.inspection { background:var(--paper); border-radius:4px; padding:10px 13px; margin-top:10px; }
-#inspect-period { margin:0 0 4px; color:var(--muted); font-size:10px; }
+.inspection-status { position:absolute; width:1px; height:1px; padding:0; margin:-1px;
+  overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
 .hint { color:var(--muted); font-size:10px; margin:7px 0 0; }
 footer { color:var(--muted); font-size:11px; margin:15px 2px 0; }
+.chart { position:relative; }
+.plot-hover { position:absolute; z-index:1; pointer-events:none; width:max-content; max-width:100%;
+  padding:8px 10px; background:var(--surface); border:1px solid var(--line);
+  border-radius:5px; box-shadow:0 3px 12px #182d3722; }
+.plot-hover-period { font-size:11px; font-weight:600; margin-bottom:4px; }
+.plot-hover > .readout-row, .plot-hover > .readout-row + .readout-row { padding:2px 0; border:0; }
+.plot-hover .readout-value strong { font-size:12px; }
+.plot-hover .readout-value:has(.readout-unit) { display:flex; align-items:baseline; gap:4px; }
 /* Project-local native chart/page components, following the Ontario chart. */
 :root { --ink:#182d37; --muted:#596b71; --paper:#f5f6f3; --surface:#fff; --line:#dce2df; --accent:#116965; }
 .eyebrow { color:var(--accent); font-size:10px; font-weight:700; letter-spacing:1.8px; margin:0 0 5px; }
@@ -36,20 +44,16 @@ select { display:block; font-family:inherit; font-size:12px; line-height:1.5; co
 .plot-panel h2 { font-size:14px; font-weight:600; margin:4px 0; }
 .panel-description { color:var(--muted); font-size:11px; margin:4px 0 8px; max-width:950px; }
 .series-line { fill:none; stroke-width:2.4; stroke-linejoin:round; stroke-linecap:round; }
-.readout { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:7px 22px; }
 .readout-row { display:flex; align-items:center; justify-content:space-between; gap:10px; font-size:11px; }
 .readout-value { text-align:right; flex-shrink:0; }
 .readout-value strong { display:block; font-size:14px; font-variant-numeric:tabular-nums; }
 .readout-unit { display:block; font-size:10px; color:var(--muted); }
 summary { cursor:pointer; width:fit-content; }
 footer ul { padding-left:18px; } footer li { margin:5px 0; }
-@media(max-width:800px) { .readout { grid-template-columns:repeat(2,minmax(0,1fr)); } }
 @media(max-width:640px) {
   .legend { gap:4px 14px; }
   .legend-item { font-size:11px; min-height:36px; }
   select { font-size:16px; min-height:44px; }
-  .readout { grid-template-columns:1fr; gap:6px; }
-  .readout-row+.readout-row { border-top:1px solid var(--line); padding-top:6px; }
 }
 @media(max-width:640px) {
   main { padding:23px 14px; }
@@ -63,7 +67,7 @@ footer ul { padding-left:18px; } footer li { margin:5px 0; }
 <div id="chart-legend" class="legend" aria-label="Toggle chart series"></div>
 <p class="series-description">Levels and ratios indexed to 100 at 2014-12-31; yields are raw percentages. Shading marks 10Y &lt; 2Y inversion.</p><div id="chart-choices" class="chart-choices"></div>
 <div id="chart" class="chart" tabindex="0" role="group" aria-label="Chart. Use arrow keys to inspect observations."></div>
-<div class="inspection"><p id="inspect-period"></p><div id="readout" class="readout" aria-live="polite" aria-atomic="true"></div></div>
+<div class="inspection-status" role="status" aria-atomic="true"><p id="inspect-period"></p><div id="readout"></div></div>
 <p class="hint">Hover, tap the plot or use arrow keys to inspect · Tap legend entries to toggle series</p></section>
 <footer><details><summary>Definitions & data sources</summary><p>Data pulled 2026-10-25</p><p>Levels and ratios indexed to 100 at 2014-12-31; yields are raw percentages. Shading marks 10Y &lt; 2Y inversion.</p><ul><li><a href="https://www.sec.gov/edgar/sec-api-documentation" target="_blank" rel="noopener">Company free cash flow (OCF - CapEx) from SEC EDGAR XBRL</a></li><li><a href="https://fred.stlouisfed.org/series/M2SL" target="_blank" rel="noopener">FRED M2 (M2SL)</a></li><li><a href="https://fred.stlouisfed.org/series/DGS3MO" target="_blank" rel="noopener">FRED 3M Treasury (DGS3MO)</a></li><li><a href="https://fred.stlouisfed.org/series/DGS2" target="_blank" rel="noopener">FRED 2Y Treasury (DGS2)</a></li><li><a href="https://fred.stlouisfed.org/series/DGS10" target="_blank" rel="noopener">FRED 10Y Treasury (DGS10)</a></li><li><a href="https://fred.stlouisfed.org/series/DGS30" target="_blank" rel="noopener">FRED 30Y Treasury (DGS30)</a></li><li><a href="https://finance.yahoo.com/quote/%5EGSPC" target="_blank" rel="noopener">S&amp;P 500 via Yahoo Finance (^GSPC)</a></li></ul></details></footer>
 </main><script id="chart-data" type="application/json">{
@@ -2225,7 +2229,70 @@ footer ul { padding-left:18px; } footer li { margin:5px 0; }
       "color": "#b64949"
     }
   ]
-}</script><script>/* Native SVG chart components, copied locally to keep each project independent. */
+}</script><script>/* Show the observations announced by the chart's live region. */
+const plotHover = (() => {
+  const chart = document.getElementById('chart');
+  const period = document.getElementById('inspect-period');
+  const readout = document.getElementById('readout');
+  const tooltip = document.createElement('div');
+  tooltip.className = 'plot-hover';
+  tooltip.setAttribute('aria-hidden', 'true');
+  tooltip.hidden = true;
+  const hide = () => { tooltip.hidden = true; };
+  document.addEventListener('pointerdown', event => {
+    if (!chart.contains(event.target)) hide();
+  });
+  chart.addEventListener('keydown', event => {
+    if (event.key === 'Escape') hide();
+  });
+  chart.addEventListener('focusout', hide);
+  window.addEventListener('resize', hide);
+
+  function show(clientX, clientY) {
+    const title = document.createElement('div');
+    title.className = 'plot-hover-period';
+    title.textContent = period.textContent;
+    tooltip.replaceChildren(title, ...Array.from(readout.children, row => row.cloneNode(true)));
+    if (!tooltip.isConnected) chart.append(tooltip);
+    tooltip.hidden = false;
+
+    const bounds = chart.getBoundingClientRect();
+    const gap = 14;
+    const x = clientX - bounds.left;
+    const w = tooltip.offsetWidth;
+    const h = tooltip.offsetHeight;
+    const left = x + gap + w <= bounds.width ? x + gap : x - gap - w;
+    const below = clientY + gap;
+    const above = clientY - gap - h;
+    const y = below + h <= window.innerHeight ? below : above;
+    tooltip.style.left = Math.max(0, Math.min(left, bounds.width - w)) + 'px';
+    tooltip.style.top = Math.max(4, Math.min(y, window.innerHeight - h - 4)) - bounds.top + 'px';
+  }
+
+  function bind(overlay, inspect) {
+    function inspectPointer(event) {
+      inspect(event);
+      show(event.clientX, event.clientY);
+    }
+    overlay.addEventListener('pointermove', event => {
+      if (event.pointerType !== 'touch') inspectPointer(event);
+    });
+    overlay.addEventListener('pointerdown', inspectPointer);
+    overlay.addEventListener('pointerleave', event => {
+      if (event.pointerType !== 'touch') hide();
+    });
+    overlay.addEventListener('pointercancel', hide);
+  }
+
+  bind.showAtCursor = selector => {
+    const guides = Array.from(chart.querySelectorAll(selector), guide => guide.getBoundingClientRect());
+    const visible = guides.find(guide => guide.bottom > 0 && guide.top < window.innerHeight);
+    if (visible) show(visible.left, Math.max(0, visible.top) + 12);
+  };
+  return bind;
+})();
+
+/* Shared native SVG chart components embedded at build time. */
 (function (root) {
   'use strict';
   const model = {
@@ -2238,7 +2305,7 @@ footer ul { padding-left:18px; } footer li { margin:5px 0; }
         choice.series.flatMap(series => series.points.map(point => point.date)))))].sort();
     },
     nearest(dates, value) {
-      const target = Date.parse(value);
+      const target = new Date(value).getTime();
       return dates.reduce((best, date) => Math.abs(Date.parse(date)-target) < Math.abs(Date.parse(best)-target) ? date : best);
     },
     segments(points) {
@@ -2377,11 +2444,10 @@ footer ul { padding-left:18px; } footer li { margin:5px 0; }
     const inspectPointer = event=>{
       const bounds=graphic.getBoundingClientRect();
       const px=(event.clientX-bounds.left)/bounds.width*width;
-      const date=new Date(start+Math.max(0,Math.min(1,(px-left)/(width-left-right)))*(end-start)).toISOString().slice(0,10);
+      const date=new Date(start+Math.max(0,Math.min(1,(px-left)/(width-left-right)))*(end-start));
       inspect(date);
     };
-    overlay.addEventListener('pointermove',inspectPointer);
-    overlay.addEventListener('pointerdown',inspectPointer);
+    plotHover(overlay, inspectPointer);
     target.append(graphic);
   }
   function render() {
@@ -2411,6 +2477,7 @@ footer ul { padding-left:18px; } footer li { margin:5px 0; }
     event.preventDefault();const index=dates.indexOf(current);
     const next=event.key==='Home'?0:event.key==='End'?dates.length-1:Math.max(0,Math.min(dates.length-1,index+(event.key==='ArrowLeft'?-1:1)));
     inspect(dates[next]);
+    plotHover.showAtCursor('.inspection-cursor');
   });
   let resizeTimer;window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(render,100);});
   render();

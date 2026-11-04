@@ -170,11 +170,13 @@ function render() {
   svg.append(svgNode('line',{y1:top,y2:plotBottom,stroke:'var(--ink)','stroke-dasharray':'2 3',class:'shared-cursor'}));
   const overlay=svgNode('rect',{x:left,y:top,width:layout.plotWidth,height:plotBottom-top,fill:'transparent'});
   svg.append(overlay);
-  overlay.addEventListener('pointermove',event=>{
+  plotHover(overlay, event=>{
     const bounds=svg.getBoundingClientRect();
     const x=(event.clientX-bounds.left)/bounds.width*width;
-    const date=start+Math.max(0,Math.min(1,(x-left)/layout.plotWidth))*(end-start);
-    inspectMonth(new Date(date).toISOString().slice(0,7));
+    const date = new Date(start + Math.max(0, Math.min(1, (x-left)/layout.plotWidth)) * (end-start));
+    const month = date.toISOString().slice(0,7);
+    const next = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth()+1, 1));
+    inspectMonth(date - T.stamp(month) <= next - date ? month : next.toISOString().slice(0,7));
   });
   svg.addEventListener('keydown',event=>{
     if (!['ArrowLeft','ArrowRight','Home','End'].includes(event.key)) return;
@@ -183,6 +185,7 @@ function render() {
     const date=new Date(Date.UTC(year,month-1+(event.key==='ArrowLeft'?-1:1),1));
     const period=event.key==='Home'?state.from+'-01':event.key==='End'?state.to+'-12':date.toISOString().slice(0,7);
     inspectMonth(period);
+    plotHover.showAtCursor('.shared-cursor');
   });
   $('series-label').textContent=new Date(start).toISOString().slice(0,7)+'–'+new Date(end).toISOString().slice(0,7)+
     ' · Monthly data · Dashed bank line = CMHC forecast · Price coverage changes at 2024';

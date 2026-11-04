@@ -35,9 +35,10 @@ forecasts dashed, legends above the plot, and distinct
 units explicitly labelled. Multi-panel plots share a horizontal time scale.
 
 Use native SVG and page components modelled on the Ontario mortgage chart:
-compact legend above, plot/panels on one time scale, inspection readout below,
-and collapsed definitions/sources. Fit the viewport without a plotting-library
-toolbar. Hover and keyboard inspection expose exact observations; legend taps
+compact legend above, plot/panels on one time scale, and collapsed definitions
+and sources. Fit the viewport without a plotting-library toolbar. Hover, tap or
+use the arrow keys to show the selected date and values beside the vertical
+guide. Legend taps
 can toggle lines. Keep only essential controls, such as the FCF ratio choice.
 Rebasing is a build-time option in the macro projects.
 

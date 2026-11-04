@@ -9,7 +9,15 @@ h1 { font-size:clamp(27px,3.5vw,38px); font-weight:650; letter-spacing:-1px; lin
 .vertical-grid { stroke:var(--line); stroke-width:1; stroke-dasharray:2 4; }
 .axis { font-size:11px; fill:var(--muted); }
 .axis-title { font-size:11px; font-weight:600; fill:var(--muted); }
-.inspection { background:var(--paper); border-radius:4px; padding:10px 13px; margin-top:10px; }
-#inspect-period { margin:0 0 4px; color:var(--muted); font-size:10px; }
+.inspection-status { position:absolute; width:1px; height:1px; padding:0; margin:-1px;
+  overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
 .hint { color:var(--muted); font-size:10px; margin:7px 0 0; }
 footer { color:var(--muted); font-size:11px; margin:15px 2px 0; }
+.chart { position:relative; }
+.plot-hover { position:absolute; z-index:1; pointer-events:none; width:max-content; max-width:100%;
+  padding:8px 10px; background:var(--surface); border:1px solid var(--line);
+  border-radius:5px; box-shadow:0 3px 12px #182d3722; }
+.plot-hover-period { font-size:11px; font-weight:600; margin-bottom:4px; }
+.plot-hover > .readout-row, .plot-hover > .readout-row + .readout-row { padding:2px 0; border:0; }
+.plot-hover .readout-value strong { font-size:12px; }
+.plot-hover .readout-value:has(.readout-unit) { display:flex; align-items:baseline; gap:4px; }

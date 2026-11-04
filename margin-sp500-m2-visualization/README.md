@@ -10,8 +10,7 @@ market events.
 ## Chart components
 
 The page follows the Ontario mortgage chart's compact native SVG layout: a
-legend above the plot, one shared time axis, a synchronized inspection readout
-below, and collapsed definitions/sources. It has no plotting runtime, CDN,
+legend above the plot, one shared time axis, an on-plot tooltip, and collapsed definitions/sources. It has no plotting runtime, CDN,
 zoom toolbar, range slider or log-scale controls. The generated HTML is fully
 self-contained, including its data, styles and JavaScript.
 

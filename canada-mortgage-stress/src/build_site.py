@@ -21,6 +21,7 @@ def build():
     for marker, value in [('__STYLE__', (ASSETS / 'plots/page.css').read_text() + (source / 'style.css').read_text() + (ASSETS / 'plots/page-mobile.css').read_text()),
                           ('__DATA__', payload),
                           ('__TIMELINE__', (source / 'timeline.js').read_text()),
+                          ('__HOVER__', (ASSETS / 'plots/hover.js').read_text()),
                           ('__APP__', (source / 'app.js').read_text())]:
         html = html.replace(marker, value)
     OUT_DIR.mkdir(parents=True, exist_ok=True)

@@ -67,7 +67,7 @@ def chart_page(payload, *, title, subtitle, sources, pulled, context=''):
     """One offline HTML artifact using native SVG, with no plotting runtime/CDN."""
     source = Path(__file__).parent / 'assets' / 'plots'
     style = (source / 'page.css').read_text(encoding='utf-8') + (source / 'chart.css').read_text(encoding='utf-8') + (source / 'page-mobile.css').read_text(encoding='utf-8')
-    behavior = (source / 'chart.js').read_text(encoding='utf-8')
+    behavior = '\n'.join((source / name).read_text(encoding='utf-8') for name in ('hover.js', 'chart.js'))
     title = escape(unescape(title))
     encoded = script_json(payload)
     links = ''.join(f'<li><a href="{escape(url, quote=True)}" target="_blank" rel="noopener">{escape(name)}</a></li>'
@@ -85,7 +85,7 @@ def chart_page(payload, *, title, subtitle, sources, pulled, context=''):
 <div id="chart-legend" class="legend" aria-label="Toggle chart series"></div>
 <p class="series-description">{escape(context)}</p><div id="chart-choices" class="chart-choices"></div>
 <div id="chart" class="chart" tabindex="0" role="group" aria-label="Chart. Use arrow keys to inspect observations."></div>
-<div class="inspection"><p id="inspect-period"></p><div id="readout" class="readout" aria-live="polite" aria-atomic="true"></div></div>
+<div class="inspection-status" role="status" aria-atomic="true"><p id="inspect-period"></p><div id="readout"></div></div>
 <p class="hint">Hover, tap the plot or use arrow keys to inspect · Tap legend entries to toggle series</p></section>
 <footer><details><summary>Definitions & data sources</summary>{stamp}<p>{escape(context)}</p>{events}<ul>{links}</ul></details></footer>
 </main><script id="chart-data" type="application/json">{encoded}</script><script>{behavior}</script></body></html>

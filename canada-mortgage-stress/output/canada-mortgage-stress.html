@@ -15,10 +15,18 @@ h1 { font-size:clamp(27px,3.5vw,38px); font-weight:650; letter-spacing:-1px; lin
 .vertical-grid { stroke:var(--line); stroke-width:1; stroke-dasharray:2 4; }
 .axis { font-size:11px; fill:var(--muted); }
 .axis-title { font-size:11px; font-weight:600; fill:var(--muted); }
-.inspection { background:var(--paper); border-radius:4px; padding:10px 13px; margin-top:10px; }
-#inspect-period { margin:0 0 4px; color:var(--muted); font-size:10px; }
+.inspection-status { position:absolute; width:1px; height:1px; padding:0; margin:-1px;
+  overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
 .hint { color:var(--muted); font-size:10px; margin:7px 0 0; }
 footer { color:var(--muted); font-size:11px; margin:15px 2px 0; }
+.chart { position:relative; }
+.plot-hover { position:absolute; z-index:1; pointer-events:none; width:max-content; max-width:100%;
+  padding:8px 10px; background:var(--surface); border:1px solid var(--line);
+  border-radius:5px; box-shadow:0 3px 12px #182d3722; }
+.plot-hover-period { font-size:11px; font-weight:600; margin-bottom:4px; }
+.plot-hover > .readout-row, .plot-hover > .readout-row + .readout-row { padding:2px 0; border:0; }
+.plot-hover .readout-value strong { font-size:12px; }
+.plot-hover .readout-value:has(.readout-unit) { display:flex; align-items:baseline; gap:4px; }
 :root { --ink:#182d37; --muted:#596b71; --paper:#f5f6f3; --surface:#fff; --line:#dce2df; --bank:#116965; --price:#aa5633; }
 .eyebrow { color:var(--bank); font-size:10px; font-weight:700; letter-spacing:1.8px; margin:0 0 5px; }
 a { color:var(--bank); text-underline-offset:3px; }
@@ -37,7 +45,6 @@ button:focus-visible,select:focus-visible,svg:focus-visible,summary:focus-visibl
 .series-label { font-size:10px; color:var(--muted); margin:0 0 9px; }
 .bank-axis { fill:var(--bank); }.price-axis { fill:var(--price); }
 .series-line { fill:none; stroke-width:2.4; stroke-linecap:round; stroke-linejoin:round; }
-.readout { display:grid; grid-template-columns:1fr 1fr; gap:10px 25px; }
 .readout-row { display:flex; justify-content:space-between; gap:12px; align-items:center; font-size:11px; }
 .readout-value { text-align:right; }.readout-value strong { display:block; font-size:14px; font-variant-numeric:tabular-nums; }
 .readout-period { color:var(--muted); font-size:10px; }
@@ -48,8 +55,6 @@ footer h2 { font-size:12px; color:var(--ink); margin:10px 0 0; }
 footer ol { padding-left:18px; }
 @media(max-width:640px) {
   .legend { gap:7px; flex-direction:column; font-size:11px; }
-  .readout { grid-template-columns:1fr; gap:7px; }
-  .readout-row+.readout-row { padding-top:7px; border-top:1px solid var(--line); }
 }
 @media(max-width:640px) {
   main { padding:23px 14px; }
@@ -65,8 +70,8 @@ footer ol { padding-left:18px; }
 <div class="legend"><span class="bank-key"><i></i>Ontario bank arrears <small>left axis · % of accounts</small></span><span class="price-key"><i></i>Toronto-area prices <small>right axis · CAD</small></span></div>
 <p class="series-description">Monthly bank arrears + CMHC forecast · Monthly average sale price</p><p id="series-label" class="series-label"></p>
 <div id="chart" class="chart"></div>
-<div class="inspection"><p id="inspect-period"></p><div id="readout" class="readout" aria-live="polite" aria-atomic="true"></div></div>
-<p class="hint">Hover over the plot, or focus it and use the arrow keys, to inspect published observations.</p>
+<div class="inspection-status" role="status" aria-atomic="true"><p id="inspect-period"></p><div id="readout"></div></div>
+<p class="hint">Hover or tap the plot, or focus it and use the arrow keys, to inspect published observations.</p>
 </section>
 <footer><p>Prices cover the Toronto area, not all of Ontario. They are nominal sale averages, not a quality-adjusted HPI. The two axes use different units; their visual crossings have no economic meaning.</p><details><summary>Definitions & data sources</summary><div id="definitions"></div><p>“Arrears” and “delinquency” both mean 90+ days overdue here. The monthly price line breaks at the change in TRREB report coverage around 2024. The plot is limited to the period covered by both series, so the bank forecast stops at the latest available price month. Straight lines connect published observations without inventing intervening data. Rising arrears alone do not establish a house-price bottom.</p><ol id="source-list"></ol><p id="snapshot"></p></details></footer>
 </main>
@@ -8426,6 +8431,68 @@ footer ol { padding-left:18px; }
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.MortgageTimeline = api;
 })(typeof globalThis === 'undefined' ? this : globalThis);
+</script><script>/* Show the observations announced by the chart's live region. */
+const plotHover = (() => {
+  const chart = document.getElementById('chart');
+  const period = document.getElementById('inspect-period');
+  const readout = document.getElementById('readout');
+  const tooltip = document.createElement('div');
+  tooltip.className = 'plot-hover';
+  tooltip.setAttribute('aria-hidden', 'true');
+  tooltip.hidden = true;
+  const hide = () => { tooltip.hidden = true; };
+  document.addEventListener('pointerdown', event => {
+    if (!chart.contains(event.target)) hide();
+  });
+  chart.addEventListener('keydown', event => {
+    if (event.key === 'Escape') hide();
+  });
+  chart.addEventListener('focusout', hide);
+  window.addEventListener('resize', hide);
+
+  function show(clientX, clientY) {
+    const title = document.createElement('div');
+    title.className = 'plot-hover-period';
+    title.textContent = period.textContent;
+    tooltip.replaceChildren(title, ...Array.from(readout.children, row => row.cloneNode(true)));
+    if (!tooltip.isConnected) chart.append(tooltip);
+    tooltip.hidden = false;
+
+    const bounds = chart.getBoundingClientRect();
+    const gap = 14;
+    const x = clientX - bounds.left;
+    const w = tooltip.offsetWidth;
+    const h = tooltip.offsetHeight;
+    const left = x + gap + w <= bounds.width ? x + gap : x - gap - w;
+    const below = clientY + gap;
+    const above = clientY - gap - h;
+    const y = below + h <= window.innerHeight ? below : above;
+    tooltip.style.left = Math.max(0, Math.min(left, bounds.width - w)) + 'px';
+    tooltip.style.top = Math.max(4, Math.min(y, window.innerHeight - h - 4)) - bounds.top + 'px';
+  }
+
+  function bind(overlay, inspect) {
+    function inspectPointer(event) {
+      inspect(event);
+      show(event.clientX, event.clientY);
+    }
+    overlay.addEventListener('pointermove', event => {
+      if (event.pointerType !== 'touch') inspectPointer(event);
+    });
+    overlay.addEventListener('pointerdown', inspectPointer);
+    overlay.addEventListener('pointerleave', event => {
+      if (event.pointerType !== 'touch') hide();
+    });
+    overlay.addEventListener('pointercancel', hide);
+  }
+
+  bind.showAtCursor = selector => {
+    const guides = Array.from(chart.querySelectorAll(selector), guide => guide.getBoundingClientRect());
+    const visible = guides.find(guide => guide.bottom > 0 && guide.top < window.innerHeight);
+    if (visible) show(visible.left, Math.max(0, visible.top) + 12);
+  };
+  return bind;
+})();
 </script><script>'use strict';
 const DATA = JSON.parse(document.getElementById('dataset').textContent);
 const T = MortgageTimeline;
@@ -8598,11 +8665,13 @@ function render() {
   svg.append(svgNode('line',{y1:top,y2:plotBottom,stroke:'var(--ink)','stroke-dasharray':'2 3',class:'shared-cursor'}));
   const overlay=svgNode('rect',{x:left,y:top,width:layout.plotWidth,height:plotBottom-top,fill:'transparent'});
   svg.append(overlay);
-  overlay.addEventListener('pointermove',event=>{
+  plotHover(overlay, event=>{
     const bounds=svg.getBoundingClientRect();
     const x=(event.clientX-bounds.left)/bounds.width*width;
-    const date=start+Math.max(0,Math.min(1,(x-left)/layout.plotWidth))*(end-start);
-    inspectMonth(new Date(date).toISOString().slice(0,7));
+    const date = new Date(start + Math.max(0, Math.min(1, (x-left)/layout.plotWidth)) * (end-start));
+    const month = date.toISOString().slice(0,7);
+    const next = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth()+1, 1));
+    inspectMonth(date - T.stamp(month) <= next - date ? month : next.toISOString().slice(0,7));
   });
   svg.addEventListener('keydown',event=>{
     if (!['ArrowLeft','ArrowRight','Home','End'].includes(event.key)) return;
@@ -8611,6 +8680,7 @@ function render() {
     const date=new Date(Date.UTC(year,month-1+(event.key==='ArrowLeft'?-1:1),1));
     const period=event.key==='Home'?state.from+'-01':event.key==='End'?state.to+'-12':date.toISOString().slice(0,7);
     inspectMonth(period);
+    plotHover.showAtCursor('.shared-cursor');
   });
   $('series-label').textContent=new Date(start).toISOString().slice(0,7)+'–'+new Date(end).toISOString().slice(0,7)+
     ' · Monthly data · Dashed bank line = CMHC forecast · Price coverage changes at 2024';

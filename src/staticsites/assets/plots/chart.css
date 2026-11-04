@@ -18,18 +18,14 @@ select { display:block; font-family:inherit; font-size:12px; line-height:1.5; co
 .plot-panel h2 { font-size:14px; font-weight:600; margin:4px 0; }
 .panel-description { color:var(--muted); font-size:11px; margin:4px 0 8px; max-width:950px; }
 .series-line { fill:none; stroke-width:2.4; stroke-linejoin:round; stroke-linecap:round; }
-.readout { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:7px 22px; }
 .readout-row { display:flex; align-items:center; justify-content:space-between; gap:10px; font-size:11px; }
 .readout-value { text-align:right; flex-shrink:0; }
 .readout-value strong { display:block; font-size:14px; font-variant-numeric:tabular-nums; }
 .readout-unit { display:block; font-size:10px; color:var(--muted); }
 summary { cursor:pointer; width:fit-content; }
 footer ul { padding-left:18px; } footer li { margin:5px 0; }
-@media(max-width:800px) { .readout { grid-template-columns:repeat(2,minmax(0,1fr)); } }
 @media(max-width:640px) {
   .legend { gap:4px 14px; }
   .legend-item { font-size:11px; min-height:36px; }
   select { font-size:16px; min-height:44px; }
-  .readout { grid-template-columns:1fr; gap:6px; }
-  .readout-row+.readout-row { border-top:1px solid var(--line); padding-top:6px; }
 }

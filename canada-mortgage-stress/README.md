@@ -19,8 +19,8 @@ clip to those exact month boundaries. Bank observations run through
 June 2026, so the displayed dashed forecast covers July–September 2026. Later
 forecast months are excluded because corresponding price data are unavailable.
 
-Hover to inspect, or focus the chart and use Left/Right to step through months
-(Home/End jump to the window edges). The readout labels the exact period of each
+Hover or tap to inspect, or focus the chart and use Left/Right to step through
+months (Home/End jump to the window edges). The tooltip labels the exact period of each
 nearest published observation, within half the reporting interval. It never
 interpolates values or carries a stale series beyond its published coverage.
 Definitions and linked sources are in one collapsed section beneath the chart.
