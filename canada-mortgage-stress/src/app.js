@@ -185,6 +185,7 @@ function render() {
     const date=new Date(Date.UTC(year,month-1+(event.key==='ArrowLeft'?-1:1),1));
     const period=event.key==='Home'?state.from+'-01':event.key==='End'?state.to+'-12':date.toISOString().slice(0,7);
     inspectMonth(period);
+    plotHover.showAtCursor('.shared-cursor');
   });
   $('series-label').textContent=new Date(start).toISOString().slice(0,7)+'–'+new Date(end).toISOString().slice(0,7)+
     ' · Monthly data · Dashed bank line = CMHC forecast · Price coverage changes at 2024';

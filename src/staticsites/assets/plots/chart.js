@@ -183,6 +183,7 @@
     event.preventDefault();const index=dates.indexOf(current);
     const next=event.key==='Home'?0:event.key==='End'?dates.length-1:Math.max(0,Math.min(dates.length-1,index+(event.key==='ArrowLeft'?-1:1)));
     inspect(dates[next]);
+    plotHover.showAtCursor('.inspection-cursor');
   });
   let resizeTimer;window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(render,100);});
   render();

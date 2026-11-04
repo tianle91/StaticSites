@@ -85,7 +85,7 @@ def chart_page(payload, *, title, subtitle, sources, pulled, context=''):
 <div id="chart-legend" class="legend" aria-label="Toggle chart series"></div>
 <p class="series-description">{escape(context)}</p><div id="chart-choices" class="chart-choices"></div>
 <div id="chart" class="chart" tabindex="0" role="group" aria-label="Chart. Use arrow keys to inspect observations."></div>
-<div class="inspection"><p id="inspect-period"></p><div id="readout" class="readout" aria-live="polite" aria-atomic="true"></div></div>
+<div class="inspection-status" role="status" aria-atomic="true"><p id="inspect-period"></p><div id="readout"></div></div>
 <p class="hint">Hover, tap the plot or use arrow keys to inspect · Tap legend entries to toggle series</p></section>
 <footer><details><summary>Definitions & data sources</summary>{stamp}<p>{escape(context)}</p>{events}<ul>{links}</ul></details></footer>
 </main><script id="chart-data" type="application/json">{encoded}</script><script>{behavior}</script></body></html>
