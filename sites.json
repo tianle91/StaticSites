@@ -58,5 +58,11 @@
     "title": "Union Station commute-shed",
     "description": "where you can reach Toronto's Union Station by transit in 30 / 60 / 90 / 120 minutes.",
     "output": "union-station-transit-isochrone/output/union-station-transit-isochrone.html"
+  },
+  {
+    "slug": "us-canada-yield-curves",
+    "title": "US & Canada government bond yield curves",
+    "description": "Compare nominal government bond yields from 1 month to the long end on the latest shared trading date.",
+    "output": "us-canada-yield-curves/output/us-canada-yield-curves.html"
   }
 ]

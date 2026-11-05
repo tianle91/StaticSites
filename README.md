@@ -8,6 +8,7 @@ map CDN/tile dependencies remain documented; chart pages work offline.
 
 | Project | What it is |
 | --- | --- |
+| [us-canada-yield-curves/](us-canada-yield-curves/) | US Treasury and Canadian government bond yields across maturities, on the latest shared trading date. |
 | [canada-mortgage-stress/](canada-mortgage-stress/) | Monthly Ontario bank mortgage arrears including CMHC forecasts and Toronto-area sale prices in one plot, limited to their shared available period. |
 | [fcf-macro-indicators/](fcf-macro-indicators/) | Quarterly free cash flow and cash balances of a basket of large public companies vs. M2, the S&P 500, and the 3M / 2Y / 10Y / 30Y Treasury curve, rebased to a chosen anchor quarter. Renders a static PNG and an interactive HTML chart. |
 | [margin-sp500-m2-visualization/](margin-sp500-m2-visualization/) | FINRA margin debt vs. S&P 500, M2, CPI, and PPI, rebased to a configurable anchor date. Renders a static PNG and an interactive HTML chart. |
