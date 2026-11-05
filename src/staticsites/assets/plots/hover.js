@@ -21,7 +21,9 @@ const plotHover = (() => {
   chart.addEventListener('keydown', event => {
     if (event.key === 'Escape') hide();
   });
-  chart.addEventListener('focusout', hide);
+  chart.addEventListener('focusout', event => {
+    if (!chart.contains(event.relatedTarget)) hide();
+  });
   window.addEventListener('resize', hide);
 
   function show(clientX, clientY, panel, pointerY, graphic) {

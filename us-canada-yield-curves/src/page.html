@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="US Treasury and Government of Canada nominal bond yields across maturities, on the latest shared trading date.">
+<title>US & Canada government bond yield curves</title>
+<style>__STYLE__
+.overnight-line { stroke-width:1.5; }
+.overnight-label { font-size:10px; font-weight:600; }
+.offset-controls { display:flex; flex-wrap:wrap; gap:7px; margin:0 0 10px; }
+.offset-button { display:inline-flex; align-items:center; gap:5px; font-family:inherit; font-size:12px; font-weight:600; line-height:1.5; color:var(--ink); border:1px solid var(--line); border-radius:4px; background:var(--surface); padding:6px 9px; cursor:pointer; }
+.offset-button i { width:8px; height:8px; border-radius:50%; }
+.offset-button[aria-pressed=true] { border-color:var(--muted); background:var(--paper); }
+.offset-button[aria-pressed=false] { opacity:.65; }
+.offset-button:disabled { cursor:default; }
+.date-help { font-size:11px; color:var(--muted); margin:0 0 8px; }
+.date-help:empty { display:none; }
+@media(max-width:640px) { .offset-button { min-height:40px; } }
+.country-panels { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:24px; }
+.country-panel { min-width:0; }
+.country-panel h2 { display:flex; align-items:center; gap:7px; font-size:15px; margin:0 0 8px; }
+.country-panel h2 i { width:9px; height:9px; border-radius:50%; }
+.country-panel:focus-visible { outline:3px solid var(--accent); outline-offset:3px; }
+@media(max-width:800px) { .country-panels { grid-template-columns:1fr; gap:20px; } .country-panel + .country-panel { border-top:1px solid var(--line); padding-top:16px; } }
+.curve-date { margin:0 0 12px; font-size:12px; color:var(--muted); }
+.curve-note { margin:10px 0 0; font-size:11px; color:var(--muted); }
+.curve-summary { display:flex; flex-wrap:wrap; gap:10px 32px; margin:12px 0 0; padding-top:12px; border-top:1px solid var(--line); }
+.curve-summary p { margin:0; font-size:11px; color:var(--muted); }
+.curve-summary strong { display:block; color:var(--ink); font-size:17px; font-variant-numeric:tabular-nums; }
+</style>
+</head>
+<body><main>
+<header><p class="eyebrow">GOVERNMENT BONDS</p>
+<h1>US & Canada yield curves</h1>
+<p class="subtitle">Overnight reference rates and nominal government yields, from 1 month to the long end.</p></header>
+<section class="explorer" aria-label="Government bond yield curves">
+<p id="curve-date" class="curve-date"></p>
+<div id="offset-controls" class="offset-controls" role="group" aria-label="Historical curve offsets"></div>
+<p class="date-help">Select past curves to compare. Older curves use lighter shades of each country’s color.</p>
+<p id="missing-curves" class="date-help" role="status"></p>
+<div id="chart" class="chart country-panels"></div>
+<div class="inspection-status" role="status" aria-atomic="true"><p id="inspect-period"></p><div id="readout"></div></div>
+<p class="hint">Hover, tap or focus either plot and use arrow keys to inspect</p>
+<p class="curve-note">Dashed horizontal lines show the latest US SOFR and Canada CORRA. Hover to inspect exact values.</p>
+<p class="curve-note">* The final point compares the US 30-year par yield with Canada’s long-term benchmark, plotted at 30 years. Canadian benchmark maturities are approximate.</p>
+<div id="curve-summary" class="curve-summary" aria-label="Yield curve slopes"></div>
+</section>
+<footer>
+<details><summary>Definitions & data sources</summary>
+<p id="retrieved"></p>
+<p id="coverage"></p>
+<p>Plotted observation dates</p><ul id="curve-observation-dates"></ul>
+<p>Yields are annual percentages in each country’s own currency. The maturity axis is logarithmic so short-term tenors remain readable alongside long bonds. The yield axis starts at 0%. US Treasury par yields are fitted constant-maturity rates. Canadian bill yields are daily secondary-market money-market yields. Canadian bond yields are closing mid-market yields on selected benchmark bonds, whose actual maturities can differ from the indicated term. Canada's long-term benchmark is shown at the 30-year position for context.</p>
+<p>SOFR and CORRA measure overnight borrowing costs secured by government securities. Dashed reference lines show each country’s latest available overnight observation and span all maturities. Only the latest overnight rates are shown.</p>
+<p>Offsets such as −1y are measured from the latest curve date. Each country uses its most recent trading observation on or before that target day. A country without observations on that date is labelled unavailable. Lines connect adjacent published maturity points, with gaps for missing tenors. The tooltip snaps to those observations. A positive 10Y minus 2Y spread means the longer-term bond yields more. One basis point is 0.01 percentage points.</p>
+<ul id="sources"></ul>
+</details>
+</footer>
+</main>
+<script id="dataset" type="application/json">__DATA__</script>
+<script>__APP__</script>
+</body></html>

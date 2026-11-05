@@ -1,0 +1,4 @@
+[site]
+name = "us-canada-yield-curves"
+title = "US & Canada government bond yield curves"
+description = "US & Canada government bond yield curves — Compare nominal government bond yields from 1 month to the long end on the latest shared trading date."
