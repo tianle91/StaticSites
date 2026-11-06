@@ -85,7 +85,8 @@ directly:
 Open the committed HTML in a browser:
 
 - Hover or tap any plot, or focus it and use Left/Right/Home/End, to inspect values
-  from the chart's aligned data. The browser does not interpolate new values.
+  from each series at that month. Missing or unpublished values are shown as
+  “No observation”. Lines stop at their latest available month and break at gaps.
 - Tap legend entries to hide/show lines. Each panel keeps at least one visible.
 - The full available history is always shown. The page fits mobile screens
   without a separate chart toolbar or horizontal page scrolling.
@@ -98,6 +99,10 @@ Optional component-model checks use Node 18+ built-ins only:
 - **FINRA** margin statistics (debit balances) — `margin-statistics.xlsx`
 - **FRED** — M2, CPI, PPI series via `fredgraph.csv`
 - **S&P 500** levels via `yfinance`
+
+Each series keeps its own published coverage on the shared monthly grid.
+Missing values stay empty, including months beyond a series’ latest observation.
+S&P 500 uses completed month-end closes.
 
 `src/fetch_data.py` (`make data`) pulls all three into `data/series.csv`, which
 is committed so that `make` renders offline and reproducibly.
