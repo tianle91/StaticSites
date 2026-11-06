@@ -1,5 +1,12 @@
 # StaticSites
 
+> **This project has moved.** Active development now lives in
+> [`tianle91.github.io/StaticSites`](https://github.com/tianle91/tianle91.github.io/tree/master/StaticSites).
+> Please open new issues and pull requests in
+> [`tianle91.github.io`](https://github.com/tianle91/tianle91.github.io).
+> This repository is archived for historical code, issues and pull requests.
+> Existing published map and chart URLs at [tianle91.com/StaticSites/](https://tianle91.com/#interactive) are unchanged.
+
 Standalone static maps and plots built from committed datasets. Projects share
 build-time Python and UI components, while retaining their own sources, data,
 tests and outputs. Each generated HTML embeds its application code, styles and
