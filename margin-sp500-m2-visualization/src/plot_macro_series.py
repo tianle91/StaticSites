@@ -99,9 +99,9 @@ def build_rebased(rebase_anchor: pd.Timestamp) -> pd.DataFrame:
                          f"[{START.date()}, {end.date()}].")
     frame = frame.loc[(frame.index >= START) & (frame.index <= end)].dropna(how="all")
 
-    aligned = frame.ffill(limit=2).dropna()
+    aligned = frame.asfreq("ME")
     if aligned.empty:
-        raise RuntimeError("No overlapping observations after alignment.")
+        raise RuntimeError("No observations available for the chart.")
 
     for col in aligned.columns:
         _baseline_level(aligned[col], anchor)
@@ -200,7 +200,7 @@ def render_html(rebased: pd.DataFrame, out_path: Path) -> None:
     anchor_me = rebased.attrs['anchor_month_end']
     html = chart_page(chart_payload(rebased), title=PAGE_TITLE,
                       subtitle='Margin debt, equity prices, money supply and inflation.',
-                      context=f'Monthly data · Index 100 uses each series on or before {anchor_me:%Y-%m-%d}.',
+                      context=f'Monthly observations · Missing values stay empty · Index 100 uses each series on or before {anchor_me:%Y-%m-%d}.',
                       sources=DATA_SOURCES, pulled=data_pulled_date())
     out_path.parent.mkdir(parents=True, exist_ok=True)
     if not out_path.exists() or out_path.read_text(encoding='utf-8') != html:
